@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.reclizer.csgobox.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "CsgoBox.refmap.json",
+  "mixins": [
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
