@@ -1,0 +1,33 @@
+{
+  "cs_dita": {
+    "subtitle": "cs_dita",
+    "replace": "true",
+    "sounds": [
+      {
+        "name": "csgobox:cs_dita",
+        "stream": true
+      }
+    ]
+  },
+  "cs_open": {
+    "subtitle": "cs_open",
+    "replace": "true",
+    "sounds": [
+      {
+        "name": "csgobox:cs_open",
+        "stream": true
+      }
+    ]
+  },
+  "cs_finish": {
+    "subtitle": "cs_finish",
+    "replace": "true",
+    "sounds": [
+      {
+        "name": "csgobox:cs_finish",
+        "stream": true
+      }
+    ]
+  }
+
+}
