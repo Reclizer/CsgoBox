@@ -1,0 +1,50 @@
+[
+  {
+    "name": "武器补给箱",
+    "key": "csgobox:csgo_key0",
+    "drop": 0.12,
+    "random": [
+      2,
+      5,
+      6,
+      20,
+      625
+    ],
+    "entity": [
+      "minecraft:zombie",
+      "minecraft:skeleton"
+    ],
+    "grade1": [
+      "minecraft:stone_sword.withTags{Damage:0}",
+      "minecraft:iron_axe.withTags{Damage:0}",
+      "minecraft:iron_shovel.withTags{Damage:0}",
+      "minecraft:iron_pickaxe.withTags{Damage:0}",
+      "minecraft:iron_axe.withTags{Damage:0}",
+      "minecraft:iron_hoe.withTags{Damage:0}",
+      "minecraft:iron_sword.withTags{Damage:0}"
+    ],
+    "grade2": [
+      "minecraft:golden_sword.withTags{Damage:0}",
+      "minecraft:golden_axe.withTags{Damage:0}",
+      "minecraft:golden_axe.withTags{Damage:0}",
+      "minecraft:golden_pickaxe.withTags{Damage:0}",
+      "minecraft:golden_shovel.withTags{Damage:0}"
+    ],
+    "grade3": [
+      "minecraft:diamond_shovel.withTags{Damage:0}",
+      "minecraft:diamond_pickaxe.withTags{Damage:0}",
+      "minecraft:diamond_hoe.withTags{Damage:0}"
+    ],
+    "grade4": [
+      "minecraft:diamond_axe.withTags{Damage:0}",
+      "minecraft:diamond_sword.withTags{Damage:0}"
+    ],
+    "grade5": [
+      "minecraft:netherite_sword.withTags{Damage:0,Enchantments:[{id:\"minecraft:sharpness\",lvl:4s},{id:\"minecraft:fire_aspect\",lvl:1s},{id:\"minecraft:sweeping\",lvl:2s}],RepairCost:7}",
+      "minecraft:netherite_axe.withTags{Damage:0}",
+      "minecraft:netherite_pickaxe.withTags{Damage:0}",
+      "minecraft:netherite_shovel.withTags{Damage:0}",
+      "minecraft:netherite_hoe.withTags{Damage:0}"
+    ]
+  }
+]

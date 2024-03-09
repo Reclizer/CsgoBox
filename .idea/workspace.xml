@@ -5,109 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c891f7ca-6614-43e9-9125-e46abb85e12f" name="Changes" comment="update">
-      <change afterPath="$PROJECT_DIR$/.gradle/8.1.1/executionHistory/executionHistory.bin" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.gradle/8.1.1/fileHashes/fileHashes.bin" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.gradle/8.1.1/fileHashes/resourceHashesCache.bin" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/outputFiles.bin" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.gradle/file-system.probe" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/CsgoBox$ClientModEvents.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/CsgoBox.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/capability/ModCapability$1.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/capability/ModCapability$EventHandler.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/capability/ModCapability.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/capability/csbox/CsboxCap.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/capability/csbox/CsboxCapAttacher$CsboxCapProvider.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/capability/csbox/CsboxCapAttacher.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/capability/csbox/CsboxCapEvent.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/capability/csbox/ICsboxCap.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/config/CsgoBoxManage$1.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/config/CsgoBoxManage.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/event/ClickEvent.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/event/ModEvents.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/CsgoBoxCraftMenu$1.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/CsgoBoxCraftMenu$2.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/CsgoBoxCraftMenu$3.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/CsgoBoxCraftMenu$4.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/CsgoBoxCraftMenu$5.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/CsgoBoxCraftMenu$6.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/CsgoBoxCraftMenu.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/CsgoBoxCraftScreen$1.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/CsgoBoxCraftScreen.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/RecModMenus.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/RecModScreens.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/client/CsLookItemScreen.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/client/CsboxProgressScreen.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/gui/client/CsboxScreen.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/item/ItemCsgoBox$BoxInfo.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/item/ItemCsgoBox.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/item/ItemCsgoKey.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/item/ItemOpenBox$1.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/item/ItemOpenBox.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/item/ModItems.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/packet/Networking.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/packet/PacketCsgoProgress.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/packet/PacketGiveItem.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/packet/PacketLookItem.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/packet/PacketUpdateMode.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/sounds/ModSounds.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/utils/BlurHandler.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/utils/ColorTools.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/utils/CraftWeakerNBT.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/utils/GuiItemMove.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/utils/IconListTools.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/utils/ItemNBT.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/utils/RandomItem.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/classes/java/main/com/reclizer/csgobox/utils/RenderFontTool.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/createMcpToSrg/output.tsrg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/downloadMcpConfig/output.zip" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/extractSrg/output.srg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/jarjar/jarJar/metadata.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/libs/csgobox-1.0-SNAPSHOT.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/reobfJar/log.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/reobfJar/mappings.tsrg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/reobfJar/output.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/META-INF/mods.toml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/lang/en_us.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/lang/zh_cn.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/models/item/csgo_box.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/models/item/csgo_box_craft.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/models/item/csgo_box_test.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/models/item/csgo_key0.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/models/item/csgo_key1.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/models/item/csgo_key2.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/models/item/csgo_key3.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/sounds.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/sounds/cs_dita.ogg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/sounds/cs_finish.ogg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/sounds/cs_open.ogg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/item/csgo_box.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/item/csgo_box_craft.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/item/csgo_key0.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/item/csgo_key1.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/item/csgo_key2.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/item/csgo_key3.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/screens/atlas/back_box.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/screens/atlas/imagebutton_clear.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/screens/atlas/imagebutton_craft.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/screens/atlas/imagebutton_ul_craft.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/screens/atlas/open_box.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/screens/clear.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/screens/clear_on.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/screens/csgo_background.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/screens/csgo_box.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/screens/csgo_table.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/screens/gold_item.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/screens/recipeblock_gui.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/csgobox/textures/screens/ultimate_table.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/minecraft/shaders/post/fade_in_blur.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/minecraft/shaders/program/fade_in_blur.fsh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/assets/minecraft/shaders/program/fade_in_blur.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/csgobox.mixins.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/resources/main/pack.mcmeta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/tmp/compileJava/previous-compilation-data.bin" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/tmp/jar/MANIFEST.MF" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/run/config/csbox/box.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/run/config/fml.toml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/run/config/forge-client.toml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/run/logs/crafttweaker.log" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/run/logs/debug.log" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/run/logs/latest.log" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/run/options.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.1.1/executionHistory/executionHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.1.1/executionHistory/executionHistory.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.1.1/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.1.1/fileHashes/fileHashes.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/outputFiles.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/outputFiles.bin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/reclizer/csgobox/CsgoBox.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/reclizer/csgobox/CsgoBox.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/assets/csgobox/lang/en_us.json" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/assets/csgobox/lang/en_us.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -165,17 +75,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "C:/Users/23/Desktop/文件/kaifa/mc开发/CsgoBox/src/main/resources/assets/csgobox/models/item"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/23/Desktop/文件/kaifa/mc开发/CsgoBox/src/main/resources/assets/csgobox/models/item&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\23\Desktop\文件\kaifa\mc开发\CsgoBox\src\main\resources\assets\csgobox\models\item" />
@@ -200,7 +110,7 @@
       <command value="gradle :runServer" />
     </option>
   </component>
-  <component name="RunManager" selected="Gradle.CsgoBox build">
+  <component name="RunManager" selected="Gradle.CsgoBox [:runClient]">
     <configuration name="Test" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.reclizer.csgobox.Test" />
       <module name="CsgoBox.main" />
@@ -375,7 +285,15 @@
       <option name="project" value="LOCAL" />
       <updated>1709993784654</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="update">
+      <option name="closed" value="true" />
+      <created>1709993850616</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1709993850616</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

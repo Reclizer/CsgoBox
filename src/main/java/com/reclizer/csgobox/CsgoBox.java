@@ -92,7 +92,7 @@ public class CsgoBox {
             }
             String content ="[\n" +
                     "  {\n" +
-                    "    \"name\": \"武器补给箱\",\n" +
+                    "    \"name\": \"Weapons Supply Box\",\n" +
                     "    \"key\": \"csgobox:csgo_key0\",\n" +
                     "    \"drop\": 0.12,\n" +
                     "    \"random\": [\n" +
