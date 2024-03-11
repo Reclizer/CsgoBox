@@ -122,7 +122,7 @@ public class CsLookItemScreen extends Screen {
     @Override
     public void renderBackground(GuiGraphics pGuiGraphics){
         if (this.minecraft.level != null) {
-            pGuiGraphics.fillGradient(0, 0, this.width, this.height, BlurHandler.getBackgroundColor(true), BlurHandler.getBackgroundColor(false));
+            pGuiGraphics.fillGradient(0, 0, this.width, this.height, BlurHandler.getBackgroundColor(), BlurHandler.getBackgroundColor());
             net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.ScreenEvent.BackgroundRendered(this, pGuiGraphics));
         } else {
             this.renderDirtBackground(pGuiGraphics);

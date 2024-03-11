@@ -98,15 +98,19 @@ public class CsgoBoxManage {
         JsonArray jsonArray3=new JsonArray();
         JsonArray jsonArray4=new JsonArray();
         JsonArray jsonArray5=new JsonArray();
-        for (int i=0;i<item.size();i++){
-            switch (grade.get(i)) {
-                case 1 -> jsonArray1.add(item.get(i));
-                case 2 -> jsonArray2.add(item.get(i));
-                case 3 -> jsonArray3.add(item.get(i));
-                case 4 -> jsonArray4.add(item.get(i));
-                case 5 -> jsonArray5.add(item.get(i));
+
+        if(item.size()>0){
+            for (int i=0;i<item.size();i++){
+                switch (grade.get(i)) {
+                    case 1 -> jsonArray1.add(item.get(i));
+                    case 2 -> jsonArray2.add(item.get(i));
+                    case 3 -> jsonArray3.add(item.get(i));
+                    case 4 -> jsonArray4.add(item.get(i));
+                    case 5 -> jsonArray5.add(item.get(i));
+                }
             }
         }
+
 
 
         newObject.add("grade1", jsonArray1);

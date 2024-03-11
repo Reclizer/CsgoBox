@@ -124,9 +124,9 @@ public class BlurHandler {
     private static float getProgress() {
         return Math.min((System.currentTimeMillis() - start) / (float) 100, 1);
     }
-    public static int getBackgroundColor(boolean second) {
+    public static int getBackgroundColor() {
         //透明度/r/g/b
-        int color = (64 << 24) | (128 << 16) | (128 << 8) | 128;;
+        int color = (128 << 24) | (90 << 16) | (90 << 8) | 90;
         int a = color >> 24;
         int r = (color >> 16) & 0xFF;
         int b = (color >> 8) & 0xFF;

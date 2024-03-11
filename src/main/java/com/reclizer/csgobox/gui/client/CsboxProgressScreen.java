@@ -93,7 +93,7 @@ public class CsboxProgressScreen extends Screen {
             return;
         }
         if (this.minecraft.level != null) {
-            pGuiGraphics.fillGradient(0, 0, this.width, this.height, BlurHandler.getBackgroundColor(true), BlurHandler.getBackgroundColor(false));
+            pGuiGraphics.fillGradient(0, 0, this.width, this.height, BlurHandler.getBackgroundColor(), BlurHandler.getBackgroundColor());
             net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.ScreenEvent.BackgroundRendered(this, pGuiGraphics));
         } else {
             this.renderDirtBackground(pGuiGraphics);
@@ -104,6 +104,7 @@ public class CsboxProgressScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
 
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
+        this.renderBackground(guiGraphics);
         this.renderBg(guiGraphics,partialTicks,mouseX,mouseY);
         //this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

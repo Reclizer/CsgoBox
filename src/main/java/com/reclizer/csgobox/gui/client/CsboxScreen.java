@@ -142,10 +142,18 @@ public class CsboxScreen extends Screen {
     private float xMouse;
     /** The old y position of the mouse pointer */
     private float yMouse;
+
+
     @Override
     public void renderBackground(GuiGraphics pGuiGraphics){
+        if(this.minecraft==null){
+            return;
+        }
+        if(this.minecraft.player==null){
+            return;
+        }
         if (this.minecraft.level != null) {
-            pGuiGraphics.fillGradient(0, 0, this.width, this.height, BlurHandler.getBackgroundColor(true), BlurHandler.getBackgroundColor(false));
+            pGuiGraphics.fillGradient(0, 0, this.width, this.height, BlurHandler.getBackgroundColor(), BlurHandler.getBackgroundColor());
             net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.ScreenEvent.BackgroundRendered(this, pGuiGraphics));
         } else {
             this.renderDirtBackground(pGuiGraphics);
@@ -171,7 +179,7 @@ public class CsboxScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-
+        this.renderBackground(guiGraphics);
         this.renderLabels(guiGraphics,mouseX,mouseY);
         this.renderBg(guiGraphics,partialTicks,mouseX,mouseY);
 
