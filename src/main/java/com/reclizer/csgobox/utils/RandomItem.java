@@ -62,7 +62,7 @@ public class RandomItem {
 
         int i=0;
         if(items.size()>1){
-            i=random.nextInt(0,items.size()-1);
+            i=random.nextInt(0,items.size());
         }
 
         ItemStack newItem=items.get(i);
