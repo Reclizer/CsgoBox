@@ -42,12 +42,24 @@ public class PacketGiveItem {
 
 
                     ServerPlayer player=(ServerPlayer) ctx.get().getSender();
-
-
-
+                    
                     if(player.getInventory()!=null&&giveItem!=null){
-                        player.getInventory().add(giveItem);
+                        Inventory inventory = player.getInventory();
+
+                        int emptySlot = -1;
+                        for (int i = 0; i < 36; i++) {
+                            if (inventory.getItem(i).isEmpty()) {
+                                emptySlot = i;
+                                break;
+                            }
+                        }
+                        if (emptySlot != -1) {
+                            player.getInventory().add(giveItem);
+                        }else {
+                            player.drop(giveItem,true,false);
+                        }
                     }
+
 
                 }
 
