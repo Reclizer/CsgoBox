@@ -23,6 +23,7 @@ public class CsboxScreen extends BoxScreen {
     private static final int MODEL_X = (LAYOUT_WIDTH - MODEL_SIZE) / 2;
     private static final int MODEL_Y = LAYOUT_HEIGHT * 35 / 100 - MODEL_SIZE / 2;
     private final PacketBoxPreview preview;
+    private final Component unlockLabel;
     private int page;
     private boolean requested;
     private boolean playedSound;
@@ -33,7 +34,12 @@ public class CsboxScreen extends BoxScreen {
     private List<List<FormattedCharSequence>> rewardNames = List.of();
     private int availableKeys;
 
-    public CsboxScreen(PacketBoxPreview preview) { super(preview.box().getHoverName()); this.preview = preview; }
+    public CsboxScreen(PacketBoxPreview preview) {
+        super(preview.box().getHoverName());
+        this.preview = preview;
+        this.unlockLabel = Component.translatable("gui.csgobox.csgo_box.label_box")
+                .append(" ").append(preview.box().getHoverName());
+    }
     public UUID token() { return preview.token(); }
     public List<DisplayReward> rewards() { return preview.rewards(); }
 
@@ -115,9 +121,10 @@ public class CsboxScreen extends BoxScreen {
             GuiItemMove.renderItemInInventoryFollowsMouse(g, MODEL_X, MODEL_Y,
                     rotation.yaw(), rotation.pitch(), preview.box(), minecraft.player, MODEL_SIZE/16F);
         Style bold = Style.EMPTY.withBold(true);
-        label(g, Component.translatable("gui.csgobox.csgo_box.title").withStyle(bold), 47.6F, 5.9F, 2);
-        label(g, Component.translatable("gui.csgobox.csgo_box.label_box"), 46, 13, 0.8F);
-        label(g, preview.box().getHoverName(), 50, 13, 0.8F);
+        ClassicBoxUi.centeredText(g, font, Component.translatable("gui.csgobox.csgo_box.title").withStyle(bold),
+                LAYOUT_WIDTH/2F, LAYOUT_HEIGHT*0.059F, 2, LAYOUT_WIDTH*0.9F, 0xFFD3D3D3);
+        ClassicBoxUi.centeredText(g, font, unlockLabel,
+                LAYOUT_WIDTH/2F, LAYOUT_HEIGHT*0.13F, 0.8F, LAYOUT_WIDTH*0.9F, 0xFFD3D3D3);
         label(g, Component.translatable("gui.csgobox.csgo_box.label_items").withStyle(bold), 3, 50.3F, 0.8F);
 
         hovered = null;

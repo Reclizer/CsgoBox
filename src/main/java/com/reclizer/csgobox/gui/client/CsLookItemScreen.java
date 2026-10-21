@@ -55,9 +55,10 @@ public class CsLookItemScreen extends BoxScreen {
         rotation.update(Util.getMillis());
         g.fill(LAYOUT_WIDTH*25/100, LAYOUT_HEIGHT*92/100, LAYOUT_WIDTH*75/100, LAYOUT_HEIGHT*92/100+1, 0xFFD3D3D3);
         g.fill(LAYOUT_WIDTH*37/100, LAYOUT_HEIGHT*16/100, LAYOUT_WIDTH*63/100, LAYOUT_HEIGHT*16/100+2, ColorTools.colorItems(grade));
-        ClassicBoxUi.text(g, font, title, LAYOUT_WIDTH*0.45F, LAYOUT_HEIGHT*0.05F, 1.8F, 0xFFFFFFFF);
-        ClassicBoxUi.text(g, font, Component.translatable("gui.csgobox.csgo_box.grade"+grade),
-                LAYOUT_WIDTH*0.45F, LAYOUT_HEIGHT*0.11F, 1, 0xFFFFFFFF);
+        ClassicBoxUi.centeredText(g, font, title,
+                LAYOUT_WIDTH/2F, LAYOUT_HEIGHT*0.05F, 1.8F, LAYOUT_WIDTH*0.9F, 0xFFFFFFFF);
+        ClassicBoxUi.centeredText(g, font, Component.translatable("gui.csgobox.csgo_box.grade"+grade),
+                LAYOUT_WIDTH/2F, LAYOUT_HEIGHT*0.11F, 1, LAYOUT_WIDTH*0.9F, 0xFFFFFFFF);
         if (minecraft.player != null)
             GuiItemMove.renderItemInInventoryFollowsMouse(g, LAYOUT_WIDTH*37/100, LAYOUT_HEIGHT*30/100,
                     rotation.yaw(), rotation.pitch(), reward, minecraft.player, (LAYOUT_WIDTH*26/100)/16F);

@@ -24,6 +24,14 @@ final class ClassicBoxUi {
         } finally { g.pose().popPose(); }
     }
 
+    /** Centre the complete styled text after scaling, keeping long names inside the heading area. */
+    static void centeredText(GuiGraphics g, Font font, Component text, float centerX, float y,
+                             float scale, float maxWidth, int color) {
+        int textWidth = font.width(text);
+        float fittedScale = Math.min(scale, maxWidth / Math.max(1, textWidth));
+        text(g, font, text, centerX - textWidth * fittedScale / 2, y, fittedScale, color);
+    }
+
     static void item(GuiGraphics g, ItemStack stack, float x, float y, float scale) {
         if (stack.isEmpty()) return;
         g.pose().pushPose();
