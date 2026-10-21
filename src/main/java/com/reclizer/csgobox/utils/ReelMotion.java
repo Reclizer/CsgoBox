@@ -4,6 +4,7 @@ package com.reclizer.csgobox.utils;
 public final class ReelMotion {
     public static final int DURATION = 145;
     public static final int WINNER = 45;
+    public static final int CARD_COUNT = 50;
     public static final float SPACING = 0.20F;
     public static final float CARD_WIDTH = 0.18F;
     private static final double[] DISTANCE = new double[DURATION + 1];
@@ -23,10 +24,12 @@ public final class ReelMotion {
     private final float start;
     private final float travel;
 
-    public ReelMotion(float start, float landing) {
-        if (!Float.isFinite(start) || !Float.isFinite(landing) || landing < 0 || landing > 1)
+    /** initialPhase selects a position within one card spacing on an already populated strip. */
+    public ReelMotion(float initialPhase, float landing) {
+        if (!Float.isFinite(initialPhase) || initialPhase < 0 || initialPhase > 1
+                || !Float.isFinite(landing) || landing < 0 || landing > 1)
             throw new IllegalArgumentException("Invalid reel position");
-        this.start = start;
+        this.start = -initialPhase * SPACING;
         this.travel = start + WINNER * SPACING - (0.5F - landing * CARD_WIDTH);
     }
 

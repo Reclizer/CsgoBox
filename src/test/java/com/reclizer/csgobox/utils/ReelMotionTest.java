@@ -16,15 +16,36 @@ class ReelMotionTest {
     }
 
     @Test void everyLandingKeepsTheServerWinnerUnderThePointerAtAnyResolution() {
-        for (float start : new float[]{0.935F, 1, 1.11F}) {
+        for (float phase : new float[]{0, 0.5F, 1}) {
             for (float landing : new float[]{0.12F, 0.5F, 0.88F}) {
-                var motion = new ReelMotion(start, landing);
+                var motion = new ReelMotion(phase, landing);
                 for (int width : new int[]{320, 854, 1920, 3840}) {
                     float left = motion.left(ReelMotion.WINNER, ReelMotion.DURATION) * width;
                     float right = left + width * ReelMotion.CARD_WIDTH;
                     assertTrue(left < width/2F && width/2F < right);
                 }
                 assertEquals(ReelMotion.WINNER, motion.underPointer(ReelMotion.DURATION));
+            }
+        }
+    }
+
+    @Test void populatedStripCoversTheViewportFromTheFirstFrameUntilTheStop() {
+        for (float phase : new float[]{0, 0.25F, 0.5F, 0.75F, 1}) {
+            for (float landing : new float[]{0.12F, 0.5F, 0.88F}) {
+                var motion = new ReelMotion(phase, landing);
+                assertTrue(motion.underPointer(0) > 0);
+                assertEquals(motion.left(0, 0), motion.left(0, -ReelPresentation.LEAD_IN));
+                for (float tick = 0; tick <= ReelMotion.DURATION; tick += 0.25F) {
+                    assertTrue(motion.left(0, tick) <= 0, "No empty leading section");
+                    assertTrue(motion.left(ReelMotion.CARD_COUNT - 1, tick) + ReelMotion.CARD_WIDTH >= 1,
+                            "The tail must also cover the right edge at the stop");
+                    int visible = 0;
+                    for (int i = 0; i < ReelMotion.CARD_COUNT; i++) {
+                        float x = motion.left(i, tick);
+                        if (x < 1 && x + ReelMotion.CARD_WIDTH > 0) visible++;
+                    }
+                    assertTrue(visible >= 5, "Always show a full row of cards");
+                }
             }
         }
     }

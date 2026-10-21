@@ -32,12 +32,13 @@ public class CsboxProgressScreen extends BoxScreen {
         this.grade = grade;
         List<DisplayReward> safe = display.isEmpty() ? List.of(new DisplayReward(reward, grade)) : display;
         Random random = new Random();
-        for (int i = 0; i < 50; i++) reel.add(safe.get(random.nextInt(safe.size())));
+        for (int i = 0; i < ReelMotion.CARD_COUNT; i++) reel.add(safe.get(random.nextInt(safe.size())));
         reel.set(ReelMotion.WINNER, new DisplayReward(this.reward, grade));
         var cached = new java.util.IdentityHashMap<ItemStack, CardItemLayout>();
         layouts = reel.stream().map(entry -> cached.computeIfAbsent(entry.stack(), CardItemLayout::of)).toList();
         rewardLayout = layouts.get(ReelMotion.WINNER);
-        motion = new ReelMotion(random.nextFloat(0.935F, 1.11F), random.nextFloat(0.12F, 0.88F));
+        motion = new ReelMotion(random.nextFloat(), random.nextFloat(0.12F, 0.88F));
+        lastSoundIndex = motion.underPointer(0);
     }
 
     @Override public void tick() {
@@ -45,7 +46,7 @@ public class CsboxProgressScreen extends BoxScreen {
         if (minecraft.screen != this) return;
         ticks++;
         int index = motion.underPointer(ticks - ReelPresentation.LEAD_IN);
-        if (ticks <= ReelPresentation.LEAD_IN + ReelMotion.DURATION
+        if (ticks > ReelPresentation.LEAD_IN && ticks <= ReelPresentation.LEAD_IN + ReelMotion.DURATION
                 && index >= 0 && index != lastSoundIndex && minecraft.player != null)
             minecraft.player.playSound(ModSounds.CS_DITA.get(), 0.6F, 1);
         lastSoundIndex = index;
@@ -58,7 +59,8 @@ public class CsboxProgressScreen extends BoxScreen {
         float time = elapsed - ReelPresentation.LEAD_IN;
         float reveal = ReelPresentation.reveal(elapsed);
         float y = LAYOUT_HEIGHT * 0.37F;
-        float opacity = ReelPresentation.smooth(elapsed / ReelPresentation.LEAD_IN) * (1-reveal);
+        // The complete strip is visible from frame one, before the short stationary lead-in.
+        float opacity = 1-reveal;
         layer.render(g, LAYOUT_WIDTH, LAYOUT_HEIGHT, opacity, true, () -> {
             for (int i = 0; i < reel.size(); i++) {
                 float x = motion.left(i, time) * LAYOUT_WIDTH;
@@ -68,7 +70,8 @@ public class CsboxProgressScreen extends BoxScreen {
                         i == ReelMotion.WINNER ? reveal : 0, layouts.get(i));
             }
         });
-        ReelFocus.render(g, LAYOUT_WIDTH, LAYOUT_HEIGHT, opacity);
+        renderWindowOverlay(g, viewport -> ReelFocus.render(g, LAYOUT_WIDTH, LAYOUT_HEIGHT, opacity,
+                (float) (Math.hypot(width, height) / viewport.scale())));
         // Draw the pointer AFTER the reel and spotlight so it is never masked or dimmed.
         int pointerAlpha = Math.round(255 * (1-ReelPresentation.smooth(reveal*3)));
         g.pose().pushPose();

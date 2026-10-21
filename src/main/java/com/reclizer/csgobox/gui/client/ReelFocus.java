@@ -22,14 +22,15 @@ final class ReelFocus {
     }
     private ReelFocus() {}
 
-    static void render(GuiGraphics g, int width, int height, float opacity) {
+    static void render(GuiGraphics g, int width, int height, float opacity, float windowRadius) {
         if (opacity <= 0) return;
         g.flush();
         // Match the old 2000 x 1124 mask's circle; both axes use the same logical radius.
         float cx = width * 0.501F, cy = height * 0.483F;
         float radius = height * 0.308F, feather = height * 0.022F;
         float inner = radius - feather / 2;
-        float outer = (float) Math.hypot(width, height);
+        // Cover the entire window even when it is wider/taller than the logical canvas.
+        float outer = Math.max(radius + feather, windowRadius);
         Matrix4f pose = g.pose().last().pose();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.setShaderColor(1, 1, 1, 1);

@@ -5,6 +5,7 @@ import com.reclizer.csgobox.utils.BoxViewport;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import java.util.function.Consumer;
 
 /** Own HUD/effect lifetime, including Escape, death, disconnect and screen replacement. */
 public abstract class BoxScreen extends Screen {
@@ -60,9 +61,7 @@ public abstract class BoxScreen extends Screen {
         renderBackground(graphics);
         int localX = (int) Math.floor(viewport.localX(mouseX));
         int localY = (int) Math.floor(viewport.localY(mouseY));
-        // GuiGraphics scissors use screen coordinates, independently of the pose stack.
-        graphics.enableScissor((int) Math.floor(viewport.left()), (int) Math.floor(viewport.top()),
-                (int) Math.ceil(viewport.screenX(LAYOUT_WIDTH)), (int) Math.ceil(viewport.screenY(LAYOUT_HEIGHT)));
+        clipCanvas(graphics);
         graphics.pose().pushPose();
         try {
             graphics.pose().translate(viewport.left(), viewport.top(), 0);
@@ -79,6 +78,23 @@ public abstract class BoxScreen extends Screen {
     }
 
     protected abstract void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick);
+
+    /** Keep the logical transform, but allow an overlay to cover the window's letterbox margins. */
+    protected final void renderWindowOverlay(GuiGraphics graphics, Consumer<BoxViewport> render) {
+        graphics.flush();
+        graphics.disableScissor();
+        try {
+            render.accept(viewport);
+            graphics.flush();
+        } finally { clipCanvas(graphics); }
+    }
+
+    private void clipCanvas(GuiGraphics graphics) {
+        // GuiGraphics scissors use screen coordinates, independently of the pose stack.
+        graphics.enableScissor((int) Math.floor(viewport.left()), (int) Math.floor(viewport.top()),
+                (int) Math.ceil(viewport.screenX(LAYOUT_WIDTH)), (int) Math.ceil(viewport.screenY(LAYOUT_HEIGHT)));
+    }
+
     protected void renderHover(GuiGraphics graphics, int mouseX, int mouseY) {}
     protected boolean canvasClicked(double x, double y, int button) { return false; }
     protected boolean canvasDragged(int button, double dx, double dy) { return false; }
