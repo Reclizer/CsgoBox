@@ -20,22 +20,22 @@ public final class BoxOpening {
         ItemStack held = player.getMainHandItem();
         if (!player.isAlive() || player.isSpectator() || held.isEmpty() || !box.id().equals(ItemCsgoBox.boxId(held)))
             return new Result(ItemStack.EMPTY, 0, "message.csgobox.expired");
-        ItemStack key = ItemNBT.parseStrict(box.key());
+        ItemStack key = com.reclizer.csgobox.utils.BoxKeys.parse(box.key());
         int keySlot = -1;
         for (int i = 0; i < player.getInventory().items.size(); i++) {
             ItemStack candidate = player.getInventory().getItem(i);
-            if (i != player.getInventory().selected && !candidate.isEmpty() && candidate.is(key.getItem())) {
+            if (i != player.getInventory().selected && com.reclizer.csgobox.utils.BoxKeys.matches(key, candidate)) {
                 keySlot = i;
                 break;
             }
         }
-        if (keySlot < 0) return new Result(ItemStack.EMPTY, 0, "message.csgobox.missing_key");
+        if (!key.isEmpty() && keySlot < 0) return new Result(ItemStack.EMPTY, 0, "message.csgobox.missing_key");
         int grade = WeightedSelection.grade(random, box.random(), g -> !box.items(g).isEmpty(), box.effectiveLuck(player.getLuck()));
         List<String> pool = box.items(grade);
         ItemStack reward = ItemNBT.parseStrict(pool.get(random.nextInt(pool.size())));
         // Nothing is consumed until configuration, key and reward have all been validated.
         held.shrink(1);
-        player.getInventory().getItem(keySlot).shrink(1);
+        if (keySlot >= 0) player.getInventory().getItem(keySlot).shrink(1);
         BoxService.deliver(player, reward.copy());
         player.getInventory().setChanged();
         player.containerMenu.broadcastChanges();

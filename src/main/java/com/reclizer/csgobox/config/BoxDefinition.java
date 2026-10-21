@@ -7,7 +7,9 @@ import java.util.function.Predicate;
 /** The on-disk schema. Weight order remains gold, red, pink, purple, blue. */
 public record BoxDefinition(String id, String name, String key, float drop, List<Integer> random,
                             List<String> entity, List<String> grade1, List<String> grade2,
-                            List<String> grade3, List<String> grade4, List<String> grade5, Boolean luckEnabled) {
+                            List<String> grade3, List<String> grade4, List<String> grade5, Boolean luckEnabled,
+                            List<Integer> displayOrder, AcquisitionDefinition acquisition, AcquisitionDefinition keyAcquisition) {
+    public static final int RECOMMENDED_REGULAR_LIMIT = 20;
     public BoxDefinition {
         // Missing in legacy JSON: retain the previous luck-sensitive behavior.
         luckEnabled = luckEnabled == null ? true : luckEnabled;
@@ -18,6 +20,24 @@ public record BoxDefinition(String id, String name, String key, float drop, List
         grade3 = copy(grade3);
         grade4 = copy(grade4);
         grade5 = copy(grade5);
+        if (displayOrder == null) {
+            var order = new java.util.ArrayList<Integer>();
+            var groups = List.of(grade1, grade2, grade3, grade4);
+            for (int g = 1; g <= 4; g++) for (int i = 0; i < groups.get(g - 1).size(); i++) order.add(g);
+            displayOrder = List.copyOf(order);
+        } else displayOrder = List.copyOf(displayOrder);
+        acquisition = acquisition == null ? AcquisitionDefinition.legacy(drop, entity) : acquisition;
+        keyAcquisition = keyAcquisition == null ? AcquisitionDefinition.disabled() : keyAcquisition;
+        if (key != null && key.isBlank()) { key = ""; keyAcquisition = AcquisitionDefinition.disabled(); }
+        // Retain the old JSON fields as mirrors for existing configs/tools; acquisition is authoritative.
+        drop = acquisition.drop().chance();
+        entity = acquisition.drop().entities();
+    }
+
+    public BoxDefinition(String id, String name, String key, float drop, List<Integer> random, List<String> entity,
+                         List<String> grade1, List<String> grade2, List<String> grade3,
+                         List<String> grade4, List<String> grade5, Boolean luckEnabled) {
+        this(id, name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, luckEnabled, null, null, null);
     }
 
     public BoxDefinition(String id, String name, String key, float drop, List<Integer> random, List<String> entity,
@@ -29,11 +49,24 @@ public record BoxDefinition(String id, String name, String key, float drop, List
     public float effectiveLuck(float playerLuck) { return luckEnabled ? playerLuck : 0; }
 
     public BoxDefinition withLuckEnabled(boolean enabled) {
-        return new BoxDefinition(id, name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, enabled);
+        return new BoxDefinition(id, name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, enabled,
+                displayOrder, acquisition, keyAcquisition);
     }
 
     public BoxDefinition withName(String displayName) {
-        return new BoxDefinition(id, displayName, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, luckEnabled);
+        return new BoxDefinition(id, displayName, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, luckEnabled,
+                displayOrder, acquisition, keyAcquisition);
+    }
+
+    public List<RewardEntry> regularRewardsInOrder() {
+        int[] offsets = new int[4];
+        var result = new java.util.ArrayList<RewardEntry>();
+        for (int grade : displayOrder) result.add(new RewardEntry(items(grade).get(offsets[grade - 1]++), grade));
+        return List.copyOf(result);
+    }
+
+    public List<RewardEntry> previewRewards() {
+        return regularRewardsInOrder().stream().limit(RECOMMENDED_REGULAR_LIMIT).toList();
     }
 
     public static String newId() { return "csgobox:" + java.util.UUID.randomUUID(); }
@@ -61,7 +94,7 @@ public record BoxDefinition(String id, String name, String key, float drop, List
         if (!validId(id)) throw new IllegalArgumentException("Pool requires a stable namespaced id, for example csgobox:weapons_supply");
         if (name == null || name.isBlank() || !name.equals(name.trim()) || name.length() > 128)
             throw new IllegalArgumentException("Box name must contain 1-128 characters without outer spaces");
-        if (key == null || !key.matches("[a-z0-9_.-]+:[a-z0-9_./-]+") || !validItem.test(key))
+        if (key == null || key.length() > 8192 || !key.isEmpty() && !validItem.test(key))
             throw new IllegalArgumentException(name + ": invalid key item");
         if (!Float.isFinite(drop) || drop < 0 || drop > 1)
             throw new IllegalArgumentException(name + ": drop must be between 0 and 1");
@@ -84,13 +117,29 @@ public record BoxDefinition(String id, String name, String key, float drop, List
         }
         if (count > 256 || textSize > 65536 || total == 0)
             throw new IllegalArgumentException(name + ": requires 1-256 rewards and a positive weight on a nonempty grade");
+        int[] shown = new int[4];
+        if (displayOrder.size() > 256) throw new IllegalArgumentException("Invalid reward display order");
+        for (int grade : displayOrder) {
+            if (grade < 1 || grade > 4) throw new IllegalArgumentException("Invalid reward display order");
+            shown[grade - 1]++;
+        }
+        for (int grade = 1; grade <= 4; grade++)
+            if (shown[grade - 1] != items(grade).size()) throw new IllegalArgumentException("Invalid reward display order");
+        acquisition.validate(validItem);
+        keyAcquisition.validate(validItem);
     }
 
     public BoxDefinition withRewards(List<RewardEntry> rewards) {
         Objects.requireNonNull(rewards);
+        var ordered = new java.util.ArrayList<>(rewards.stream().filter(e -> e.grade() != 5).toList());
+        var nextOrder = new java.util.ArrayList<Integer>();
+        for (var old : regularRewardsInOrder()) {
+            if (ordered.remove(old)) nextOrder.add(old.grade());
+        }
+        ordered.forEach(e -> nextOrder.add(e.grade()));
         return new BoxDefinition(id, name, key, drop, random, entity,
                 rewardsAt(rewards, 1), rewardsAt(rewards, 2), rewardsAt(rewards, 3),
-                rewardsAt(rewards, 4), rewardsAt(rewards, 5), luckEnabled);
+                rewardsAt(rewards, 4), rewardsAt(rewards, 5), luckEnabled, nextOrder, acquisition, keyAcquisition);
     }
 
     private static List<String> rewardsAt(List<RewardEntry> entries, int grade) {

@@ -27,6 +27,7 @@ public record PacketSaveBox(int containerId, int requestId, String json, String 
             try {
                 BoxDefinition box = BoxEditorCodec.decode(json);
                 CsgoBoxManage.saveDefinition(box, revision);
+                com.reclizer.csgobox.server.ConfiguredAcquisition.refresh(player.server);
                 BoxService.clearSessions();
                 player.server.getPlayerList().getPlayers().forEach(BoxService::syncCatalog);
                 Networking.sendToPlayerClient(PacketEditorState.success(containerId, requestId, true, box), player);

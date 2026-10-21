@@ -5,6 +5,7 @@ import com.reclizer.csgobox.config.CsgoBoxManage;
 import com.reclizer.csgobox.item.ItemCsgoBox;
 import com.reclizer.csgobox.item.ModItems;
 import com.reclizer.csgobox.server.BoxService;
+import com.reclizer.csgobox.server.ConfiguredAcquisition;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
@@ -28,6 +29,7 @@ public final class ModEvents {
         BoxService.clearSessions();
         try {
             CsgoBox.LOGGER.info("Loaded {} box definitions", CsgoBoxManage.loadConfigBox());
+            ConfiguredAcquisition.refresh(event.getServer());
         } catch (IOException ex) {
             // Refuse to start with an invalid economy configuration.
             throw new IllegalStateException("Cannot load config/csbox/box.json", ex);
@@ -35,7 +37,12 @@ public final class ModEvents {
     }
 
     @SubscribeEvent
-    public static void stop(ServerStoppedEvent event) { BoxService.clearSessions(); }
+    public static void stop(ServerStoppedEvent event) { BoxService.clearSessions(); ConfiguredAcquisition.clear(); }
+
+    @SubscribeEvent
+    public static void datapacks(net.minecraftforge.event.OnDatapackSyncEvent event) {
+        if (event.getPlayer() == null) ConfiguredAcquisition.refresh(event.getPlayerList().getServer());
+    }
 
     @SubscribeEvent
     public static void logout(PlayerEvent.PlayerLoggedOutEvent event) {
@@ -44,21 +51,15 @@ public final class ModEvents {
 
     @SubscribeEvent
     public static void login(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) BoxService.syncCatalog(player);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            BoxService.syncCatalog(player);
+            ConfiguredAcquisition.unlockRecipes(player);
+        }
     }
 
     @SubscribeEvent
     public static void drops(LivingDropsEvent event) {
-        var entity = event.getEntity();
-        if (entity.level().isClientSide) return;
-        String id = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()).toString();
-        for (var box : CsgoBoxManage.boxes()) {
-            if (box.drop() > 0 && box.entity().contains(id) && entity.getRandom().nextFloat() < box.drop()) {
-                var drop = new net.minecraft.world.entity.item.ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(),
-                        ItemCsgoBox.setBoxInfo(box, new ItemStack(ModItems.ITEM_CSGOBOX.get())));
-                event.getDrops().add(drop);
-            }
-        }
+        ConfiguredAcquisition.drops(event);
     }
 
     @SubscribeEvent
@@ -67,6 +68,7 @@ public final class ModEvents {
                 .then(Commands.literal("reload").executes(context -> {
                     try {
                         int count = CsgoBoxManage.loadConfigBox();
+                        ConfiguredAcquisition.refresh(context.getSource().getServer());
                         BoxService.clearSessions();
                         context.getSource().getServer().getPlayerList().getPlayers().forEach(BoxService::syncCatalog);
                         context.getSource().sendSuccess(() -> Component.translatable("message.csgobox.reloaded", count), true);

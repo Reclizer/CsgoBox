@@ -86,7 +86,7 @@ final class ClassicBoxUi {
         } finally { g.pose().popPose(); }
     }
 
-    private static void gold(GuiGraphics g, int x, int y, int w, int h) {
+    static void gold(GuiGraphics g, int x, int y, int w, int h) {
         RenderSystem.enableBlend();
         g.blit(GOLD, x, y, 0, 0, w, h, w, h);
     }

@@ -28,14 +28,12 @@ public final class BoxService {
         }
         var session = SESSIONS.begin(player.getUUID(), player.getInventory().selected, held.copy(), player.server.getTickCount());
         List<DisplayReward> display = new ArrayList<>();
-        for (int grade = 1; grade <= 4; grade++) {
-            for (String data : box.items(grade)) display.add(new DisplayReward(ItemNBT.parseStrict(data), grade));
-        }
+        for (var entry : box.previewRewards()) display.add(new DisplayReward(ItemNBT.parseStrict(entry.item()), entry.grade()));
         // Gold prizes, weights, and entity-drop rules never go into preview packets.
         if (!box.grade5().isEmpty()) display.add(new DisplayReward(new ItemStack(ModItems.ITEM_CSGO_KEY0.get()), 5));
         Networking.sendToPlayerClient(new PacketBoxPreview(session.token(),
                 ItemCsgoBox.setBoxInfo(box, new ItemStack(ModItems.ITEM_CSGOBOX.get())),
-                ItemNBT.parseStrict(box.key()), display), player);
+                com.reclizer.csgobox.utils.BoxKeys.parse(box.key()), display), player);
     }
 
     public static void open(ServerPlayer player, UUID token) {

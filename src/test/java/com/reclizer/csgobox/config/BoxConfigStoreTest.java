@@ -9,6 +9,61 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BoxConfigStoreTest {
+    @Test void previewLimitSurvivesReloadWithoutRemovingHiddenOrGoldRewards() throws IOException {
+        var store = store("[]"); store.reload();
+        var entries = new java.util.ArrayList<RewardEntry>();
+        entries.add(new RewardEntry("minecraft:diamond", 5));
+        for (int i = 0; i < 20; i++) entries.add(new RewardEntry("minecraft:stone", 4));
+        var box = BoxDefinition.create("csgobox:limit", "limit", entries);
+        entries.add(new RewardEntry("minecraft:emerald", 1));
+        box = box.withRewards(entries);
+        assertEquals(20, box.previewRewards().size());
+        assertTrue(box.previewRewards().stream().allMatch(e -> e.grade() == 4));
+        assertEquals(1, box.grade1().size()); assertEquals(1, box.grade5().size());
+        store.saveDefinition(box, ""); store.reload();
+        assertEquals(box, store.readForEditing(box.id()));
+        assertEquals(box.previewRewards(), store.readForEditing(box.id()).previewRewards());
+        entries.remove(1);
+        var removed = box.withRewards(entries);
+        assertEquals("minecraft:emerald", removed.previewRewards().get(19).item());
+        assertEquals(1, removed.previewRewards().get(19).grade());
+    }
+
+    @Test void independentAcquisitionAndOptionalKeyRoundTrip() throws IOException {
+        var store = store("[]"); store.reload();
+        var grid = new java.util.ArrayList<>(java.util.Collections.nCopies(9, ""));
+        grid.set(4, "minecraft:diamond");
+        var acquisition = new AcquisitionDefinition(new AcquisitionDefinition.Crafting(true, grid, 2),
+                new AcquisitionDefinition.Drop(true, .25F, List.of("minecraft:zombie"), 3),
+                new AcquisitionDefinition.Trade(true, "minecraft:cleric", 2, "minecraft:emerald", "", 1, 8, 5));
+        var box = new BoxDefinition("csgobox:acquisition", "acquisition", "minecraft:tripwire_hook", 0, List.of(0,0,0,0,1),
+                List.of(), List.of("minecraft:stone"), null, null, null, null, false, null, acquisition,
+                new AcquisitionDefinition(null, new AcquisitionDefinition.Drop(true, .5F, List.of("minecraft:skeleton"), 1), null));
+        assertEquals(box, BoxEditorCodec.decode(BoxEditorCodec.encode(box)));
+        store.saveDefinition(box, ""); store.reload();
+        assertEquals(box, store.readForEditing(box.id()));
+        var noKey = new BoxDefinition(box.id(), box.name(), "", 0, box.random(), List.of(), box.grade1(), null, null, null, null,
+                false, box.displayOrder(), acquisition, box.keyAcquisition());
+        store.saveDefinition(noKey, BoxConfigStore.revision(box)); store.reload();
+        assertEquals("", store.readForEditing(box.id()).key());
+        assertEquals(AcquisitionDefinition.disabled(), store.readForEditing(box.id()).keyAcquisition());
+        assertEquals(acquisition, store.readForEditing(box.id()).acquisition());
+    }
+
+    @Test void invalidAcquisitionOrOrderDoesNotPublishOrOverwrite() throws IOException {
+        var store = store(VALID); store.reload();
+        var before = store.snapshot();
+        for (String invalid : List.of(
+                VALID.replace("\"grade1\"", "\"displayOrder\":[5],\"grade1\""),
+                VALID.replace("\"grade1\"", "\"acquisition\":{\"crafting\":{\"enabled\":true,\"count\":1}},\"grade1\""),
+                VALID.replace("\"grade1\"", "\"keyAcquisition\":{\"drop\":{\"enabled\":true,\"chance\":1,\"count\":1,\"entities\":[]}},\"grade1\""))) {
+            Files.writeString(directory.resolve("box.json"), invalid);
+            assertThrows(IOException.class, store::reload);
+            assertSame(before, store.snapshot());
+            assertEquals(invalid, Files.readString(directory.resolve("box.json")));
+        }
+    }
+
     @TempDir Path directory;
     private static final String VALID = """
             [{"id":"csgobox:test","name":"测试箱","key":"csgobox:csgo_key0","drop":0.3,

@@ -9,10 +9,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -25,7 +23,16 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     private final List<EditBox> fields = new ArrayList<>();
     private final List<UiButton> catalogButtons = new ArrayList<>();
     private final String[] weights = {"625", "20", "6", "5", "2"};
-    private String name = "", key = "csgobox:csgo_key0", drop = "0", entities = "minecraft:zombie";
+    private String name = "", key = "";
+    private final List<Integer> displayOrder = new ArrayList<>();
+    private AcquisitionDraft boxAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled());
+    private AcquisitionDraft keyAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled());
+    private boolean acquireKey;
+    private int acquisitionPage, sampleTarget;
+    private ItemStack pressedSample = ItemStack.EMPTY;
+    private double samplePressX, samplePressY;
+    private boolean sampleDragging;
+    private final Map<String, ItemStack> sampleCache = new HashMap<>();
     private String poolId = BoxDefinition.newId(), originalId = "", revision = "", search = "", itemId = "", luck = "0";
     private String status = "", issue = "", amountError = "";
     private boolean dirty, needsValidation = true, statusError, luckEnabled = true;
@@ -74,6 +81,8 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     }
 
     private void rebuild() {
+        pressedSample = ItemStack.EMPTY;
+        sampleDragging = false;
         clearWidgets();
         fields.clear();
         catalogButtons.clear();
@@ -109,14 +118,18 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
                     () -> { page = tab; rebuild(); }, page == i ? COLORS[4] : MUTED);
         }
         if (page == 0) buildRewards();
-        if (page == 1) buildRules();
+        if (page == 1) buildAcquisition();
         if (page == 2) {
-            field(152, 126, 90, 12, luck, value -> luck = value).setEditable(pending == 0 && luckEnabled);
-            UiButton myLuck = button(254, 126, 120, tr("my_luck"), () -> {
+            for (int i = 0; i < 5; i++) {
+                int index = i;
+                field(152 + i * 91, 126, 84, 10, weights[i], value -> { weights[index] = value; changed(); });
+            }
+            field(152, 181, 90, 12, luck, value -> luck = value).setEditable(pending == 0 && luckEnabled);
+            UiButton myLuck = button(254, 181, 120, tr("my_luck"), () -> {
                 luck = Float.toString(minecraft.player.getLuck()); rebuild();
             }, MUTED);
             myLuck.active = pending == 0 && luckEnabled;
-            luckButton(390, 126, 214);
+            luckButton(390, 181, 214);
         }
         testButton = button(350, 402, 98, tr("test_box"), this::getTestBox, COLORS[0]);
         saveButton = button(456, 402, 94, tr("save"), this::save, COLORS[4]);
@@ -143,7 +156,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             } catch (NumberFormatException ex) { amountError = text("bad_count"); needsValidation = true; }
         });
         amountField.setEditable(pending == 0 && !chosen.isEmpty());
-        UiButton remove = button(438, 214, 166, tr("remove"), this::removeSelected, 0xFFF0747A);
+        UiButton remove = button(438, 208, 166, tr("remove"), this::removeSelected, 0xFFF0747A);
         remove.active = pending == 0 && !chosen.isEmpty();
         field(152, 270, 350, 256, itemId, value -> itemId = value);
         button(512, 270, 92, tr("add_item"), () -> {
@@ -153,21 +166,58 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
                         ? text("tacz_sample_required") : text("bad_item"));
             }
         }, MUTED);
+        field(472, 250, 105, 8192, key, value -> { key = value; changed(); });
+        button(582, 250, 22, Component.literal("×"), () -> {
+            key = ""; keyAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled()); changed(); rebuild();
+        }, MUTED);
     }
 
-    private void buildRules() {
-        field(152, 126, 308, 256, key, value -> { key = value; changed(); });
-        button(470, 126, 134, tr("use_hand"), () -> {
-            ItemStack hand = minecraft.player.getMainHandItem();
-            if (!hand.isEmpty()) { key = ForgeRegistries.ITEMS.getKey(hand.getItem()).toString(); changed(); rebuild(); }
-        }, MUTED);
-        for (int i = 0; i < 5; i++) {
-            int index = i;
-            field(152 + i * 91, 186, 84, 10, weights[i], value -> { weights[index] = value; changed(); });
+    private AcquisitionDraft acquisition() { return acquireKey ? keyAcquisition : boxAcquisition; }
+
+    private void acquisitionField(int x, int y, int width, int max, String value, Consumer<String> setter) {
+        field(x, y, width, max, value, next -> { setter.accept(next); changed(); });
+    }
+
+    private void buildAcquisition() {
+        button(152, 108, 120, tr("acquire_box"), () -> { acquireKey = false; sampleTarget = 0; rebuild(); }, !acquireKey ? COLORS[4] : MUTED);
+        button(282, 108, 120, tr("acquire_key"), () -> { acquireKey = true; sampleTarget = 0; rebuild(); }, acquireKey ? COLORS[4] : MUTED);
+        if (acquireKey && key.isBlank()) return;
+        var a = acquisition();
+        for (int i = 0; i < 3; i++) {
+            int tab = i;
+            boolean enabled = i == 0 ? a.crafting : i == 1 ? a.dropping : a.trading;
+            button(152 + i * 152, 138, 144, tr(new String[]{"crafting", "dropping", "trading"}[i]).copy().append(enabled ? " ✓" : ""),
+                    () -> { acquisitionPage = tab; sampleTarget = 0; rebuild(); }, acquisitionPage == i ? COLORS[4] : MUTED);
         }
-        field(152, 264, 100, 16, drop, value -> { drop = value; changed(); });
-        field(152, 322, 452, 8192, entities, value -> { entities = value; changed(); });
-        luckButton(152, 370, 150);
+        boolean enabled = acquisitionPage == 0 ? a.crafting : acquisitionPage == 1 ? a.dropping : a.trading;
+        button(484, 108, 120, tr(enabled ? "method_on" : "method_off"), () -> {
+            if (acquisitionPage == 0) a.crafting = !a.crafting;
+            else if (acquisitionPage == 1) a.dropping = !a.dropping;
+            else a.trading = !a.trading;
+            changed(); rebuild();
+        }, enabled ? COLORS[0] : MUTED);
+        if (acquisitionPage == 0) {
+            acquisitionField(353, 211, 60, 2, a.craftCount, value -> a.craftCount = value);
+        } else if (acquisitionPage == 1) {
+            acquisitionField(152, 190, 100, 16, a.dropChance, value -> a.dropChance = value);
+            acquisitionField(280, 190, 70, 2, a.dropCount, value -> a.dropCount = value);
+            acquisitionField(152, 238, 452, 8192, a.entities, value -> a.entities = value);
+        } else {
+            acquisitionField(152, 181, 220, 128, a.profession, value -> a.profession = value);
+            acquisitionField(390, 181, 54, 1, a.level, value -> a.level = value);
+            acquisitionField(461, 181, 64, 4, a.uses, value -> a.uses = value);
+            acquisitionField(542, 181, 62, 3, a.xp, value -> a.xp = value);
+            acquisitionField(183, 228, 46, 2, a.costCount, value -> a.costCount = value);
+            acquisitionField(270, 228, 46, 2, a.secondCount, value -> a.secondCount = value);
+            acquisitionField(363, 228, 50, 2, a.tradeCount, value -> a.tradeCount = value);
+        }
+        if (acquisitionPage != 1) {
+            field(152, 270, 350, 8192, itemId, value -> itemId = value);
+            button(512, 270, 92, tr("set_sample"), () -> {
+                try { setAcquisitionSample(ItemNBT.parseStrict(itemId.trim()), sampleTarget); }
+                catch (RuntimeException ex) { fail(text("bad_item")); }
+            }, MUTED);
+        }
     }
 
     private void luckButton(int x, int y, int width) {
@@ -199,7 +249,10 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
 
     private void newDraft() {
         for (var group : rewards) group.clear();
-        name = ""; key = "csgobox:csgo_key0"; drop = "0"; entities = "minecraft:zombie";
+        name = ""; key = "";
+        displayOrder.clear(); sampleCache.clear(); acquireKey = false;
+        boxAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled());
+        keyAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled());
         luckEnabled = true;
         String[] defaults = {"625", "20", "6", "5", "2"};
         System.arraycopy(defaults, 0, weights, 0, 5);
@@ -237,8 +290,9 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         BoxDefinition box = BoxEditorCodec.decode(packet.json());
         luckEnabled = box.luckEnabled();
         name = box.name(); poolId = box.id(); originalId = box.id(); revision = packet.revision(); key = box.key();
-        drop = new java.math.BigDecimal(Float.toString(box.drop())).movePointRight(2).stripTrailingZeros().toPlainString();
-        entities = String.join(", ", box.entity());
+        displayOrder.clear(); displayOrder.addAll(box.displayOrder()); sampleCache.clear();
+        boxAcquisition = new AcquisitionDraft(box.acquisition());
+        keyAcquisition = new AcquisitionDraft(box.keyAcquisition());
         for (int i = 0; i < 5; i++) {
             weights[i] = box.random().get(4 - i).toString();
             rewards.get(i).clear();
@@ -266,12 +320,19 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         if (sample.isEmpty()) return;
         if (rewardCount() >= 256) { fail(text("reward_limit")); return; }
         current().add(sample.copy());
+        if (grade < 5) displayOrder.add(grade);
         selected = current().size() - 1; rewardPage = selected / PAGE_SIZE;
         amountError = ""; changed(); rebuild();
     }
 
     private void removeSelected() {
         if (selectedStack().isEmpty()) return;
+        if (grade < 5) {
+            int ordinal = 0;
+            for (int i = 0; i < displayOrder.size(); i++) {
+                if (displayOrder.get(i) == grade && ordinal++ == selected) { displayOrder.remove(i); break; }
+            }
+        }
         current().remove(selected); selected = -1; amountError = "";
         rewardPage = Math.min(rewardPage, Math.max(0, (current().size() - 1) / PAGE_SIZE));
         changed(); rebuild();
@@ -291,9 +352,10 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         List<RewardEntry> entries = new ArrayList<>();
         for (int i = 0; i < 5; i++)
             for (ItemStack item : rewards.get(i)) entries.add(new RewardEntry(ItemNBT.getStacksData(item), i + 1));
-        return new BoxDefinition(poolId, name.trim(), key.trim(), Float.parseFloat(drop) / 100F, parsedWeights(),
-                Arrays.stream(entities.split("[,;\\s]+")).filter(s -> !s.isBlank()).distinct().toList(),
-                null, null, null, null, null, luckEnabled).withRewards(entries);
+        BoxDefinition grouped = BoxDefinition.create(poolId, name.trim(), entries);
+        return new BoxDefinition(poolId, name.trim(), key.trim(), 0, parsedWeights(), List.of(),
+                grouped.grade1(), grouped.grade2(), grouped.grade3(), grouped.grade4(), grouped.grade5(), luckEnabled,
+                displayOrder, boxAcquisition.definition(), key.isBlank() ? AcquisitionDefinition.disabled() : keyAcquisition.definition());
     }
 
     private void validateDraft() {
@@ -301,25 +363,16 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         needsValidation = false; issue = "";
         if (name.isBlank()) { issue = text("name_required"); return; }
         if (!amountError.isEmpty()) { issue = amountError; return; }
-        ResourceLocation keyId = ResourceLocation.tryParse(key.trim());
-        if (keyId == null || !ForgeRegistries.ITEMS.containsKey(keyId) || new ItemStack(ForgeRegistries.ITEMS.getValue(keyId)).isEmpty()) {
+        if (!key.isBlank() && ItemNBT.getStacks(key.trim()).isEmpty()) {
             issue = text("bad_key"); return;
         }
         try { parsedWeights(); } catch (RuntimeException ex) { issue = text("bad_weights"); return; }
         try {
-            float rate = Float.parseFloat(drop);
-            if (!Float.isFinite(rate) || rate < 0 || rate > 100) throw new NumberFormatException();
-        } catch (RuntimeException ex) { issue = text("bad_drop"); return; }
-        BoxDefinition box = definition();
-        for (String entity : box.entity()) {
-            ResourceLocation id = ResourceLocation.tryParse(entity);
-            if (id == null || !ForgeRegistries.ENTITY_TYPES.containsKey(id)) { issue = text("bad_entity", entity); return; }
-        }
-        if (box.drop() > 0 && box.entity().isEmpty()) { issue = text("entity_required"); return; }
-        try { WeightedSelection.effectiveWeights(box.random(), g -> !box.items(g).isEmpty(), 0); }
-        catch (RuntimeException ex) { issue = text("empty_pool"); return; }
-        try { box.validate(value -> !ItemNBT.getStacks(value).isEmpty()); }
-        catch (RuntimeException ex) { issue = ex.getMessage(); }
+            BoxDefinition box = definition();
+            WeightedSelection.effectiveWeights(box.random(), g -> !box.items(g).isEmpty(), 0);
+            box.validate(value -> !ItemNBT.getStacks(value).isEmpty());
+            com.reclizer.csgobox.server.ConfiguredAcquisition.validate(box);
+        } catch (RuntimeException ex) { issue = Component.translatable(Objects.toString(ex.getMessage(), "editor.csgobox.empty_pool")).getString(); }
     }
 
     private double[] chances(float previewLuck) {
@@ -366,7 +419,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             label(g, (catalogPage+1) + "/" + Math.max(1, (pools.size()+11)/12), 54, 350, MUTED);
             if (pools.isEmpty()) label(g, text("no_pools"), 22, 82, MUTED);
             if (page == 0) renderRewards(g, mx, my);
-            if (page == 1) renderRules(g);
+            if (page == 1) renderAcquisition(g, mx, my);
             if (page == 2) renderProbabilities(g);
             String footer = !status.isEmpty() ? status : issue.isEmpty() ? text("ready", rewardCount()) : issue;
             if (inside(mx, my, 350, 402, 98, 20) && pending == 0)
@@ -382,8 +435,13 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             label(g, text("discard_hint"), 170, 207, MUTED);
         }
         for (Renderable widget : renderables) widget.render(g, mx, my, partialTick);
+        if (sampleDragging && !pressedSample.isEmpty()) {
+            g.pose().pushPose(); g.pose().translate(0, 0, 600);
+            g.renderItem(pressedSample, mx - 8, my - 8);
+            g.pose().popPose();
+        }
         g.pose().popPose();
-        if (!tooltip.isEmpty() && discardAction == null) {
+        if (!tooltip.isEmpty() && discardAction == null && pressedSample.isEmpty()) {
             List<Component> lines = new ArrayList<>(getTooltipFromItem(minecraft, tooltip));
             if (!tooltipChance.isEmpty()) lines.add(Component.literal(tooltipChance));
             g.renderTooltip(font, lines, tooltip.getTooltipImage(), tooltip, mouseX, mouseY);
@@ -400,9 +458,11 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             ItemStack stack = current().get(index);
             g.renderItem(stack, leftPos+x+5, topPos+y+4);
             g.renderItemDecorations(font, stack, leftPos+x+5, topPos+y+4);
+            if (!previewVisible(grade, index)) label(g, "—", x+1, y+1, MUTED);
             if (inside(mx, my, x, y, 26, 26)) {
                 tooltip = stack;
                 tooltipChance = text("entry_chance", percent(chance/current().size()));
+                if (!previewVisible(grade, index)) tooltipChance += " · " + text("hidden_reward");
             }
         }
         label(g, text("page_count", rewardPage+1, Math.max(1, (current().size()+PAGE_SIZE-1)/PAGE_SIZE), current().size()), 190, 244, MUTED);
@@ -414,6 +474,17 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         label(g, text("quantity"), 438, 174, MUTED);
         if (!selectedItem.isEmpty()) label(g, "1-" + selectedItem.getMaxStackSize(), 520, 192, MUTED);
         label(g, text("item_id"), 152, 258, MUTED);
+        label(g, text("key"), 438, 231, MUTED);
+        sampleSlot(g, mx, my, 438, 242, key, false);
+        renderSamples(g, mx, my);
+        clipped(g, text("sample_drag_key"), 350, 307, 254, TEXT);
+        label(g, text("regular_total", displayOrder.size(), BoxDefinition.RECOMMENDED_REGULAR_LIMIT), 350, 326,
+                displayOrder.size() > BoxDefinition.RECOMMENDED_REGULAR_LIMIT ? COLORS[4] : MUTED);
+        clipped(g, text("regular_limit_hint"), 350, 343, 254, MUTED);
+        label(g, text("reward_total", rewardCount()), 350, 370, COLORS[4]);
+    }
+
+    private void renderSamples(GuiGraphics g, int mx, int my) {
         label(g, text("inventory_samples"), 152, 296, MUTED);
         for (var slot : menu.slots) {
             panel(g, slot.x-1, slot.y-1, 18, 18, 0xFF0E1621);
@@ -424,40 +495,88 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
                 tooltip = stack; tooltipChance = text("sample_hint");
             }
         }
-        label(g, text("sample_hint"), 350, 307, TEXT);
-        label(g, text("sample_preserves"), 350, 324, MUTED);
-        label(g, text("right_remove"), 350, 346, MUTED);
-        label(g, text("reward_total", rewardCount()), 350, 370, COLORS[4]);
     }
 
-    private void renderRules(GuiGraphics g) {
-        label(g, text("key"), 152, 112, TEXT);
-        label(g, text("weights"), 152, 158, TEXT);
-        double[] probabilities = chances(0);
-        for (int i = 0; i < 5; i++) {
-            label(g, text("grade"+(i+1)), 152+i*91, 174, COLORS[i]);
-            label(g, percent(probabilities[i]), 152+i*91, 214, MUTED);
+    private boolean previewVisible(int tier, int index) {
+        if (tier == 5) return true;
+        int ordinal = 0;
+        for (int i = 0; i < Math.min(displayOrder.size(), BoxDefinition.RECOMMENDED_REGULAR_LIMIT); i++)
+            if (displayOrder.get(i) == tier && ordinal++ == index) return true;
+        return false;
+    }
+
+    private void sampleSlot(GuiGraphics g, int mx, int my, int x, int y, String value, boolean selected) {
+        panel(g, x, y, 26, 26, selected ? 0xFF40516A : 0xFF0E1621);
+        ItemStack stack = sampleCache.computeIfAbsent(value, ItemNBT::getStacks);
+        g.renderItem(stack, leftPos+x+5, topPos+y+5);
+        if (inside(mx, my, x, y, 26, 26) && !stack.isEmpty()) {
+            tooltip = stack; tooltipChance = text("sample_target_hint");
         }
-        label(g, text("weights_hint"), 152, 232, MUTED);
-        label(g, text("drop"), 152, 250, TEXT);
-        label(g, text("drop_hint"), 264, 270, MUTED);
-        label(g, text("entities"), 152, 306, TEXT);
-        label(g, text("entities_hint"), 152, 350, MUTED);
-        clipped(g, text(luckEnabled ? "luck_enabled_hint" : "luck_disabled_hint"), 310, 376, 294, MUTED);
+    }
+
+    private void renderAcquisition(GuiGraphics g, int mx, int my) {
+        if (acquireKey && key.isBlank()) {
+            label(g, text("key_disabled_hint"), 152, 150, MUTED); return;
+        }
+        var a = acquisition();
+        if (acquisitionPage == 0) {
+            label(g, text("recipe_grid"), 152, 166, TEXT);
+            for (int i = 0; i < 9; i++)
+                sampleSlot(g, mx, my, 152+i%3*28, 181+i/3*28, a.ingredients.get(i), sampleTarget == i);
+            label(g, "→", 249, 213, MUTED);
+            renderAcquisitionOutput(g, 285, 208);
+            label(g, text("output_count"), 353, 197, MUTED);
+            clipped(g, text("recipe_hint"), 432, 209, 172, MUTED);
+        } else if (acquisitionPage == 1) {
+            label(g, text("acquisition_drop_chance"), 152, 174, TEXT);
+            label(g, text("output_count"), 280, 174, MUTED);
+            label(g, text("entities"), 152, 222, TEXT);
+            clipped(g, text("entities_hint"), 152, 268, 452, MUTED);
+        } else {
+            label(g, text("profession"), 152, 167, MUTED);
+            label(g, text("trade_level"), 390, 167, MUTED);
+            label(g, text("trade_uses"), 461, 167, MUTED);
+            label(g, text("trade_xp"), 542, 167, MUTED);
+            label(g, text("cost"), 152, 208, MUTED);
+            label(g, text("second_cost"), 239, 208, MUTED);
+            label(g, text("output_count"), 326, 208, MUTED);
+            sampleSlot(g, mx, my, 152, 225, a.cost, sampleTarget == 0);
+            sampleSlot(g, mx, my, 239, 225, a.secondCost, sampleTarget == 1);
+            renderAcquisitionOutput(g, 326, 225);
+            clipped(g, text("trade_hint"), 432, 225, 172, MUTED);
+        }
+        renderSamples(g, mx, my);
+        clipped(g, text("acquisition_sample_hint"), 350, 307, 254, TEXT);
+        clipped(g, text("sample_preserves"), 350, 326, 254, MUTED);
+        clipped(g, text(acquisitionPage == 2 ? "existing_trade_hint" : "acquisition_apply_hint"), 350, 347, 254, MUTED);
+        clipped(g, text("methods_independent"), 350, 373, 254, COLORS[4]);
+    }
+
+    private void renderAcquisitionOutput(GuiGraphics g, int x, int y) {
+        ItemStack stack;
+        if (acquireKey) stack = sampleCache.computeIfAbsent(key, ItemNBT::getStacks);
+        else {
+            stack = new ItemStack(com.reclizer.csgobox.item.ModItems.ITEM_CSGOBOX.get());
+            stack.getOrCreateTag().putString("PoolId", poolId);
+        }
+        panel(g, x, y, 26, 26, 0xFF0E1621);
+        g.renderItem(stack, leftPos+x+5, topPos+y+5);
     }
 
     private void renderProbabilities(GuiGraphics g) {
-        label(g, text("luck"), 152, 112, TEXT);
+        for (int i = 0; i < 5; i++) label(g, text("grade"+(i+1)) + " · " + text("weight"), 152+i*91, 112, COLORS[i]);
+        clipped(g, text("weights_hint"), 152, 150, 452, MUTED);
+        label(g, text("luck"), 152, 167, TEXT);
         float previewLuck;
         try {
             previewLuck = luckEnabled ? Float.parseFloat(luck) : 0;
             if (!Float.isFinite(previewLuck)) throw new NumberFormatException();
         } catch (RuntimeException ex) {
-            label(g, text("bad_luck"), 152, 164, 0xFFF19A9A); return;
+            label(g, text("bad_luck"), 152, 214, 0xFFF19A9A); return;
         }
         double[] values = chances(previewLuck);
         for (int i = 0; i < 5; i++) {
-            int y = 169 + i*36;
+            int y = 214 + i*29;
             label(g, text("grade"+(i+1)), 152, y, COLORS[i]);
             panel(g, 224, y, 192, 10, 0xFF0E1621);
             panel(g, 224, y, (int)Math.round(192*values[i]), 10, COLORS[i]);
@@ -466,8 +585,9 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             label(g, text("entries", count), 518, y, MUTED);
             label(g, text("entry_chance", percent(count == 0 ? 0 : values[i]/count)), 224, y+14, MUTED);
         }
-        label(g, text("probability_hint"), 152, 359, MUTED);
-        label(g, text("duplicate_hint"), 152, 377, MUTED);
+        clipped(g, text("overview_total", displayOrder.size(), rewards.get(4).size(),
+                Math.min(displayOrder.size(), BoxDefinition.RECOMMENDED_REGULAR_LIMIT)), 152, 364, 452, MUTED);
+        clipped(g, text("hidden_chance_hint"), 152, 379, 452, MUTED);
     }
 
     private boolean inside(double mx, double my, int x, int y, int w, int h) {
@@ -486,14 +606,88 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
                     return true;
                 }
             }
-            for (var slot : menu.slots) {
-                if (inside(mx, my, slot.x-1, slot.y-1, 18, 18)) { addSample(slot.getItem()); return true; }
+            if (inside(mx, my, 438, 242, 26, 26)) {
+                if (button == 1) setKeySample(ItemStack.EMPTY);
+                return true;
+            }
+        }
+        if (discardAction == null && page == 1 && !(acquireKey && key.isBlank())) {
+            int target = acquisitionTargetAt(mx, my);
+            if (target >= 0) {
+                sampleTarget = target;
+                if (button == 1) setAcquisitionSample(ItemStack.EMPTY, target); else rebuild();
+                return true;
+            }
+        }
+        if (discardAction == null && (page == 0 || page == 1 && !(acquireKey && key.isBlank()))) {
+            for (var slot : menu.slots) if (inside(mx, my, slot.x-1, slot.y-1, 18, 18)) {
+                if (button == 0 && !slot.getItem().isEmpty()) {
+                    pressedSample = slot.getItem().copy(); samplePressX = mx; samplePressY = my; sampleDragging = false;
+                }
+                return true;
             }
         }
         return super.mouseClicked(mx, my, button);
     }
-    @Override public boolean mouseReleased(double x, double y, int button) { return super.mouseReleased(x/uiScale, y/uiScale, button); }
-    @Override public boolean mouseDragged(double x, double y, int button, double dx, double dy) { return super.mouseDragged(x/uiScale, y/uiScale, button, dx/uiScale, dy/uiScale); }
+
+    private int acquisitionTargetAt(double mx, double my) {
+        if (acquisitionPage == 0) {
+            for (int i = 0; i < 9; i++) if (inside(mx, my, 152+i%3*28, 181+i/3*28, 26, 26)) return i;
+        } else if (acquisitionPage == 2) {
+            if (inside(mx, my, 152, 225, 26, 26)) return 0;
+            if (inside(mx, my, 239, 225, 26, 26)) return 1;
+        }
+        return -1;
+    }
+
+    private void setKeySample(ItemStack sample) {
+        ItemStack copy = sample.copy();
+        if (!copy.isEmpty()) copy.setCount(1);
+        key = copy.isEmpty() ? "" : ItemNBT.getStacksData(copy);
+        if (key.isEmpty()) keyAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled());
+        sampleCache.clear(); changed(); rebuild();
+    }
+
+    private void setAcquisitionSample(ItemStack sample, int target) {
+        var a = acquisition();
+        ItemStack copy = sample.copy();
+        if (acquisitionPage == 0) {
+            if (!copy.isEmpty()) copy.setCount(1);
+            a.ingredients.set(target, copy.isEmpty() ? "" : ItemNBT.getStacksData(copy));
+        } else if (acquisitionPage == 2) {
+            String value = copy.isEmpty() ? "" : ItemNBT.getStacksData(copy);
+            String count = Integer.toString(copy.isEmpty() ? 1 : copy.getCount());
+            if (target == 0) { a.cost = value; a.costCount = count; }
+            else { a.secondCost = value; a.secondCount = count; }
+        } else return;
+        sampleTarget = target; sampleCache.clear(); changed(); rebuild();
+    }
+
+    @Override public boolean mouseReleased(double x, double y, int button) {
+        if (button == 0 && !pressedSample.isEmpty()) {
+            double mx = x/uiScale, my = y/uiScale;
+            ItemStack sample = pressedSample;
+            boolean dragged = sampleDragging;
+            pressedSample = ItemStack.EMPTY; sampleDragging = false;
+            if (pending != 0 || discardAction != null) return true;
+            if (page == 0) {
+                if (dragged && inside(mx, my, 438, 242, 26, 26)) setKeySample(sample);
+                else if (!dragged || inside(mx, my, 152, 140, 270, 90)) addSample(sample);
+            } else if (page == 1 && !(acquireKey && key.isBlank())) {
+                int target = dragged ? acquisitionTargetAt(mx, my) : sampleTarget;
+                if (target >= 0) setAcquisitionSample(sample, target);
+            }
+            return true;
+        }
+        return super.mouseReleased(x/uiScale, y/uiScale, button);
+    }
+    @Override public boolean mouseDragged(double x, double y, int button, double dx, double dy) {
+        if (button == 0 && !pressedSample.isEmpty()) {
+            if (Math.hypot(x/uiScale - samplePressX, y/uiScale - samplePressY) > 3) sampleDragging = true;
+            return true;
+        }
+        return super.mouseDragged(x/uiScale, y/uiScale, button, dx/uiScale, dy/uiScale);
+    }
     @Override public boolean mouseScrolled(double x, double y, double delta) {
         if (pending != 0 || discardAction != null) return true;
         if (inside(x/uiScale, y/uiScale, 8, 34, 132, 360)) {

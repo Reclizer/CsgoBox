@@ -25,7 +25,6 @@ public class CsboxScreen extends BoxScreen {
     private final PacketBoxPreview preview;
     private final Component unlockLabel;
     private final Component requiredKeyLabel;
-    private int page;
     private boolean requested;
     private boolean playedSound;
     private Button openButton;
@@ -63,13 +62,13 @@ public class CsboxScreen extends BoxScreen {
         }
         openButton = addRenderableWidget(ClassicBoxUi.action(font, LAYOUT_WIDTH, LAYOUT_HEIGHT, 67, "open_box",
                 Component.translatable("gui.csgobox.csgo_box.open_box"), button -> {
-                    if (!requested && keyCount() > 0) {
+                    if (!requested && (preview.key().isEmpty() || keyCount() > 0)) {
                         requested = true;
                         button.active = false;
                         Networking.INSTANCE.sendToServer(new PacketCsgoProgress(token()));
                     }
                 }));
-        openButton.active = !requested && keyCount() > 0;
+        openButton.active = !requested && (preview.key().isEmpty() || keyCount() > 0);
         addRenderableWidget(ClassicBoxUi.action(font, LAYOUT_WIDTH, LAYOUT_HEIGHT, 72, "back_box",
                 Component.translatable("gui.csgobox.csgo_box.back_box"), button -> onClose()));
     }
@@ -77,14 +76,15 @@ public class CsboxScreen extends BoxScreen {
     private int keyCount() {
         if (minecraft.player == null) return 0;
         return minecraft.player.getInventory().items.stream()
-                .filter(stack -> !stack.isEmpty() && stack.is(preview.key().getItem()))
+                .filter(stack -> com.reclizer.csgobox.utils.BoxKeys.matches(preview.key(), stack)
+                        && stack != minecraft.player.getMainHandItem())
                 .mapToInt(ItemStack::getCount).sum();
     }
 
     @Override public void tick() {
         super.tick();
         availableKeys = keyCount();
-        if (openButton != null) openButton.active = !requested && availableKeys > 0;
+        if (openButton != null) openButton.active = !requested && (preview.key().isEmpty() || availableKeys > 0);
     }
 
     @Override protected boolean canvasDragged(int button, double dx, double dy) {
@@ -96,10 +96,6 @@ public class CsboxScreen extends BoxScreen {
     }
 
     @Override protected boolean canvasScrolled(double x, double y, double delta) {
-        if (rewards().size() > PAGE_SIZE && y >= LAYOUT_HEIGHT*0.5 && y <= LAYOUT_HEIGHT*0.9) {
-            page = Math.max(0, Math.min((rewards().size()-1)/PAGE_SIZE, page + (delta < 0 ? 1 : -1)));
-            return true;
-        }
         return false;
     }
 
@@ -108,10 +104,6 @@ public class CsboxScreen extends BoxScreen {
                 && y >= MODEL_Y && y <= MODEL_Y + MODEL_SIZE) {
             rotation.grab(Util.getMillis());
             return true;
-        }
-        if (button == 0 && rewards().size() > PAGE_SIZE && y >= LAYOUT_HEIGHT*0.49 && y <= LAYOUT_HEIGHT*0.53) {
-            if (x >= LAYOUT_WIDTH*0.88 && x <= LAYOUT_WIDTH*0.91) { page = Math.max(0, page-1); return true; }
-            if (x >= LAYOUT_WIDTH*0.94 && x <= LAYOUT_WIDTH*0.97) { page = Math.min((rewards().size()-1)/PAGE_SIZE, page+1); return true; }
         }
         return false;
     }
@@ -132,7 +124,7 @@ public class CsboxScreen extends BoxScreen {
         label(g, Component.translatable("gui.csgobox.csgo_box.label_items").withStyle(bold), 3, 50.3F, 0.8F);
 
         hovered = null;
-        for (int n = page*PAGE_SIZE; n < Math.min(rewards().size(), (page+1)*PAGE_SIZE); n++) {
+        for (int n = 0; n < Math.min(rewards().size(), PAGE_SIZE); n++) {
             int index = n%PAGE_SIZE, column = index%10, row = index/10;
             int x = LAYOUT_WIDTH*4/100 + column*LAYOUT_WIDTH*9/100, y = LAYOUT_HEIGHT*(row == 0 ? 55 : 73)/100;
             DisplayReward entry = rewards().get(n);
@@ -151,10 +143,10 @@ public class CsboxScreen extends BoxScreen {
             if (!rotation.isDragging() && mouseX >= x && mouseX < x+LAYOUT_WIDTH*8/100
                     && mouseY >= y && mouseY < y+LAYOUT_HEIGHT*11/100) hovered = entry;
         }
-        if (rewards().size() > PAGE_SIZE) {
-            label(g, Component.literal("<"), 88, 50.3F, 0.8F);
-            label(g, Component.literal((page+1)+"/"+((rewards().size()+PAGE_SIZE-1)/PAGE_SIZE)), 91, 50.3F, 0.6F);
-            label(g, Component.literal(">"), 95, 50.3F, 0.8F);
+        if (rewards().size() > PAGE_SIZE && rewards().get(PAGE_SIZE).grade() == 5) {
+            // Twenty regular cards retain their original grid; the extra gold badge uses the former page controls.
+            ClassicBoxUi.gold(g, 447, 124, 17, 17);
+            if (mouseX >= 444 && mouseX <= 466 && mouseY >= 122 && mouseY <= 142) hovered = rewards().get(PAGE_SIZE);
         }
         if (!preview.key().isEmpty()) {
             ClassicBoxUi.item(g, preview.key(), LAYOUT_WIDTH*0.25F, LAYOUT_HEIGHT*0.93F, 1);
@@ -167,7 +159,7 @@ public class CsboxScreen extends BoxScreen {
                 float scale = Math.min(0.8F, maxWidth / Math.max(1, font.width(requiredKeyLabel)));
                 ClassicBoxUi.text(g, font, requiredKeyLabel, x, LAYOUT_HEIGHT * 0.94F, scale, 0xFFD3D3D3);
             }
-        }
+        } else label(g, Component.translatable("gui.csgobox.csgo_box.no_key"), 25, 94, 0.8F);
     }
 
     // Vanilla tooltip positioning needs the real screen coordinates, outside the canvas transform.

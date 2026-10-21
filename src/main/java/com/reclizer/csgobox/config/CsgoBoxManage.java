@@ -14,7 +14,7 @@ public final class CsgoBoxManage {
     private static final BoxConfigStore STORE = new BoxConfigStore(FILE, data -> {
         try { ItemNBT.parseStrict(data); return true; }
         catch (IllegalArgumentException ex) { return false; }
-    });
+    }, com.reclizer.csgobox.server.ConfiguredAcquisition::validate);
 
     private CsgoBoxManage() {}
 
@@ -33,12 +33,6 @@ public final class CsgoBoxManage {
     public static BoxDefinition find(String id) { return STORE.snapshot().get(id); }
     public static BoxDefinition readForEditing(String id) throws IOException { return STORE.readForEditing(id); }
     public static void saveDefinition(BoxDefinition box, String revision) throws IOException {
-        for (String entity : box.entity()) {
-            var id = net.minecraft.resources.ResourceLocation.tryParse(entity);
-            if (id == null || !net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.containsKey(id))
-                throw new IllegalArgumentException("Unknown entity: " + entity);
-        }
-        if (box.drop() > 0 && box.entity().isEmpty()) throw new IllegalArgumentException("Drop chance requires at least one entity");
         STORE.saveDefinition(box, revision);
     }
 }

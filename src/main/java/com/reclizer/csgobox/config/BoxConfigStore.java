@@ -19,11 +19,16 @@ public final class BoxConfigStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private final Path file;
     private final Predicate<String> validItem;
+    private final java.util.function.Consumer<BoxDefinition> validateRuntime;
     private volatile Map<String, BoxDefinition> snapshot = Map.of();
 
     public BoxConfigStore(Path file, Predicate<String> validItem) {
+        this(file, validItem, ignored -> {});
+    }
+    public BoxConfigStore(Path file, Predicate<String> validItem, java.util.function.Consumer<BoxDefinition> validateRuntime) {
         this.file = file;
         this.validItem = validItem;
+        this.validateRuntime = validateRuntime;
     }
 
     public Map<String, BoxDefinition> snapshot() { return snapshot; }
@@ -43,6 +48,7 @@ public final class BoxConfigStore {
         if (!revision(next.get(box.id())).equals(expectedRevision))
             throw new IllegalArgumentException("editor.csgobox.conflict");
         box.validate(validItem);
+        validateRuntime.accept(box);
         next.put(box.id(), box);
         publish(next);
     }
@@ -62,6 +68,7 @@ public final class BoxConfigStore {
             LinkedHashMap<String, BoxDefinition> next = new LinkedHashMap<>();
             for (BoxDefinition box : definitions) {
                 Objects.requireNonNull(box, "Null box definition").validate(validItem);
+                validateRuntime.accept(box);
                 if (next.putIfAbsent(box.id(), box) != null)
                     throw new IllegalArgumentException("Duplicate pool id: " + box.id());
             }
