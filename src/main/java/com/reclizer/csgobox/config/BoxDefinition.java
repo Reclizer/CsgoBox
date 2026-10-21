@@ -7,8 +7,10 @@ import java.util.function.Predicate;
 /** The on-disk schema. Weight order remains gold, red, pink, purple, blue. */
 public record BoxDefinition(String name, String key, float drop, List<Integer> random,
                             List<String> entity, List<String> grade1, List<String> grade2,
-                            List<String> grade3, List<String> grade4, List<String> grade5) {
+                            List<String> grade3, List<String> grade4, List<String> grade5, Boolean luckEnabled) {
     public BoxDefinition {
+        // Missing in legacy JSON: retain the previous luck-sensitive behavior.
+        luckEnabled = luckEnabled == null ? true : luckEnabled;
         random = copy(random);
         entity = copy(entity);
         grade1 = copy(grade1);
@@ -16,6 +18,18 @@ public record BoxDefinition(String name, String key, float drop, List<Integer> r
         grade3 = copy(grade3);
         grade4 = copy(grade4);
         grade5 = copy(grade5);
+    }
+
+    public BoxDefinition(String name, String key, float drop, List<Integer> random, List<String> entity,
+                         List<String> grade1, List<String> grade2, List<String> grade3,
+                         List<String> grade4, List<String> grade5) {
+        this(name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, true);
+    }
+
+    public float effectiveLuck(float playerLuck) { return luckEnabled ? playerLuck : 0; }
+
+    public BoxDefinition withLuckEnabled(boolean enabled) {
+        return new BoxDefinition(name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, enabled);
     }
 
     private static <T> List<T> copy(List<T> list) {
@@ -65,7 +79,7 @@ public record BoxDefinition(String name, String key, float drop, List<Integer> r
         Objects.requireNonNull(rewards);
         return new BoxDefinition(name, key, drop, random, entity,
                 rewardsAt(rewards, 1), rewardsAt(rewards, 2), rewardsAt(rewards, 3),
-                rewardsAt(rewards, 4), rewardsAt(rewards, 5));
+                rewardsAt(rewards, 4), rewardsAt(rewards, 5), luckEnabled);
     }
 
     private static List<String> rewardsAt(List<RewardEntry> entries, int grade) {

@@ -21,6 +21,9 @@ public class CsgoBox {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public CsgoBox() {
+        net.minecraftforge.fml.ModLoadingContext.get().registerConfig(
+                net.minecraftforge.fml.config.ModConfig.Type.CLIENT,
+                com.reclizer.csgobox.config.ClientConfig.SPEC, "csgobox-client.toml");
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
         bus.addListener(this::commonSetup);
         ModSounds.SOUNDS.register(bus);

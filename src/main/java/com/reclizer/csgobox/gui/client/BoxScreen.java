@@ -102,7 +102,8 @@ public abstract class BoxScreen extends Screen {
     public void renderBackground(GuiGraphics graphics) {
         BlurHandler.updateShader(false);
         float fade = Math.min(1, (net.minecraft.Util.getMillis() - backgroundStarted) / 100F);
-        int alpha = (int)(128 * fade), shade = (int)(90 * fade);
+        int alpha = (int)Math.round(255 * com.reclizer.csgobox.config.ClientConfig.BACKGROUND_OPACITY.get() * fade);
+        int shade = (int)(90 * fade);
         int color = (alpha << 24) | (shade << 16) | (shade << 8) | shade;
         graphics.fill(0, 0, width, height, color);
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(

@@ -28,12 +28,12 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     private String name = "", key = "csgobox:csgo_key0", drop = "0", entities = "minecraft:zombie";
     private String originalName = "", revision = "", search = "", itemId = "", luck = "0";
     private String status = "", issue = "", amountError = "";
-    private boolean dirty, needsValidation = true, statusError;
+    private boolean dirty, needsValidation = true, statusError, luckEnabled = true;
     private int page, grade = 1, rewardPage, catalogPage, selected = -1;
     private int requestId, pending, pendingTicks;
     private float uiScale = 1;
     private EditBox amountField;
-    private UiButton saveButton;
+    private UiButton saveButton, testButton;
     private Runnable discardAction;
     private ItemStack tooltip = ItemStack.EMPTY;
     private String tooltipChance = "";
@@ -111,11 +111,14 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         if (page == 0) buildRewards();
         if (page == 1) buildRules();
         if (page == 2) {
-            field(152, 126, 90, 12, luck, value -> luck = value);
-            button(254, 126, 120, tr("my_luck"), () -> {
+            field(152, 126, 90, 12, luck, value -> luck = value).setEditable(pending == 0 && luckEnabled);
+            UiButton myLuck = button(254, 126, 120, tr("my_luck"), () -> {
                 luck = Float.toString(minecraft.player.getLuck()); rebuild();
             }, MUTED);
+            myLuck.active = pending == 0 && luckEnabled;
+            luckButton(390, 126, 214);
         }
+        testButton = button(350, 402, 98, tr("test_box"), this::getTestBox, COLORS[0]);
         saveButton = button(456, 402, 94, tr("save"), this::save, COLORS[4]);
         button(558, 402, 46, tr("close"), this::onClose, MUTED);
     }
@@ -145,7 +148,10 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         field(152, 270, 350, 256, itemId, value -> itemId = value);
         button(512, 270, 92, tr("add_item"), () -> {
             try { addSample(ItemNBT.parseStrict(itemId.trim())); }
-            catch (RuntimeException ex) { fail(text("bad_item")); }
+            catch (RuntimeException ex) {
+                fail("editor.csgobox.tacz_sample_required".equals(ex.getMessage())
+                        ? text("tacz_sample_required") : text("bad_item"));
+            }
         }, MUTED);
     }
 
@@ -161,6 +167,13 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         }
         field(152, 264, 100, 16, drop, value -> { drop = value; changed(); });
         field(152, 322, 452, 8192, entities, value -> { entities = value; changed(); });
+        luckButton(152, 370, 150);
+    }
+
+    private void luckButton(int x, int y, int width) {
+        button(x, y, width, tr(luckEnabled ? "luck_on" : "luck_off"), () -> {
+            luckEnabled = !luckEnabled; changed(); rebuild();
+        }, luckEnabled ? COLORS[4] : MUTED);
     }
 
     private List<String> filteredNames() {
@@ -185,6 +198,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     private void newDraft() {
         for (var group : rewards) group.clear();
         name = ""; key = "csgobox:csgo_key0"; drop = "0"; entities = "minecraft:zombie";
+        luckEnabled = true;
         String[] defaults = {"625", "20", "6", "5", "2"};
         System.arraycopy(defaults, 0, weights, 0, 5);
         originalName = ""; revision = ""; selected = -1; rewardPage = 0; grade = 1; page = 0;
@@ -210,11 +224,16 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
 
     public void receive(PacketEditorState packet) {
         if (packet.containerId() != menu.containerId || packet.requestId() != requestId || pending == 0) return;
+        boolean testResponse = pending == 3;
         pending = 0;
         if (!packet.error().isEmpty()) {
             fail(Component.translatable(packet.error()).getString()); rebuild(); return;
         }
+        if (testResponse) {
+            status = text("test_given"); statusError = false; rebuild(); return;
+        }
         BoxDefinition box = BoxEditorCodec.decode(packet.json());
+        luckEnabled = box.luckEnabled();
         name = box.name(); originalName = box.name(); revision = packet.revision(); key = box.key();
         drop = new java.math.BigDecimal(Float.toString(box.drop())).movePointRight(2).stripTrailingZeros().toPlainString();
         entities = String.join(", ", box.entity());
@@ -226,6 +245,13 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         dirty = false; selected = -1; amountError = ""; rewardPage = 0; needsValidation = true;
         status = text(packet.saved() ? "saved" : "loaded"); statusError = false;
         rebuild();
+    }
+
+    private void getTestBox() {
+        if (pending != 0 || dirty || originalName.isEmpty()) return;
+        pending = 3; pendingTicks = 0; requestId++;
+        status = text("test_pending"); statusError = false; rebuild();
+        Networking.INSTANCE.sendToServer(new PacketTestBox(menu.containerId, requestId, originalName, revision));
     }
 
     private void changed() { dirty = true; needsValidation = true; status = ""; statusError = false; }
@@ -265,7 +291,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             for (ItemStack item : rewards.get(i)) entries.add(new RewardEntry(ItemNBT.getStacksData(item), i + 1));
         return new BoxDefinition(name.trim(), key.trim(), Float.parseFloat(drop) / 100F, parsedWeights(),
                 Arrays.stream(entities.split("[,;\\s]+")).filter(s -> !s.isBlank()).distinct().toList(),
-                null, null, null, null, null).withRewards(entries);
+                null, null, null, null, null, luckEnabled).withRewards(entries);
     }
 
     private void validateDraft() {
@@ -297,7 +323,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
 
     private double[] chances(float previewLuck) {
         try {
-            long[] effective = WeightedSelection.effectiveWeights(parsedWeights(), g -> !rewards.get(g - 1).isEmpty(), previewLuck);
+            long[] effective = WeightedSelection.effectiveWeights(parsedWeights(), g -> !rewards.get(g - 1).isEmpty(), luckEnabled ? previewLuck : 0);
             double total = Arrays.stream(effective).sum();
             double[] result = new double[5];
             for (int i = 0; i < 5; i++) result[i] = effective[4 - i] / total;
@@ -342,8 +368,11 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             if (page == 1) renderRules(g);
             if (page == 2) renderProbabilities(g);
             String footer = !status.isEmpty() ? status : issue.isEmpty() ? text("ready", rewardCount()) : issue;
+            if (inside(mx, my, 350, 402, 98, 20) && pending == 0)
+                footer = text(dirty || originalName.isEmpty() ? "test_save_first" : "test_hint");
             int footerColor = statusError || (status.isEmpty() && !issue.isEmpty()) ? 0xFFF19A9A : MUTED;
-            clipped(g, footer, 16, 407, 430, footerColor);
+            clipped(g, footer, 16, 407, 326, footerColor);
+            testButton.active = pending == 0 && !dirty && !originalName.isEmpty();
             saveButton.active = pending == 0 && issue.isEmpty() && dirty;
             saveButton.setMessage(tr(pending == 2 ? "saving_short" : !originalName.isEmpty() && !name.trim().equals(originalName) ? "save_as" : "save"));
         } else {
@@ -356,7 +385,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         if (!tooltip.isEmpty() && discardAction == null) {
             List<Component> lines = new ArrayList<>(getTooltipFromItem(minecraft, tooltip));
             if (!tooltipChance.isEmpty()) lines.add(Component.literal(tooltipChance));
-            g.renderComponentTooltip(font, lines, mouseX, mouseY);
+            g.renderTooltip(font, lines, tooltip.getTooltipImage(), tooltip, mouseX, mouseY);
         }
     }
 
@@ -378,7 +407,9 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         label(g, text("page_count", rewardPage+1, Math.max(1, (current().size()+PAGE_SIZE-1)/PAGE_SIZE), current().size()), 190, 244, MUTED);
         ItemStack selectedItem = selectedStack();
         clipped(g, selectedItem.isEmpty() ? text("select_reward") : selectedItem.getHoverName().getString(), 438, 143, 164, TEXT);
-        label(g, selectedItem.hasTag() ? text("nbt_preserved") : text("no_nbt"), 438, 161, MUTED);
+        String modelId = com.reclizer.csgobox.compat.TaczCompat.gunId(selectedItem);
+        clipped(g, modelId.isEmpty() ? selectedItem.hasTag() ? text("nbt_preserved") : text("no_nbt")
+                : modelId, 438, 161, 164, MUTED);
         label(g, text("quantity"), 438, 174, MUTED);
         if (!selectedItem.isEmpty()) label(g, "1-" + selectedItem.getMaxStackSize(), 520, 192, MUTED);
         label(g, text("item_id"), 152, 258, MUTED);
@@ -411,14 +442,14 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         label(g, text("drop_hint"), 264, 270, MUTED);
         label(g, text("entities"), 152, 306, TEXT);
         label(g, text("entities_hint"), 152, 350, MUTED);
-        label(g, text("rule_save_hint"), 152, 376, COLORS[4]);
+        clipped(g, text(luckEnabled ? "luck_enabled_hint" : "luck_disabled_hint"), 310, 376, 294, MUTED);
     }
 
     private void renderProbabilities(GuiGraphics g) {
         label(g, text("luck"), 152, 112, TEXT);
         float previewLuck;
         try {
-            previewLuck = Float.parseFloat(luck);
+            previewLuck = luckEnabled ? Float.parseFloat(luck) : 0;
             if (!Float.isFinite(previewLuck)) throw new NumberFormatException();
         } catch (RuntimeException ex) {
             label(g, text("bad_luck"), 152, 164, 0xFFF19A9A); return;
@@ -490,7 +521,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         }
     }
     @Override public void onClose() {
-        if (pending == 2) return;
+        if (pending == 2 || pending == 3) return;
         if (discardAction != null) { discardAction = null; rebuild(); return; }
         if (pending == 1) { pending = 0; requestId++; }
         guard(() -> super.onClose());

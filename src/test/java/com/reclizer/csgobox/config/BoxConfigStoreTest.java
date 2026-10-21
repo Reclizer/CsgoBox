@@ -26,8 +26,26 @@ class BoxConfigStoreTest {
         var store = store(VALID);
         assertEquals(1, store.reload());
         assertEquals(List.of(), store.snapshot().get("测试箱").grade5());
+        assertTrue(store.snapshot().get("测试箱").luckEnabled());
         assertThrows(UnsupportedOperationException.class, () -> store.snapshot().clear());
         assertThrows(UnsupportedOperationException.class, () -> store.snapshot().get("测试箱").grade1().clear());
+    }
+
+    @Test void luckToggleSurvivesEditorCodecSaveReloadAndRewardEdits() throws IOException {
+        var store = store(VALID);
+        store.reload();
+        var original = store.snapshot().get("测试箱");
+        var edited = original.withLuckEnabled(false);
+        assertEquals(0F, edited.effectiveLuck(100));
+        assertEquals(0F, edited.effectiveLuck(-10));
+        assertEquals(10F, original.effectiveLuck(10));
+        assertEquals(edited, BoxEditorCodec.decode(BoxEditorCodec.encode(edited)));
+        assertNotEquals(BoxConfigStore.revision(original), BoxConfigStore.revision(edited));
+        store.saveDefinition(edited, BoxConfigStore.revision(original));
+        store.reload();
+        assertFalse(store.snapshot().get("测试箱").luckEnabled());
+        store.saveRewards("测试箱", List.of(new RewardEntry("minecraft:diamond", 1)));
+        assertFalse(store.readForEditing("测试箱").luckEnabled());
     }
 
     @Test void badReloadKeepsLastSnapshotAndFile() throws IOException {

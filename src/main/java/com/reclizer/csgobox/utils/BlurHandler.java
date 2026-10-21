@@ -15,7 +15,7 @@ public final class BlurHandler {
     public static void updateShader(boolean close) {
         Minecraft minecraft = Minecraft.getInstance();
         var renderer = minecraft.gameRenderer;
-        if (close || minecraft.level == null) {
+        if (close || minecraft.level == null || !com.reclizer.csgobox.config.ClientConfig.BLUR.get()) {
             if (owned != null && renderer.currentEffect() == owned) renderer.shutdownEffect();
             owned = null;
             attempted = false;

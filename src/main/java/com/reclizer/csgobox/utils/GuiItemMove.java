@@ -31,7 +31,11 @@ public final class GuiItemMove {
             graphics.pose().mulPoseMatrix(new Matrix4f().scaling(1, -1, 1));
             graphics.pose().scale(16 * scale, 16 * scale, 16 * scale);
             if (!model.usesBlockLight()) Lighting.setupForFlatItems();
-            renderer.render(item, ItemDisplayContext.GUI, false, graphics.pose(), graphics.bufferSource(),
+            // TaCZ intentionally uses a flat slot texture in GUI context. FIXED uses its
+            // gun-pack positioning, attachments and 3D model without first-person arms.
+            var display = com.reclizer.csgobox.config.ClientConfig.TACZ_3D_PREVIEW.get()
+                    && com.reclizer.csgobox.compat.TaczCompat.isGun(item) ? ItemDisplayContext.FIXED : ItemDisplayContext.GUI;
+            renderer.render(item, display, false, graphics.pose(), graphics.bufferSource(),
                     LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, model);
             graphics.flush();
         } finally {

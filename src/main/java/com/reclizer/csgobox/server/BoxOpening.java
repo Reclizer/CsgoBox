@@ -30,7 +30,7 @@ public final class BoxOpening {
             }
         }
         if (keySlot < 0) return new Result(ItemStack.EMPTY, 0, "message.csgobox.missing_key");
-        int grade = WeightedSelection.grade(random, box.random(), g -> !box.items(g).isEmpty(), player.getLuck());
+        int grade = WeightedSelection.grade(random, box.random(), g -> !box.items(g).isEmpty(), box.effectiveLuck(player.getLuck()));
         List<String> pool = box.items(grade);
         ItemStack reward = ItemNBT.parseStrict(pool.get(random.nextInt(pool.size())));
         // Nothing is consumed until configuration, key and reward have all been validated.

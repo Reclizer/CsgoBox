@@ -61,6 +61,7 @@ public final class ItemNBT {
                 throw new IllegalArgumentException("Unexpected item suffix: " + reader.getRemaining());
             }
         }
+        com.reclizer.csgobox.compat.TaczCompat.validate(stack);
         return stack;
     }
 

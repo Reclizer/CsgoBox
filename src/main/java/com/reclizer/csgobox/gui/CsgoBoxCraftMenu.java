@@ -8,8 +8,15 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
-/** Read-only inventory samples. Editing never transfers, consumes or creates inventory items. */
+/** Read-only sample slots; only the separate, server-validated test request grants items. */
 public class CsgoBoxCraftMenu extends AbstractContainerMenu {
+    private int lastTestRequest = -1;
+
+    public boolean acceptTestRequest(int requestId) {
+        if (requestId <= lastTestRequest) return false;
+        lastTestRequest = requestId;
+        return true;
+    }
     public CsgoBoxCraftMenu(int id, Inventory inventory, FriendlyByteBuf ignored) {
         super(RecModMenus.CSGO_BOX_CRAFT.get(), id);
         for (int row = 0; row < 3; row++)

@@ -38,6 +38,19 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 repositories { mavenCentral() }
 
+// Optional real-mod compatibility run: -PtaczCompat=true. Never bundled into CsgoBox.
+if (project.findProperty('taczCompat') == 'true') {
+    repositories {
+        maven { url 'https://www.cursemaven.com'; content { includeGroup 'curse.maven' } }
+    }
+    dependencies { runtimeOnly fg.deobf('curse.maven:timeless-and-classics-zero-1028108:9037989') }
+    minecraft.runs.configureEach {
+        property 'csgobox.taczCompat', 'true'
+        property 'mixin.env.remapRefMap', 'true'
+        property 'mixin.env.refMapRemappingFile', "${buildDir}/createSrgToMcp/output.srg"
+    }
+}
+
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
