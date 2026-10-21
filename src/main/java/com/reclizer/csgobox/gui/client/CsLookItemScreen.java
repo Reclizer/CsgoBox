@@ -13,6 +13,7 @@ public class CsLookItemScreen extends BoxScreen {
     private final int grade;
     private float rotationX;
     private float rotationY;
+    private boolean rotating;
     private boolean playedSound;
 
     public CsLookItemScreen(ItemStack reward, int grade) {
@@ -23,35 +24,43 @@ public class CsLookItemScreen extends BoxScreen {
 
     @Override protected void init() {
         super.init();
+        rotating = false;
         if (!playedSound && minecraft.player != null) {
             minecraft.player.playSound(ModSounds.CS_FINSH.get(), 1, 1);
             playedSound = true;
         }
-        addRenderableWidget(ClassicBoxUi.action(font, width, height, 72, "back_box",
+        addRenderableWidget(ClassicBoxUi.action(font, LAYOUT_WIDTH, LAYOUT_HEIGHT, 72, "back_box",
                 Component.translatable("gui.csgobox.csgo_box.back_box"), button -> onClose()));
     }
 
-    @Override public boolean mouseDragged(double x, double y, int button, double dx, double dy) {
-        int size = width*26/100;
-        if (button == 0 && x >= width*0.37F && x <= width*0.37F+size
-                && y >= height*0.30F && y <= height*0.30F+size) {
-            rotationX = GuiItemMove.renderRotAngleX(dx, rotationX);
-            rotationY = GuiItemMove.renderRotAngleY(dy, rotationY);
+    @Override protected boolean canvasClicked(double x, double y, int button) {
+        if (button == 0 && x >= LAYOUT_WIDTH*0.37 && x <= LAYOUT_WIDTH*0.63
+                && y >= LAYOUT_HEIGHT*0.30 && y <= LAYOUT_HEIGHT*0.30 + LAYOUT_WIDTH*0.26) {
+            rotating = true;
             return true;
         }
-        return super.mouseDragged(x, y, button, dx, dy);
+        return false;
     }
 
-    @Override public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        renderBackground(g);
-        g.fill(width*25/100, height*92/100, width*75/100, height*92/100+1, 0xFFD3D3D3);
-        g.fill(width*37/100, height*16/100, width*63/100, height*16/100+2, ColorTools.colorItems(grade));
-        ClassicBoxUi.text(g, font, title, width*0.45F, height*0.05F, 1.8F, 0xFFFFFFFF);
+    @Override protected boolean canvasDragged(int button, double dx, double dy) {
+        if (button != 0 || !rotating) return false;
+        rotationX = GuiItemMove.renderRotAngleX(dx, rotationX);
+        rotationY = GuiItemMove.renderRotAngleY(dy, rotationY);
+        return true;
+    }
+
+    @Override protected void canvasReleased(int button) {
+        if (button == 0) rotating = false;
+    }
+
+    @Override protected void renderContents(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        g.fill(LAYOUT_WIDTH*25/100, LAYOUT_HEIGHT*92/100, LAYOUT_WIDTH*75/100, LAYOUT_HEIGHT*92/100+1, 0xFFD3D3D3);
+        g.fill(LAYOUT_WIDTH*37/100, LAYOUT_HEIGHT*16/100, LAYOUT_WIDTH*63/100, LAYOUT_HEIGHT*16/100+2, ColorTools.colorItems(grade));
+        ClassicBoxUi.text(g, font, title, LAYOUT_WIDTH*0.45F, LAYOUT_HEIGHT*0.05F, 1.8F, 0xFFFFFFFF);
         ClassicBoxUi.text(g, font, Component.translatable("gui.csgobox.csgo_box.grade"+grade),
-                width*0.45F, height*0.11F, 1, 0xFFFFFFFF);
+                LAYOUT_WIDTH*0.45F, LAYOUT_HEIGHT*0.11F, 1, 0xFFFFFFFF);
         if (minecraft.player != null)
-            GuiItemMove.renderItemInInventoryFollowsMouse(g, width*37/100, height*30/100,
-                    rotationX, rotationY, reward, minecraft.player, (width*26/100)/16F);
-        super.render(g, mouseX, mouseY, partialTick);
+            GuiItemMove.renderItemInInventoryFollowsMouse(g, LAYOUT_WIDTH*37/100, LAYOUT_HEIGHT*30/100,
+                    rotationX, rotationY, reward, minecraft.player, (LAYOUT_WIDTH*26/100)/16F);
     }
 }

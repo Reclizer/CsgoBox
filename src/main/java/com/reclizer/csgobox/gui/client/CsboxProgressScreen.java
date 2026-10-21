@@ -42,26 +42,21 @@ public class CsboxProgressScreen extends BoxScreen {
         if (ticks >= LEAD_IN + ReelMotion.DURATION) minecraft.setScreen(new CsLookItemScreen(reward, grade));
     }
 
-    @Override public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        renderBackground(g);
+    @Override protected void renderContents(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         if (ticks < LEAD_IN) return;
         float time = ticks - LEAD_IN + partialTick;
-        float y = height * 0.37F;
-        g.enableScissor(0, 0, width, height);
+        float y = LAYOUT_HEIGHT * 0.37F;
+        for (int i = 0; i < reel.size(); i++) {
+            float x = motion.left(i, time) * LAYOUT_WIDTH;
+            if (x + LAYOUT_WIDTH * ReelMotion.CARD_WIDTH < 0 || x > LAYOUT_WIDTH) continue;
+            var entry = reel.get(i);
+            ClassicBoxUi.reelCard(g, entry.stack(), entry.grade(), x, y, LAYOUT_WIDTH, LAYOUT_HEIGHT);
+        }
+        g.pose().pushPose();
         try {
-            for (int i = 0; i < reel.size(); i++) {
-                float x = motion.left(i, time) * width;
-                if (x + width * ReelMotion.CARD_WIDTH < 0 || x > width) continue;
-                var entry = reel.get(i);
-                ClassicBoxUi.reelCard(g, entry.stack(), entry.grade(), x, y, width, height);
-            }
-            g.pose().pushPose();
-            try {
-                g.pose().translate(0, 0, 300);
-                g.fill(width/2, height*37/100, width/2+2, height*37/100+height*25/100+2, 0x80FFD700);
-            } finally { g.pose().popPose(); }
-            ClassicBoxUi.reelMask(g, width, height);
-        } finally { g.disableScissor(); }
-        super.render(g, mouseX, mouseY, partialTick);
+            g.pose().translate(0, 0, 300);
+            g.fill(LAYOUT_WIDTH/2, LAYOUT_HEIGHT*37/100, LAYOUT_WIDTH/2+2, LAYOUT_HEIGHT*37/100+LAYOUT_HEIGHT*25/100+2, 0x80FFD700);
+        } finally { g.pose().popPose(); }
+        ClassicBoxUi.reelMask(g, LAYOUT_WIDTH, LAYOUT_HEIGHT);
     }
 }
