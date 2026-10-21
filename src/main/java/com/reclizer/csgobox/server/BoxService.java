@@ -14,6 +14,8 @@ import java.util.*;
 public final class BoxService {
     private static final OpeningSessions<ItemStack> SESSIONS = new OpeningSessions<>();
     private static final Random RANDOM = new Random();
+    private record CachedNames(BoxDefinition definition, PacketBoxRewardNames packet) {}
+    private static final Map<String, CachedNames> REWARD_NAMES = new HashMap<>();
     private BoxService() {}
 
     public static void preview(ServerPlayer player) {
@@ -79,8 +81,25 @@ public final class BoxService {
     }
 
     public static void logout(UUID player) { SESSIONS.remove(player); }
-    public static void clearSessions() { SESSIONS.clear(); }
+    public static void clearSessions() { SESSIONS.clear(); REWARD_NAMES.clear(); }
+
+    public static PacketBoxRewardNames rewardNames(BoxDefinition box) {
+        var rewards = new ArrayList<RewardName>();
+        for (int grade = 1; grade <= 4; grade++) {
+            for (String data : box.items(grade)) {
+                var stack = ItemNBT.parseStrict(data);
+                rewards.add(new RewardName(com.reclizer.csgobox.compat.TaczCompat.rewardName(stack), grade));
+            }
+        }
+        return new PacketBoxRewardNames(box.id(), rewards);
+    }
+
     public static void syncCatalog(ServerPlayer player) {
         Networking.sendToPlayerClient(new PacketBoxCatalog(CsgoBoxManage.boxes().stream().map(box -> new com.reclizer.csgobox.item.BoxCatalog.Entry(box.id(), box.name())).toList()), player);
+        for (var box : CsgoBoxManage.boxes()) {
+            var names = REWARD_NAMES.compute(box.id(), (id, cached) -> cached != null && cached.definition() == box
+                    ? cached : new CachedNames(box, rewardNames(box)));
+            Networking.sendToPlayerClient(names.packet(), player);
+        }
     }
 }

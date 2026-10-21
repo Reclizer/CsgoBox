@@ -74,6 +74,7 @@ public class ItemCsgoBox extends Item {
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltips.csgobox.item.cs_box").withStyle(ChatFormatting.GRAY));
-        if (!boxId(stack).isEmpty()) tooltip.add(Component.literal(boxId(stack)).withStyle(ChatFormatting.DARK_GRAY));
+        if (flag.isAdvanced() && !boxId(stack).isEmpty())
+            tooltip.add(Component.literal(boxId(stack)).withStyle(ChatFormatting.DARK_GRAY));
     }
 }
