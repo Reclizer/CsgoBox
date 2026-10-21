@@ -9,6 +9,18 @@ public final class WeightedSelection {
 
     /** Empty grades have zero probability. Luck only adjusts enabled rare grades. */
     public static int grade(RandomGenerator random, List<Integer> weights, IntPredicate available, float luck) {
+        long[] effective = effectiveWeights(weights, available, luck);
+        long total = java.util.Arrays.stream(effective).sum();
+        long roll = random.nextLong(total);
+        for (int i = 0; i < 5; i++) {
+            if (roll < effective[i]) return 5 - i;
+            roll -= effective[i];
+        }
+        throw new AssertionError("Unreachable weighted selection");
+    }
+
+    /** Shared by actual draws and the editor probability preview. Gold-to-blue order. */
+    public static long[] effectiveWeights(List<Integer> weights, IntPredicate available, float luck) {
         if (weights.size() != 5) throw new IllegalArgumentException("Expected five weights");
         long[] effective = new long[5];
         long total = 0;
@@ -22,13 +34,8 @@ public final class WeightedSelection {
             }
         }
         // Negative luck must not make an otherwise usable box impossible to open.
-        if (total == 0 && bonus < 0) return grade(random, weights, available, 0);
+        if (total == 0 && bonus < 0) return effectiveWeights(weights, available, 0);
         if (total == 0) throw new IllegalArgumentException("No weighted rewards available");
-        long roll = random.nextLong(total);
-        for (int i = 0; i < 5; i++) {
-            if (roll < effective[i]) return 5 - i;
-            roll -= effective[i];
-        }
-        throw new AssertionError("Unreachable weighted selection");
+        return effective;
     }
 }

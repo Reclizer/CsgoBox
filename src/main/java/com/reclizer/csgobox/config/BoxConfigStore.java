@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -25,6 +27,25 @@ public final class BoxConfigStore {
     }
 
     public Map<String, BoxDefinition> snapshot() { return snapshot; }
+    public synchronized BoxDefinition readForEditing(String name) throws IOException { return read().get(name); }
+
+    /** Optimistic version of one pool; unrelated pool changes do not block a save. */
+    public static String revision(BoxDefinition box) {
+        if (box == null) return "";
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(GSON.toJson(box).getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException ex) { throw new AssertionError(ex); }
+    }
+
+    public synchronized void saveDefinition(BoxDefinition box, String expectedRevision) throws IOException {
+        Map<String, BoxDefinition> next = new LinkedHashMap<>(read());
+        if (!revision(next.get(box.name())).equals(expectedRevision))
+            throw new IllegalArgumentException("editor.csgobox.conflict");
+        box.validate(validItem);
+        next.put(box.name(), box);
+        publish(next);
+    }
 
     public synchronized int reload() throws IOException {
         Map<String, BoxDefinition> next = read();
@@ -57,6 +78,10 @@ public final class BoxConfigStore {
         BoxDefinition replacement = previous == null ? BoxDefinition.create(name, rewards) : previous.withRewards(rewards);
         replacement.validate(validItem);
         next.put(name, replacement);
+        publish(next);
+    }
+
+    private void publish(Map<String, BoxDefinition> next) throws IOException {
         if (next.size() > 512) throw new IllegalArgumentException("At most 512 box definitions are supported");
         String json = GSON.toJson(next.values());
         if (json.getBytes(StandardCharsets.UTF_8).length > 2 * 1024 * 1024)

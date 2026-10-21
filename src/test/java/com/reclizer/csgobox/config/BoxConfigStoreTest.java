@@ -84,4 +84,46 @@ class BoxConfigStoreTest {
         assertEquals(List.of("minecraft:stone"), store.snapshot().get("新箱子").grade3());
         assertEquals(1, store.reload());
     }
+
+    @Test void editorSavesAllRulesAndRejectsStaleOrAccidentalOverwrite() throws IOException {
+        var store = store(VALID);
+        store.reload();
+        var original = store.snapshot().get("测试箱");
+        String version = BoxConfigStore.revision(original);
+        var edited = new BoxDefinition("测试箱", "minecraft:tripwire_hook", 0.8F, List.of(10,0,0,0,0),
+                List.of("minecraft:skeleton"), List.of(), List.of(), List.of(), List.of(), List.of("minecraft:diamond"));
+        store.saveDefinition(edited, version);
+        assertEquals(edited, store.readForEditing("测试箱"));
+        assertEquals(edited, store.snapshot().get("测试箱"));
+        assertThrows(IllegalArgumentException.class, () -> store.saveDefinition(original, version));
+        assertThrows(IllegalArgumentException.class, () -> store.saveDefinition(original, ""));
+        assertEquals(edited, store.readForEditing("测试箱"));
+    }
+
+    @Test void editorDetectsExternalChangesAndCanReadFreshVersionWithoutPublishing() throws IOException {
+        var store = store(VALID);
+        store.reload();
+        var original = store.snapshot().get("测试箱");
+        Files.writeString(directory.resolve("box.json"), VALID.replace("0.3", "0.9"));
+        assertThrows(IllegalArgumentException.class, () -> store.saveDefinition(original, BoxConfigStore.revision(original)));
+        var latest = store.readForEditing("测试箱");
+        assertEquals(0.9F, latest.drop());
+        assertEquals(original, store.snapshot().get("测试箱"));
+        store.saveDefinition(latest, BoxConfigStore.revision(latest));
+        assertEquals(latest, store.snapshot().get("测试箱"));
+    }
+
+    @Test void editorNewPoolAndUnrelatedEditsPreserveOtherPools() throws IOException {
+        var store = store(VALID);
+        store.reload();
+        var original = store.snapshot().get("测试箱");
+        var added = BoxDefinition.create("copy", List.of(new RewardEntry("minecraft:diamond", 5)));
+        store.saveDefinition(added, "");
+        store.saveDefinition(original, BoxConfigStore.revision(original));
+        assertEquals(2, store.reload());
+        assertEquals(added, store.snapshot().get("copy"));
+        var invalid = BoxDefinition.create("invalid", List.of());
+        assertThrows(IllegalArgumentException.class, () -> store.saveDefinition(invalid, ""));
+        assertEquals(2, store.reload());
+    }
 }

@@ -40,4 +40,14 @@ class WeightedSelectionTest {
         assertEquals(1, WeightedSelection.grade(roll(0), List.of(0,0,0,0,1), g -> true, 100));
         assertEquals(5, WeightedSelection.grade(roll(0), List.of(1,0,0,0,0), g -> g == 5, -100));
     }
+
+    @Test void previewUsesExactlyTheSameEffectiveWeightsAsDraws() {
+        List<Integer> weights = List.of(1,0,4,3,2);
+        long[] effective = WeightedSelection.effectiveWeights(weights, g -> g != 2, 2);
+        assertArrayEquals(new long[]{5,0,8,0,2}, effective);
+        int[] observed = new int[5];
+        for (int i = 0; i < 15; i++) observed[5 - WeightedSelection.grade(roll(i), weights, g -> g != 2, 2)]++;
+        assertArrayEquals(new int[]{5,0,8,0,2}, observed);
+        assertArrayEquals(new long[]{1,0,0,0,0}, WeightedSelection.effectiveWeights(List.of(1,0,0,0,0), g -> true, -100));
+    }
 }

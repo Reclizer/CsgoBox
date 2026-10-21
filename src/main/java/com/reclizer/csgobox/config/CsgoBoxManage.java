@@ -33,4 +33,14 @@ public final class CsgoBoxManage {
     public static Collection<BoxDefinition> boxes() { return STORE.snapshot().values(); }
     public static BoxDefinition find(String name) { return STORE.snapshot().get(name); }
     public static void save(String name, List<RewardEntry> rewards) throws IOException { STORE.saveRewards(name, rewards); }
+    public static BoxDefinition readForEditing(String name) throws IOException { return STORE.readForEditing(name); }
+    public static void saveDefinition(BoxDefinition box, String revision) throws IOException {
+        for (String entity : box.entity()) {
+            var id = net.minecraft.resources.ResourceLocation.tryParse(entity);
+            if (id == null || !net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.containsKey(id))
+                throw new IllegalArgumentException("Unknown entity: " + entity);
+        }
+        if (box.drop() > 0 && box.entity().isEmpty()) throw new IllegalArgumentException("Drop chance requires at least one entity");
+        STORE.saveDefinition(box, revision);
+    }
 }

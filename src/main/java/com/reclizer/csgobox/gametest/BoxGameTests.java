@@ -140,26 +140,42 @@ public final class BoxGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void editorKeepsItemsAndGradesTogether(GameTestHelper helper) {
+    public static void editorSamplesNeverTransferOrDuplicateInventory(GameTestHelper helper) {
         var player = player(helper);
+        ItemStack original = new ItemStack(Items.DIAMOND, 3);
+        original.getOrCreateTag().putString("sample", "preserve-me");
+        player.getInventory().setItem(0, original.copy());
         var menu = new CsgoBoxCraftMenu(7, player.getInventory(), null);
-        ItemStack taggedAir = new ItemStack(Items.AIR);
-        taggedAir.setTag(new CompoundTag());
-        menu.getSlot(1).set(taggedAir);
-        int[] slots = {0, 6, 7, 11, 12, 14, 15, 16, 17, 34};
-        int[] grades = {1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
-        for (int i : slots) menu.getSlot(i).set(new ItemStack(Items.DIAMOND, 3));
-        var rewards = menu.rewards();
-        helper.assertTrue(rewards.size() == slots.length, "Sparse editor slots lost or added entries");
-        for (int i = 0; i < slots.length; i++) {
-            helper.assertTrue(rewards.get(i).grade() == grades[i], "Grade boundary incorrect at slot " + slots[i]);
-            helper.assertTrue(ItemNBT.parseStrict(rewards.get(i).item()).getCount() == 3, "Editor lost stack count");
-        }
-        menu.quickMoveStack(player, 34);
-        helper.assertTrue(menu.getSlot(34).getItem().isEmpty(), "Last reward slot did not shift-click into player inventory");
-        helper.assertTrue(player.getInventory().countItem(Items.DIAMOND) == 3, "Shift-click lost items");
+        helper.assertTrue(menu.slots.size() == 36, "Expected read-only inventory samples");
+        helper.assertTrue(!menu.getSlot(27).mayPickup(player) && !menu.getSlot(27).mayPlace(original), "Sample slot is mutable");
+        for (var type : net.minecraft.world.inventory.ClickType.values()) menu.clicked(27, 0, type, player);
+        helper.assertTrue(menu.quickMoveStack(player, 27).isEmpty(), "Shift-click moved a sample");
         menu.removed(player);
-        helper.assertTrue(player.getInventory().countItem(Items.DIAMOND) == 30, "Closing editor lost items");
+        helper.assertTrue(ItemStack.matches(original, player.getInventory().getItem(0)), "Editing changed the original item or NBT");
+        helper.assertTrue(player.getInventory().countItem(Items.DIAMOND) == 3, "Closing editor duplicated or lost samples");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void editorNetworkRoundTripPreservesFullConfiguration(GameTestHelper helper) {
+        ItemStack stack = new ItemStack(Items.DIAMOND, 32);
+        stack.getOrCreateTag().putString("custom", "tag.withCount(9)");
+        var entries = java.util.stream.IntStream.range(0, 256)
+                .mapToObj(i -> new RewardEntry(ItemNBT.getStacksData(stack), i % 5 + 1)).toList();
+        var original = new BoxDefinition("测试奖池", "minecraft:tripwire_hook", 0.0125F, List.of(1,2,3,4,5),
+                List.of("minecraft:zombie", "minecraft:skeleton"), null, null, null, null, null).withRewards(entries);
+        original.validate(item -> !ItemNBT.getStacks(item).isEmpty());
+        String json = com.reclizer.csgobox.config.BoxEditorCodec.encode(original);
+        var buffer = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+        try {
+            var packet = new com.reclizer.csgobox.packet.PacketSaveBox(7, 42, json, "");
+            packet.toBytes(buffer);
+            var decoded = new com.reclizer.csgobox.packet.PacketSaveBox(buffer);
+            helper.assertTrue(decoded.containerId() == 7 && decoded.requestId() == 42, "Lost menu/request identity");
+            var roundTrip = com.reclizer.csgobox.config.BoxEditorCodec.decode(decoded.json());
+            helper.assertTrue(original.equals(roundTrip), "Configuration changed across the editor network codec");
+            helper.assertTrue(ItemStack.matches(stack, ItemNBT.parseStrict(roundTrip.grade5().get(0))), "Sample NBT/count changed");
+        } finally { buffer.release(); }
         helper.succeed();
     }
 }
