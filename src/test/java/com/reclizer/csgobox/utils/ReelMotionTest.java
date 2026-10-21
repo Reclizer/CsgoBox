@@ -8,7 +8,7 @@ class ReelMotionTest {
         var motion = new ReelMotion(1, 0.5F);
         float initial = motion.left(0, 0) - motion.left(0, 0.25F);
         float cruising = motion.left(0, 6) - motion.left(0, 6.25F);
-        assertTrue(initial < cruising / 20);
+        assertTrue(initial > 0 && initial < cruising / 20);
         assertTrue(motion.left(0, ReelMotion.DURATION - 4) > motion.left(0, ReelMotion.DURATION));
         float finalStep = motion.left(0, ReelMotion.DURATION-1) - motion.left(0, ReelMotion.DURATION);
         float precedingStep = motion.left(0, ReelMotion.DURATION-2) - motion.left(0, ReelMotion.DURATION-1);
@@ -34,7 +34,7 @@ class ReelMotionTest {
             for (float landing : new float[]{0.12F, 0.5F, 0.88F}) {
                 var motion = new ReelMotion(phase, landing);
                 assertTrue(motion.underPointer(0) > 0);
-                assertEquals(motion.left(0, 0), motion.left(0, -ReelPresentation.LEAD_IN));
+                assertEquals(motion.left(0, 0), motion.left(0, -1));
                 for (float tick = 0; tick <= ReelMotion.DURATION; tick += 0.25F) {
                     assertTrue(motion.left(0, tick) <= 0, "No empty leading section");
                     assertTrue(motion.left(ReelMotion.CARD_COUNT - 1, tick) + ReelMotion.CARD_WIDTH >= 1,

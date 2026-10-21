@@ -2,8 +2,8 @@ package com.reclizer.csgobox.utils;
 
 /** Resolution-independent presentation. The central landing region is never distorted. */
 public final class ReelPresentation {
-    public static final int LEAD_IN = 4, HOLD = 9, REVEAL = 14;
-    public static final int REVEAL_START = LEAD_IN + ReelMotion.DURATION + HOLD;
+    public static final int HOLD = 9, REVEAL = 14;
+    public static final int REVEAL_START = ReelMotion.DURATION + HOLD;
     public static final int END = REVEAL_START + REVEAL;
     private ReelPresentation() {}
 

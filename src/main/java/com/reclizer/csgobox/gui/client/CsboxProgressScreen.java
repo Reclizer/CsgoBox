@@ -45,8 +45,8 @@ public class CsboxProgressScreen extends BoxScreen {
         super.tick();
         if (minecraft.screen != this) return;
         ticks++;
-        int index = motion.underPointer(ticks - ReelPresentation.LEAD_IN);
-        if (ticks > ReelPresentation.LEAD_IN && ticks <= ReelPresentation.LEAD_IN + ReelMotion.DURATION
+        int index = motion.underPointer(ticks);
+        if (ticks <= ReelMotion.DURATION
                 && index >= 0 && index != lastSoundIndex && minecraft.player != null)
             minecraft.player.playSound(ModSounds.CS_DITA.get(), 0.6F, 1);
         lastSoundIndex = index;
@@ -56,14 +56,13 @@ public class CsboxProgressScreen extends BoxScreen {
 
     @Override protected void renderContents(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         float elapsed = ticks + partialTick;
-        float time = elapsed - ReelPresentation.LEAD_IN;
         float reveal = ReelPresentation.reveal(elapsed);
         float y = LAYOUT_HEIGHT * 0.37F;
-        // The complete strip is visible from frame one, before the short stationary lead-in.
+        // The populated strip starts moving immediately; only the final reveal fades it out.
         float opacity = 1-reveal;
         layer.render(g, LAYOUT_WIDTH, LAYOUT_HEIGHT, opacity, true, () -> {
             for (int i = 0; i < reel.size(); i++) {
-                float x = motion.left(i, time) * LAYOUT_WIDTH;
+                float x = motion.left(i, elapsed) * LAYOUT_WIDTH;
                 if (x + LAYOUT_WIDTH * ReelMotion.CARD_WIDTH < 0 || x > LAYOUT_WIDTH) continue;
                 var entry = reel.get(i);
                 ClassicBoxUi.reelCard(g, entry.stack(), entry.grade(), x, y, LAYOUT_WIDTH, LAYOUT_HEIGHT,
@@ -82,7 +81,7 @@ public class CsboxProgressScreen extends BoxScreen {
         } finally { g.pose().popPose(); }
         if (reveal > 0 && minecraft.player != null) {
             float w = LAYOUT_WIDTH*18/100, h = LAYOUT_HEIGHT*25/100;
-            float cx = ReelPresentation.mix(motion.left(ReelMotion.WINNER, time)*LAYOUT_WIDTH+w/2,
+            float cx = ReelPresentation.mix(motion.left(ReelMotion.WINNER, elapsed)*LAYOUT_WIDTH+w/2,
                     CsLookItemScreen.MODEL_CENTER_X, reveal);
             float cy = ReelPresentation.mix(y+h/2, CsLookItemScreen.MODEL_CENTER_Y, reveal);
             float startSize = rewardLayout.size(w, h);

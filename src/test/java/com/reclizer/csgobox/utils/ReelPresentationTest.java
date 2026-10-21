@@ -26,7 +26,7 @@ class ReelPresentationTest {
     }
 
     @Test void revealWaitsForTheStopAndHoldAndEndsAtTheInspectionPose() {
-        assertTrue(ReelPresentation.REVEAL_START > ReelPresentation.LEAD_IN + ReelMotion.DURATION);
+        assertTrue(ReelPresentation.REVEAL_START > ReelMotion.DURATION);
         assertEquals(0, ReelPresentation.reveal(ReelPresentation.REVEAL_START));
         assertEquals(1, ReelPresentation.reveal(ReelPresentation.END));
         float previous = 0;
