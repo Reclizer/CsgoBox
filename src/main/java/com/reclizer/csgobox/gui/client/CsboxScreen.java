@@ -24,6 +24,7 @@ public class CsboxScreen extends BoxScreen {
     private static final int MODEL_Y = LAYOUT_HEIGHT * 35 / 100 - MODEL_SIZE / 2;
     private final PacketBoxPreview preview;
     private final Component unlockLabel;
+    private final Component requiredKeyLabel;
     private int page;
     private boolean requested;
     private boolean playedSound;
@@ -39,6 +40,7 @@ public class CsboxScreen extends BoxScreen {
         this.preview = preview;
         this.unlockLabel = Component.translatable("gui.csgobox.csgo_box.label_box")
                 .append(" ").append(preview.box().getHoverName());
+        this.requiredKeyLabel = Component.translatable("gui.csgobox.csgo_box.requires_key", preview.key().getHoverName());
     }
     public UUID token() { return preview.token(); }
     public List<DisplayReward> rewards() { return preview.rewards(); }
@@ -157,9 +159,11 @@ public class CsboxScreen extends BoxScreen {
             int count = availableKeys;
             if (count > 0) label(g, Component.literal(" × " + count), 28, 94, 0.8F);
             else {
-                label(g, Component.translatable("gui.csgobox.csgo_box.label_open"), 28, 94, 0.8F);
-                label(g, preview.key().getHoverName(), 35, 94, 0.8F);
-                label(g, Component.translatable("gui.csgobox.csgo_box.label_open_1"), 40, 94, 0.8F);
+                // Lay out the whole translated sentence, leaving space for the icon and button.
+                float x = LAYOUT_WIDTH * 0.25F + 16 + 2;
+                float maxWidth = openButton.getX() - 4 - x;
+                float scale = Math.min(0.8F, maxWidth / Math.max(1, font.width(requiredKeyLabel)));
+                ClassicBoxUi.text(g, font, requiredKeyLabel, x, LAYOUT_HEIGHT * 0.94F, scale, 0xFFD3D3D3);
             }
         }
     }
