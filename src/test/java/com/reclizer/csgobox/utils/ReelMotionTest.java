@@ -4,6 +4,17 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ReelMotionTest {
+    @Test void spinStartsAndEndsWithNearZeroVelocityWithoutEarlyCutoff() {
+        var motion = new ReelMotion(1, 0.5F);
+        float initial = motion.left(0, 0) - motion.left(0, 0.25F);
+        float cruising = motion.left(0, 6) - motion.left(0, 6.25F);
+        assertTrue(initial < cruising / 20);
+        assertTrue(motion.left(0, ReelMotion.DURATION - 4) > motion.left(0, ReelMotion.DURATION));
+        float finalStep = motion.left(0, ReelMotion.DURATION-1) - motion.left(0, ReelMotion.DURATION);
+        float precedingStep = motion.left(0, ReelMotion.DURATION-2) - motion.left(0, ReelMotion.DURATION-1);
+        assertTrue(finalStep < precedingStep && finalStep >= 0);
+    }
+
     @Test void everyLandingKeepsTheServerWinnerUnderThePointerAtAnyResolution() {
         for (float start : new float[]{0.935F, 1, 1.11F}) {
             for (float landing : new float[]{0.12F, 0.5F, 0.88F}) {

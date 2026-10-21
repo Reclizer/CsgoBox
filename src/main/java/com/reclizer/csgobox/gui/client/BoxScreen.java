@@ -12,9 +12,21 @@ public abstract class BoxScreen extends Screen {
     protected static final int LAYOUT_HEIGHT = BoxViewport.HEIGHT;
     private Boolean previousHideGui;
     private long backgroundStarted;
+    private boolean continuingBlur;
     private BoxViewport viewport = BoxViewport.fit(LAYOUT_WIDTH, LAYOUT_HEIGHT);
 
     protected BoxScreen(Component title) { super(title); }
+
+    protected final void showNext(BoxScreen next) {
+        next.backgroundStarted = backgroundStarted;
+        continuingBlur = true;
+        try { minecraft.setScreen(next); }
+        finally {
+            continuingBlur = false;
+            // A Forge screen event may cancel or replace the requested transition.
+            if (!(minecraft.screen instanceof BoxScreen)) BlurHandler.updateShader(true);
+        }
+    }
 
     @Override
     protected void init() {
@@ -22,14 +34,14 @@ public abstract class BoxScreen extends Screen {
         viewport = BoxViewport.fit(width, height);
         if (previousHideGui == null) {
             previousHideGui = minecraft.options.hideGui;
-            backgroundStarted = net.minecraft.Util.getMillis();
+            if (backgroundStarted == 0) backgroundStarted = net.minecraft.Util.getMillis();
         }
         minecraft.options.hideGui = true;
     }
 
     @Override
     public void removed() {
-        BlurHandler.updateShader(true);
+        if (!continuingBlur) BlurHandler.updateShader(true);
         if (minecraft != null && previousHideGui != null) minecraft.options.hideGui = previousHideGui;
         previousHideGui = null;
         super.removed();

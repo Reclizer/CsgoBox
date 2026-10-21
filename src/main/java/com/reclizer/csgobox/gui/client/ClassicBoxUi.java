@@ -2,6 +2,8 @@ package com.reclizer.csgobox.gui.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.reclizer.csgobox.utils.ColorTools;
+import com.reclizer.csgobox.utils.ReelPresentation;
+import com.mojang.math.Axis;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -12,7 +14,6 @@ import net.minecraft.world.item.ItemStack;
 /** Original CSGO presentation, with rendering isolated from inventory and network operations. */
 final class ClassicBoxUi {
     private static final ResourceLocation GOLD = new ResourceLocation("csgobox:textures/screens/gold_item.png");
-    private static final ResourceLocation REEL_MASK = new ResourceLocation("csgobox:textures/screens/csgo_background.png");
     private ClassicBoxUi() {}
 
     static void text(GuiGraphics g, Font font, Component text, float x, float y, float scale, int color) {
@@ -43,26 +44,42 @@ final class ClassicBoxUi {
         } finally { g.pose().popPose(); }
     }
 
-    static void previewCard(GuiGraphics g, ItemStack stack, int grade, int x, int y, int screenWidth, int screenHeight) {
+    static void previewCard(GuiGraphics g, ItemStack stack, int grade, int x, int y, int screenWidth, int screenHeight,
+                            CardItemLayout layout) {
         int w = Math.max(5, screenWidth * 8 / 100), h = Math.max(5, screenHeight * 11 / 100);
-        g.fillGradient(x, y, x+w, y+h, grade == 5 ? 0xFF533C00 : 0xFF696969, grade == 5 ? 0xFFB69008 : 0xFFD3D3D3);
+        g.fillGradient(x, y, x+w, y+h, grade == 5 ? 0xFF554A33 : 0xFF666970, grade == 5 ? 0xFF827044 : 0xFF85878C);
         g.fill(x, y, x+2, y+h, ColorTools.colorItems(grade));
         if (grade == 5) gold(g, x+2, y+2, w-4, h-4);
-        else item(g, stack, x+w*20/100, y+h*10/100, w*0.6F/16);
+        else {
+            float size = layout.size(w, h);
+            item(g, stack, x+(w-size)/2, y+(h-size)/2, size/16);
+        }
     }
 
-    static void reelCard(GuiGraphics g, ItemStack stack, int grade, float x, float y, int screenWidth, int screenHeight) {
+    static void reelCard(GuiGraphics g, ItemStack stack, int grade, float x, float y,
+                         int screenWidth, int screenHeight, float reveal, CardItemLayout layout) {
         int w = Math.max(5, screenWidth * 18 / 100), h = Math.max(5, screenHeight * 25 / 100);
+        float centerX = x + w/2F, centerY = y + h/2F;
+        float depth = ReelPresentation.depth(centerX / screenWidth);
+        if (reveal > 0) {
+            centerX = ReelPresentation.mix(centerX, CsLookItemScreen.MODEL_CENTER_X, reveal);
+            centerY = ReelPresentation.mix(centerY, CsLookItemScreen.MODEL_CENTER_Y, reveal);
+        }
         g.pose().pushPose();
         try {
-            g.pose().translate(x, y, 0);
+            g.pose().translate(centerX, centerY, 0);
+            g.pose().mulPose(Axis.ZP.rotationDegrees(Math.signum(centerX-screenWidth/2F) * 2 * depth));
+            g.pose().scale(1 - 0.24F * depth, 1 - 0.17F * depth, 1);
+            g.pose().translate(-w/2F, -h/2F, 0);
             if (grade == 5) {
-                g.fillGradient(0, 0, w, h, 0xFF533C00, 0xFFB69008);
+                g.fillGradient(0, 0, w, h, 0xFF554A33, 0xFF827044);
                 gold(g, 2, 2, w-4, h-4);
             } else {
-                g.fillGradient(0, 0, w, h, 0xFF696969, 0xFFA9A9A9);
-                g.fillGradient(0, h*2/3, w, h, 0x00808080, ColorTools.deepColor(ColorTools.colorItems(grade)));
-                item(g, stack, w*0.2F, h*0.1F, w*0.6F/16);
+                g.fillGradient(0, 0, w, h, 0xFF77787C, 0xFF8E8E91);
+                int tint = ColorTools.colorItems(grade) & 0xFFFFFF;
+                g.fillGradient(0, h*3/5, w, h, tint, 0xB0000000 | tint);
+                float size = layout.size(w, h);
+                item(g, stack, (w-size)/2, (h-size)/2 - 1, size/16);
             }
             g.fill(0, h, w, h+2, ColorTools.colorItems(grade));
             g.flush();
@@ -72,16 +89,6 @@ final class ClassicBoxUi {
     private static void gold(GuiGraphics g, int x, int y, int w, int h) {
         RenderSystem.enableBlend();
         g.blit(GOLD, x, y, 0, 0, w, h, w, h);
-    }
-
-    static void reelMask(GuiGraphics g, int width, int height) {
-        g.flush();
-        g.pose().pushPose();
-        try {
-            g.pose().translate(0, 0, 400);
-            RenderSystem.enableBlend();
-            g.blit(REEL_MASK, 0, 0, 0, 0, width, height, width, height);
-        } finally { g.pose().popPose(); }
     }
 
     /** Keep the original green/grey textures and percentage-based hit areas. */

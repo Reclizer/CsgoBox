@@ -1,6 +1,6 @@
 package com.reclizer.csgobox.utils;
 
-/** Original deceleration profile in screen-width units, with a guaranteed server-result landing. */
+/** Continuous, gently accelerated spin and deceleration, with a guaranteed server-result landing. */
 public final class ReelMotion {
     public static final int DURATION = 145;
     public static final int WINNER = 45;
@@ -9,10 +9,16 @@ public final class ReelMotion {
     private static final double[] DISTANCE = new double[DURATION + 1];
     static {
         for (int tick = 0; tick < DURATION; tick++) {
-            double time = tick / 20.0;
-            double velocity = (1.6 * time + 0.8) / Math.pow(2, 1.5 * time - 5.2);
-            DISTANCE[tick + 1] = DISTANCE[tick] + (velocity < 0.3 ? 0 : velocity);
+            // Simpson integration; no velocity threshold or early stationary tail.
+            DISTANCE[tick + 1] = DISTANCE[tick]
+                    + (velocity(tick) + 4 * velocity(tick + 0.5) + velocity(tick + 1)) / 6;
         }
+    }
+
+    private static double velocity(double tick) {
+        double ramp = Math.min(1, tick / 6);
+        double remaining = Math.max(0, 1 - tick / DURATION);
+        return ramp * ramp * (3 - 2 * ramp) * remaining * remaining;
     }
     private final float start;
     private final float travel;
@@ -28,7 +34,14 @@ public final class ReelMotion {
         float time = Math.max(0, Math.min(DURATION, ticks));
         int whole = (int) time;
         double distance = DISTANCE[whole];
-        if (whole < DURATION) distance += (DISTANCE[whole + 1] - distance) * (time - whole);
+        if (whole < DURATION) {
+            // Hermite interpolation preserves velocity across tick boundaries, including the stop.
+            double f = time - whole, f2 = f * f, f3 = f2 * f;
+            distance = (2*f3 - 3*f2 + 1) * DISTANCE[whole]
+                    + (f3 - 2*f2 + f) * velocity(whole)
+                    + (-2*f3 + 3*f2) * DISTANCE[whole + 1]
+                    + (f3 - f2) * velocity(whole + 1);
+        }
         return start + index * SPACING - travel * (float)(distance / DISTANCE[DURATION]);
     }
 

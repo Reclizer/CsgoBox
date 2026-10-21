@@ -15,7 +15,7 @@ import org.joml.Matrix4f;
 public final class GuiItemMove {
     private GuiItemMove() {}
 
-    public static void renderItemInInventoryFollowsMouse(GuiGraphics graphics, int x, int y,
+    public static void renderItemInInventoryFollowsMouse(GuiGraphics graphics, float x, float y,
             float angleX, float angleY, ItemStack item, LivingEntity player, float scale) {
         if (item.isEmpty()) return;
         var renderer = Minecraft.getInstance().getItemRenderer();

@@ -30,7 +30,7 @@ public final class ClientPackets {
         if (minecraft.player == null || !(minecraft.screen instanceof CsboxScreen screen)
                 || !screen.token().equals(packet.token())) return;
         if (packet.reward().isEmpty()) screen.onClose();
-        else minecraft.setScreen(new CsboxProgressScreen(screen.rewards(), packet.reward(), packet.grade()));
+        else screen.showNext(new CsboxProgressScreen(screen.rewards(), packet.reward(), packet.grade()));
     }
 
     public static void catalog(PacketBoxCatalog packet) {

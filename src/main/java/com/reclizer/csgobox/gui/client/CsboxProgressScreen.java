@@ -3,6 +3,10 @@ package com.reclizer.csgobox.gui.client;
 import com.reclizer.csgobox.packet.DisplayReward;
 import com.reclizer.csgobox.sounds.ModSounds;
 import com.reclizer.csgobox.utils.ReelMotion;
+import com.reclizer.csgobox.utils.ReelPresentation;
+import com.reclizer.csgobox.utils.GuiItemMove;
+import com.reclizer.csgobox.compat.TaczCompat;
+import com.reclizer.csgobox.config.ClientConfig;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -12,11 +16,13 @@ import java.util.Random;
 
 /** The original reel presentation is cosmetic; the server has already delivered the reward. */
 public class CsboxProgressScreen extends BoxScreen {
-    private static final int LEAD_IN = 4;
+    private final ReelLayer layer = new ReelLayer();
     private final List<DisplayReward> reel = new ArrayList<>();
     private final ItemStack reward;
     private final int grade;
     private final ReelMotion motion;
+    private final List<CardItemLayout> layouts;
+    private final CardItemLayout rewardLayout;
     private int ticks;
     private int lastSoundIndex = -1;
 
@@ -28,6 +34,9 @@ public class CsboxProgressScreen extends BoxScreen {
         Random random = new Random();
         for (int i = 0; i < 50; i++) reel.add(safe.get(random.nextInt(safe.size())));
         reel.set(ReelMotion.WINNER, new DisplayReward(this.reward, grade));
+        var cached = new java.util.IdentityHashMap<ItemStack, CardItemLayout>();
+        layouts = reel.stream().map(entry -> cached.computeIfAbsent(entry.stack(), CardItemLayout::of)).toList();
+        rewardLayout = layouts.get(ReelMotion.WINNER);
         motion = new ReelMotion(random.nextFloat(0.935F, 1.11F), random.nextFloat(0.12F, 0.88F));
     }
 
@@ -35,28 +44,59 @@ public class CsboxProgressScreen extends BoxScreen {
         super.tick();
         if (minecraft.screen != this) return;
         ticks++;
-        int index = motion.underPointer(ticks - LEAD_IN);
-        if (index >= 0 && index != lastSoundIndex && minecraft.player != null)
+        int index = motion.underPointer(ticks - ReelPresentation.LEAD_IN);
+        if (ticks <= ReelPresentation.LEAD_IN + ReelMotion.DURATION
+                && index >= 0 && index != lastSoundIndex && minecraft.player != null)
             minecraft.player.playSound(ModSounds.CS_DITA.get(), 0.6F, 1);
         lastSoundIndex = index;
-        if (ticks >= LEAD_IN + ReelMotion.DURATION) minecraft.setScreen(new CsLookItemScreen(reward, grade));
+        if (ticks >= ReelPresentation.END)
+            showNext(new CsLookItemScreen(reward, grade));
     }
 
     @Override protected void renderContents(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        if (ticks < LEAD_IN) return;
-        float time = ticks - LEAD_IN + partialTick;
+        float elapsed = ticks + partialTick;
+        float time = elapsed - ReelPresentation.LEAD_IN;
+        float reveal = ReelPresentation.reveal(elapsed);
         float y = LAYOUT_HEIGHT * 0.37F;
-        for (int i = 0; i < reel.size(); i++) {
-            float x = motion.left(i, time) * LAYOUT_WIDTH;
-            if (x + LAYOUT_WIDTH * ReelMotion.CARD_WIDTH < 0 || x > LAYOUT_WIDTH) continue;
-            var entry = reel.get(i);
-            ClassicBoxUi.reelCard(g, entry.stack(), entry.grade(), x, y, LAYOUT_WIDTH, LAYOUT_HEIGHT);
-        }
+        float opacity = ReelPresentation.smooth(elapsed / ReelPresentation.LEAD_IN) * (1-reveal);
+        layer.render(g, LAYOUT_WIDTH, LAYOUT_HEIGHT, opacity, true, () -> {
+            for (int i = 0; i < reel.size(); i++) {
+                float x = motion.left(i, time) * LAYOUT_WIDTH;
+                if (x + LAYOUT_WIDTH * ReelMotion.CARD_WIDTH < 0 || x > LAYOUT_WIDTH) continue;
+                var entry = reel.get(i);
+                ClassicBoxUi.reelCard(g, entry.stack(), entry.grade(), x, y, LAYOUT_WIDTH, LAYOUT_HEIGHT,
+                        i == ReelMotion.WINNER ? reveal : 0, layouts.get(i));
+            }
+        });
+        ReelFocus.render(g, LAYOUT_WIDTH, LAYOUT_HEIGHT, opacity);
+        // Draw the pointer AFTER the reel and spotlight so it is never masked or dimmed.
+        int pointerAlpha = Math.round(255 * (1-ReelPresentation.smooth(reveal*3)));
         g.pose().pushPose();
         try {
-            g.pose().translate(0, 0, 300);
-            g.fill(LAYOUT_WIDTH/2, LAYOUT_HEIGHT*37/100, LAYOUT_WIDTH/2+2, LAYOUT_HEIGHT*37/100+LAYOUT_HEIGHT*25/100+2, 0x80FFD700);
+            g.pose().translate(0, 0, 400);
+            g.fill(LAYOUT_WIDTH/2, LAYOUT_HEIGHT*37/100-1, LAYOUT_WIDTH/2+1,
+                    LAYOUT_HEIGHT*37/100+LAYOUT_HEIGHT*25/100+2, (pointerAlpha << 24) | 0xFFE06B);
         } finally { g.pose().popPose(); }
-        ClassicBoxUi.reelMask(g, LAYOUT_WIDTH, LAYOUT_HEIGHT);
+        if (reveal > 0 && minecraft.player != null) {
+            float w = LAYOUT_WIDTH*18/100, h = LAYOUT_HEIGHT*25/100;
+            float cx = ReelPresentation.mix(motion.left(ReelMotion.WINNER, time)*LAYOUT_WIDTH+w/2,
+                    CsLookItemScreen.MODEL_CENTER_X, reveal);
+            float cy = ReelPresentation.mix(y+h/2, CsLookItemScreen.MODEL_CENTER_Y, reveal);
+            float startSize = rewardLayout.size(w, h);
+            // FIXED gun models are wider than their nominal GUI model square.
+            if (TaczCompat.isGun(reward) && ClientConfig.TACZ_3D_PREVIEW.get()) startSize /= 3;
+            float size = ReelPresentation.mix(startSize, CsLookItemScreen.MODEL_SIZE, reveal);
+            layer.render(g, LAYOUT_WIDTH, LAYOUT_HEIGHT, reveal, false,
+                    () -> GuiItemMove.renderItemInInventoryFollowsMouse(g, cx-size/2, cy-size/2,
+                            0, 0, reward, minecraft.player, size/16));
+        }
+    }
+
+    @Override public void removed() {
+        try { layer.close(); }
+        finally {
+            if (minecraft != null) minecraft.getMainRenderTarget().bindWrite(true);
+            super.removed();
+        }
     }
 }

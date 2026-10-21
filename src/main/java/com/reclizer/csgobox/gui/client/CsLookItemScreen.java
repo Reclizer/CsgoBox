@@ -11,6 +11,9 @@ import net.minecraft.world.item.ItemStack;
 
 /** Keep the original reveal composition while displaying only the server-confirmed reward. */
 public class CsLookItemScreen extends BoxScreen {
+    static final int MODEL_SIZE = LAYOUT_WIDTH*26/100;
+    static final float MODEL_CENTER_X = LAYOUT_WIDTH*37/100 + MODEL_SIZE/2F;
+    static final float MODEL_CENTER_Y = LAYOUT_HEIGHT*30/100 + MODEL_SIZE/2F;
     private final ItemStack reward;
     private final int grade;
     private final PreviewRotation rotation = new PreviewRotation();
@@ -60,7 +63,7 @@ public class CsLookItemScreen extends BoxScreen {
         ClassicBoxUi.centeredText(g, font, Component.translatable("gui.csgobox.csgo_box.grade"+grade),
                 LAYOUT_WIDTH/2F, LAYOUT_HEIGHT*0.11F, 1, LAYOUT_WIDTH*0.9F, 0xFFFFFFFF);
         if (minecraft.player != null)
-            GuiItemMove.renderItemInInventoryFollowsMouse(g, LAYOUT_WIDTH*37/100, LAYOUT_HEIGHT*30/100,
-                    rotation.yaw(), rotation.pitch(), reward, minecraft.player, (LAYOUT_WIDTH*26/100)/16F);
+            GuiItemMove.renderItemInInventoryFollowsMouse(g, MODEL_CENTER_X-MODEL_SIZE/2F, MODEL_CENTER_Y-MODEL_SIZE/2F,
+                    rotation.yaw(), rotation.pitch(), reward, minecraft.player, MODEL_SIZE/16F);
     }
 }

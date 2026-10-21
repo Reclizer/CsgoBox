@@ -33,11 +33,13 @@ public class CsboxScreen extends BoxScreen {
     private DisplayReward hovered;
     private final HoverCache<List<Component>> tooltip = new HoverCache<>();
     private List<List<FormattedCharSequence>> rewardNames = List.of();
+    private final List<CardItemLayout> rewardLayouts;
     private int availableKeys;
 
     public CsboxScreen(PacketBoxPreview preview) {
         super(preview.box().getHoverName());
         this.preview = preview;
+        this.rewardLayouts = preview.rewards().stream().map(entry -> CardItemLayout.of(entry.stack())).toList();
         this.unlockLabel = Component.translatable("gui.csgobox.csgo_box.label_box")
                 .append(" ").append(preview.box().getHoverName());
         this.requiredKeyLabel = Component.translatable("gui.csgobox.csgo_box.requires_key", preview.key().getHoverName());
@@ -134,7 +136,7 @@ public class CsboxScreen extends BoxScreen {
             int index = n%PAGE_SIZE, column = index%10, row = index/10;
             int x = LAYOUT_WIDTH*4/100 + column*LAYOUT_WIDTH*9/100, y = LAYOUT_HEIGHT*(row == 0 ? 55 : 73)/100;
             DisplayReward entry = rewards().get(n);
-            ClassicBoxUi.previewCard(g, entry.stack(), entry.grade(), x, y, LAYOUT_WIDTH, LAYOUT_HEIGHT);
+            ClassicBoxUi.previewCard(g, entry.stack(), entry.grade(), x, y, LAYOUT_WIDTH, LAYOUT_HEIGHT, rewardLayouts.get(n));
             // Long names wrap inside their original card column instead of spilling into adjacent cards.
             int line = 0;
             for (var part : rewardNames.get(n)) {
