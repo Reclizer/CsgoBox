@@ -1,7 +1,7 @@
 package com.reclizer.csgobox.item;
 
 import com.reclizer.csgobox.CsgoBox;
-import com.reclizer.csgobox.config.CsgoBoxManage;
+
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -38,10 +38,8 @@ public class ModItems {
 
                 //entries.accept(ModItems.ITEM_CSGO_TEST.get());
 
-                for (ItemCsgoBox.BoxInfo info : CsgoBoxManage.BOX) {
-                    ItemStack stack = new ItemStack(ModItems.ITEM_CSGOBOX.get());
-                    ItemCsgoBox.setBoxInfo(info, stack);
-                    entries.accept(stack);
+                for (String name : BoxCatalog.names()) {
+                    entries.accept(ItemCsgoBox.setBoxName(name, new ItemStack(ModItems.ITEM_CSGOBOX.get())));
                 }
             })
             .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)

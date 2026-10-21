@@ -1,0 +1,9 @@
+.gradle/
+.idea/
+build/
+run/
+run-data/
+run-gametest/
+out/
+*.iml
+*.log

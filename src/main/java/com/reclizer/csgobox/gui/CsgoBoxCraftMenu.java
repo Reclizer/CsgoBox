@@ -1,278 +1,81 @@
 package com.reclizer.csgobox.gui;
 
-import net.minecraft.core.BlockPos;
+import com.reclizer.csgobox.config.RewardEntry;
+import com.reclizer.csgobox.utils.ItemNBT;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
+import java.util.ArrayList;
+import java.util.List;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Supplier;
+public class CsgoBoxCraftMenu extends AbstractContainerMenu {
+    public static final int REWARD_SLOTS = 35;
+    private final ItemStackHandler rewards = new ItemStackHandler(REWARD_SLOTS);
 
-public class CsgoBoxCraftMenu extends AbstractContainerMenu implements Supplier<Map<Integer, Slot>> {
-    public final static HashMap<String, Object> guistate = new HashMap<>();
-    public final Level world;
-    public final Player entity;
-    public int x, y, z;
-    private ContainerLevelAccess access = ContainerLevelAccess.NULL;
-    private IItemHandler internal;
-    private final Map<Integer, Slot> customSlots = new HashMap<>();
-    private boolean bound = false;
-    private Supplier<Boolean> boundItemMatcher = null;
-    private Entity boundEntity = null;
-    private BlockEntity boundBlockEntity = null;
-
-    public CsgoBoxCraftMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-
+    public CsgoBoxCraftMenu(int id, Inventory inventory, FriendlyByteBuf ignored) {
         super(RecModMenus.CSGO_BOX_CRAFT.get(), id);
-
-        this.entity = inv.player;
-        this.world = inv.player.level();
-        this.internal = new ItemStackHandler(35);
-        BlockPos pos = null;
-        if (extraData != null) {
-            pos = extraData.readBlockPos();
-            this.x = pos.getX();
-            this.y = pos.getY();
-            this.z = pos.getZ();
-            access = ContainerLevelAccess.create(world, pos);
+        int index = 0;
+        int[] widths = {7, 5, 3, 2, 9, 9};
+        int[] rows = {-20, -2, 16, 34, 70, 88};
+        for (int row = 0; row < widths.length; row++) {
+            for (int column = 0; column < widths[row]; column++)
+                addSlot(new SlotItemHandler(rewards, index++, 20 + column * 18, rows[row]));
         }
-        if (pos != null) {
-            if (extraData.readableBytes() == 1) { // bound to item
-                byte hand = extraData.readByte();
-                ItemStack itemstack = hand == 0 ? this.entity.getMainHandItem() : this.entity.getOffhandItem();
-                this.boundItemMatcher = () -> itemstack == (hand == 0 ? this.entity.getMainHandItem() : this.entity.getOffhandItem());
-                itemstack.getCapability(ForgeCapabilities.ITEM_HANDLER, null).ifPresent(capability -> {
-                    this.internal = capability;
-                    this.bound = true;
-                });
-            } else if (extraData.readableBytes() > 1) { // bound to entity
-                extraData.readByte(); // drop padding
-                boundEntity = world.getEntity(extraData.readVarInt());
-                if (boundEntity != null)
-                    boundEntity.getCapability(ForgeCapabilities.ITEM_HANDLER, null).ifPresent(capability -> {
-                        this.internal = capability;
-                        this.bound = true;
-                    });
-            } else { // might be bound to block
-                boundBlockEntity = this.world.getBlockEntity(pos);
-                if (boundBlockEntity != null)
-                    boundBlockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER, null).ifPresent(capability -> {
-                        this.internal = capability;
-                        this.bound = true;
-                    });
-            }
+        for (int row = 0; row < 3; row++)
+            for (int column = 0; column < 9; column++)
+                addSlot(new Slot(inventory, column + (row + 1) * 9, 20 + column * 18, 121 + row * 18));
+        for (int column = 0; column < 9; column++)
+            addSlot(new Slot(inventory, column, 20 + column * 18, 179));
+    }
+
+    public List<RewardEntry> rewards() {
+        List<RewardEntry> result = new ArrayList<>();
+        for (int slot = 0; slot < REWARD_SLOTS; slot++) {
+            ItemStack stack = rewards.getStackInSlot(slot);
+            if (!stack.isEmpty()) result.add(new RewardEntry(ItemNBT.getStacksData(stack), gradeForSlot(slot)));
         }
-        int nextId=0;
+        return List.copyOf(result);
+    }
 
-        for (int i=0;i<7;i++){
-            int index=nextId;
-            nextId++;
-            this.customSlots.put(index, this.addSlot(new SlotItemHandler(internal, index, 20+i*18, -20) {
-                private final int slot = index;
-            }));
-        }
-
-        for (int i=0;i<5;i++){
-            int index=nextId;
-            nextId++;
-            this.customSlots.put(index, this.addSlot(new SlotItemHandler(internal, index, 20+i*18, -20+18) {
-                private final int slot = index;
-            }));
-        }
-
-        for (int i=0;i<3;i++){
-            int index=nextId;
-            nextId++;
-            this.customSlots.put(index, this.addSlot(new SlotItemHandler(internal, index, 20+i*18, -20+18*2) {
-                private final int slot = index;
-            }));
-        }
-
-        for (int i=0;i<2;i++){
-            int index=nextId;
-            nextId++;
-            this.customSlots.put(index, this.addSlot(new SlotItemHandler(internal, index, 20+i*18, -20+18*3) {
-                private final int slot = index;
-            }));
-        }
-
-
-        for (int i=0;i<9;i++){
-            int index=nextId;
-            nextId++;
-            this.customSlots.put(index, this.addSlot(new SlotItemHandler(internal, index, 20+i*18, -20+18*5) {
-                private final int slot = index;
-            }));
-        }
-        for (int i=0;i<9;i++){
-            int index=nextId;
-            nextId++;
-            this.customSlots.put(index, this.addSlot(new SlotItemHandler(internal, index, 20+i*18, -20+18*6) {
-                private final int slot = index;
-            }));
-        }
-
-
-
-        for (int si = 0; si < 3; ++si)
-            for (int sj = 0; sj < 9; ++sj)
-                this.addSlot(new Slot(inv, sj + (si + 1) * 9, 0 + 20 + sj * 18, 0 + 121 + si * 18));
-
-        for (int si = 0; si < 9; ++si)
-            this.addSlot(new Slot(inv, si, 0 + 20 + si * 18, 0 + 179));
+    public static int gradeForSlot(int slot) {
+        if (slot < 0 || slot >= REWARD_SLOTS) throw new IllegalArgumentException("Invalid reward slot");
+        return slot < 7 ? 1 : slot < 12 ? 2 : slot < 15 ? 3 : slot < 17 ? 4 : 5;
     }
 
     @Override
-    public boolean stillValid(Player player) {
-        if (this.bound) {
-            if (this.boundItemMatcher != null)
-                return this.boundItemMatcher.get();
-            else if (this.boundBlockEntity != null)
-                return AbstractContainerMenu.stillValid(this.access, player, this.boundBlockEntity.getBlockState().getBlock());
-            else if (this.boundEntity != null)
-                return this.boundEntity.isAlive();
-        }
-        return true;
+    public boolean stillValid(Player player) { return player.isAlive() && player.hasPermissions(2); }
+
+    @Override
+    public ItemStack quickMoveStack(Player player, int index) {
+        if (index < 0 || index >= slots.size()) return ItemStack.EMPTY;
+        Slot slot = slots.get(index);
+        if (!slot.hasItem()) return ItemStack.EMPTY;
+        ItemStack source = slot.getItem();
+        ItemStack original = source.copy();
+        boolean moved = index < REWARD_SLOTS
+                ? moveItemStackTo(source, REWARD_SLOTS, slots.size(), true)
+                : moveItemStackTo(source, 0, REWARD_SLOTS, false);
+        if (!moved) return ItemStack.EMPTY;
+        if (source.isEmpty()) slot.set(ItemStack.EMPTY);
+        else slot.setChanged();
+        slot.onTake(player, source);
+        return original;
     }
 
     @Override
-    public ItemStack quickMoveStack(Player playerIn, int index) {
-        ItemStack itemstack = ItemStack.EMPTY;
-        Slot slot = (Slot) this.slots.get(index);
-        if (slot != null && slot.hasItem()) {
-            ItemStack itemstack1 = slot.getItem();
-            itemstack = itemstack1.copy();
-            if (index < 3) {
-                if (!this.moveItemStackTo(itemstack1, 3, this.slots.size(), true))
-                    return ItemStack.EMPTY;
-                slot.onQuickCraft(itemstack1, itemstack);
-            } else if (!this.moveItemStackTo(itemstack1, 0, 3, false)) {
-                if (index < 3 + 27) {
-                    if (!this.moveItemStackTo(itemstack1, 3 + 27, this.slots.size(), true))
-                        return ItemStack.EMPTY;
-                } else {
-                    if (!this.moveItemStackTo(itemstack1, 3, 3 + 27, false))
-                        return ItemStack.EMPTY;
-                }
-                return ItemStack.EMPTY;
-            }
-            if (itemstack1.getCount() == 0)
-                slot.set(ItemStack.EMPTY);
-            else
-                slot.setChanged();
-            if (itemstack1.getCount() == itemstack.getCount())
-                return ItemStack.EMPTY;
-            slot.onTake(playerIn, itemstack1);
+    public void removed(Player player) {
+        super.removed(player);
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
+        for (int slot = 0; slot < REWARD_SLOTS; slot++) {
+            ItemStack stack = rewards.extractItem(slot, rewards.getStackInSlot(slot).getCount(), false);
+            if (!serverPlayer.isAlive() || serverPlayer.hasDisconnected()) player.drop(stack, false);
+            else player.getInventory().placeItemBackInInventory(stack);
         }
-        return itemstack;
-    }
-
-    @Override
-    protected boolean moveItemStackTo(ItemStack p_38904_, int p_38905_, int p_38906_, boolean p_38907_) {
-        boolean flag = false;
-        int i = p_38905_;
-        if (p_38907_) {
-            i = p_38906_ - 1;
-        }
-        if (p_38904_.isStackable()) {
-            while (!p_38904_.isEmpty()) {
-                if (p_38907_) {
-                    if (i < p_38905_) {
-                        break;
-                    }
-                } else if (i >= p_38906_) {
-                    break;
-                }
-                Slot slot = this.slots.get(i);
-                ItemStack itemstack = slot.getItem();
-                if (slot.mayPlace(itemstack) && !itemstack.isEmpty() && ItemStack.isSameItemSameTags(p_38904_, itemstack)) {
-                    int j = itemstack.getCount() + p_38904_.getCount();
-                    int maxSize = Math.min(slot.getMaxStackSize(), p_38904_.getMaxStackSize());
-                    if (j <= maxSize) {
-                        p_38904_.setCount(0);
-                        itemstack.setCount(j);
-                        slot.set(itemstack);
-                        flag = true;
-                    } else if (itemstack.getCount() < maxSize) {
-                        p_38904_.shrink(maxSize - itemstack.getCount());
-                        itemstack.setCount(maxSize);
-                        slot.set(itemstack);
-                        flag = true;
-                    }
-                }
-                if (p_38907_) {
-                    --i;
-                } else {
-                    ++i;
-                }
-            }
-        }
-        if (!p_38904_.isEmpty()) {
-            if (p_38907_) {
-                i = p_38906_ - 1;
-            } else {
-                i = p_38905_;
-            }
-            while (true) {
-                if (p_38907_) {
-                    if (i < p_38905_) {
-                        break;
-                    }
-                } else if (i >= p_38906_) {
-                    break;
-                }
-                Slot slot1 = this.slots.get(i);
-                ItemStack itemstack1 = slot1.getItem();
-                if (itemstack1.isEmpty() && slot1.mayPlace(p_38904_)) {
-                    if (p_38904_.getCount() > slot1.getMaxStackSize()) {
-                        slot1.setByPlayer(p_38904_.split(slot1.getMaxStackSize()));
-                    } else {
-                        slot1.setByPlayer(p_38904_.split(p_38904_.getCount()));
-                    }
-                    slot1.setChanged();
-                    flag = true;
-                    break;
-                }
-                if (p_38907_) {
-                    --i;
-                } else {
-                    ++i;
-                }
-            }
-        }
-        return flag;
-    }
-
-    @Override
-    public void removed(Player playerIn) {
-        super.removed(playerIn);
-        if (!bound && playerIn instanceof ServerPlayer serverPlayer) {
-            if (!serverPlayer.isAlive() || serverPlayer.hasDisconnected()) {
-                for (int j = 0; j < internal.getSlots(); ++j) {
-                    playerIn.drop(internal.extractItem(j, internal.getStackInSlot(j).getCount(), false), false);
-                }
-            } else {
-                for (int i = 0; i < internal.getSlots(); ++i) {
-                    playerIn.getInventory().placeItemBackInInventory(internal.extractItem(i, internal.getStackInSlot(i).getCount(), false));
-                }
-            }
-        }
-    }
-
-    public Map<Integer, Slot> get() {
-        return customSlots;
     }
 }

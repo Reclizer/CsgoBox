@@ -1,22 +1,17 @@
 {
-
   "itemGroup.csgobox.cs_tab": "CSGO BOX",
-
-
   "item.csgobox.csgo_key0": "Iron Key",
   "item.csgobox.csgo_key1": "Gold Key",
   "item.csgobox.csgo_key2": "Diamond Key",
   "item.csgobox.csgo_key3": "Nether Key",
   "item.csgobox.csgo_box": "Treasure Box",
   "item.csgobox.csgo_box_craft": "Box Making Tool",
-
   "gui.csgobox.csgo_box.label_open": "Requires a ",
   "gui.csgobox.csgo_box.label_open_1": " to open",
-  "gui.csgobox.csgo_box.label_gold": "\u2605 Legendary \u2605",
+  "gui.csgobox.csgo_box.label_gold": "★ Legendary ★",
   "gui.csgobox.csgo_box.label_box": "Unlock",
   "gui.csgobox.csgo_box_craft.box_name": "input name",
   "gui.csgobox.csgo_box_craft.button_down": "submit",
-
   "gui.csgobox.csgo_box.label_items": "这个箱子里可能有以下物品",
   "gui.csgobox.csgo_box.title": "Unlock Container",
   "gui.csgobox.csgo_box.open_box": "Unlock",
@@ -26,10 +21,12 @@
   "gui.csgobox.csgo_box.grade3": "Classified, Exotic",
   "gui.csgobox.csgo_box.grade4": "Covert, Extraordinary",
   "gui.csgobox.csgo_box.grade5": "Legendary",
-
-  "tooltips.csgobox.item.cs_box": "The box may contain the following items:"
-
+  "tooltips.csgobox.item.cs_box": "The box may contain the following items:",
+  "gui.csgobox.required_key": "Required key: %s",
+  "message.csgobox.saved": "Saved box: %s",
+  "message.csgobox.config_error": "Box configuration was not applied: %s",
+  "message.csgobox.reloaded": "Reloaded %s box definitions.",
+  "message.csgobox.unknown_box": "No server configuration exists for this box. Ask an administrator to check its name or use /csgobox give <name>.",
+  "message.csgobox.expired": "The box preview expired. Right-click the box again.",
+  "message.csgobox.missing_key": "The required key is missing. Your box was not consumed."
 }
-
-
-

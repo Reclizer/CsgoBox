@@ -1,22 +1,17 @@
 {
-
   "itemGroup.csgobox.cs_tab": "CSGO箱子",
-
-
   "item.csgobox.csgo_key0": "普通钥匙",
   "item.csgobox.csgo_key1": "黄金钥匙",
   "item.csgobox.csgo_key2": "钻石钥匙",
   "item.csgobox.csgo_key3": "下界钥匙",
   "item.csgobox.csgo_box": "普通宝箱",
   "item.csgobox.csgo_box_craft": "箱子制作工具",
-
   "gui.csgobox.csgo_box.label_open": "需要使用 1个",
   "gui.csgobox.csgo_box.label_open_1": " 打开",
-  "gui.csgobox.csgo_box.label_gold": "\u2605 传奇物品 \u2605",
+  "gui.csgobox.csgo_box.label_gold": "★ 传奇物品 ★",
   "gui.csgobox.csgo_box.label_box": "解锁",
   "gui.csgobox.csgo_box_craft.box_name": "输入箱子名称",
   "gui.csgobox.csgo_box_craft.button_down": "提交",
-
   "gui.csgobox.csgo_box.label_items": "这个箱子里可能有以下物品",
   "gui.csgobox.csgo_box.title": "开箱",
   "gui.csgobox.csgo_box.open_box": "开箱",
@@ -26,10 +21,12 @@
   "gui.csgobox.csgo_box.grade3": "保密级收藏品",
   "gui.csgobox.csgo_box.grade4": "隐秘级收藏品",
   "gui.csgobox.csgo_box.grade5": "传说级收藏品",
-
-  "tooltips.csgobox.item.cs_box": "该箱子内可能有以下物品:"
-
+  "tooltips.csgobox.item.cs_box": "该箱子内可能有以下物品:",
+  "gui.csgobox.required_key": "所需钥匙：%s",
+  "message.csgobox.saved": "已保存箱子：%s",
+  "message.csgobox.config_error": "箱子配置未应用：%s",
+  "message.csgobox.reloaded": "已重新加载 %s 个箱子配置。",
+  "message.csgobox.unknown_box": "找不到该箱子的服务端配置。请管理员检查名称或使用 /csgobox give <名称> 获取箱子。",
+  "message.csgobox.expired": "开箱预览已失效，请重新右键打开箱子。",
+  "message.csgobox.missing_key": "缺少对应钥匙，未扣除箱子。"
 }
-
-
-
