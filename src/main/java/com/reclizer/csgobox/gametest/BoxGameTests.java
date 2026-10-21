@@ -23,7 +23,7 @@ import java.util.Random;
 @PrefixGameTestTemplate(false)
 public final class BoxGameTests {
     private static BoxDefinition box() {
-        return BoxDefinition.create("test", List.of(new RewardEntry("minecraft:diamond.withCount(3)", 5)));
+        return BoxDefinition.create("csgobox:test", "test", List.of(new RewardEntry("minecraft:diamond.withCount(3)", 5)));
     }
 
     private static ServerPlayer player(GameTestHelper helper) {
@@ -93,15 +93,16 @@ public final class BoxGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void forgedLegacyRewardIsIgnoredAndNotShared(GameTestHelper helper) {
+    public static void embeddedRewardIsIgnoredAndOnlyPoolIdIsShared(GameTestHelper helper) {
         var player = player(helper);
         heldBox(player, 2);
-        CompoundTag legacy = player.getMainHandItem().getOrCreateTag().getCompound(ItemCsgoBox.BOX_INFO_TAG);
+        CompoundTag legacy = new CompoundTag();
+        player.getMainHandItem().getOrCreateTag().put("BoxItemInfo", legacy);
         legacy.putString("key", "minecraft:dirt");
         legacy.putIntArray("random", new int[]{1,0,0,0,0});
         legacy.putString("grade5", "minecraft:netherite_block");
-        var share = player.getMainHandItem().getItem().getShareTag(player.getMainHandItem()).getCompound(ItemCsgoBox.BOX_INFO_TAG);
-        helper.assertTrue(share.size() == 1 && share.getString("name").equals("test"), "Private config leaked through share tag");
+        var share = player.getMainHandItem().getItem().getShareTag(player.getMainHandItem());
+        helper.assertTrue(share.size() == 1 && share.getString(ItemCsgoBox.POOL_ID_TAG).equals("csgobox:test"), "Private config leaked through share tag");
         player.getInventory().setItem(1, new ItemStack(ModItems.ITEM_CSGO_KEY0.get(), 2));
         var result = BoxOpening.open(player, box(), new Random(0));
         helper.assertTrue(result.reward().is(Items.DIAMOND), "Client/legacy NBT selected the reward");
@@ -162,7 +163,7 @@ public final class BoxGameTests {
         stack.getOrCreateTag().putString("custom", "tag.withCount(9)");
         var entries = java.util.stream.IntStream.range(0, 256)
                 .mapToObj(i -> new RewardEntry(ItemNBT.getStacksData(stack), i % 5 + 1)).toList();
-        var original = new BoxDefinition("测试奖池", "minecraft:tripwire_hook", 0.0125F, List.of(1,2,3,4,5),
+        var original = new BoxDefinition("csgobox:network-test", "测试奖池", "minecraft:tripwire_hook", 0.0125F, List.of(1,2,3,4,5),
                 List.of("minecraft:zombie", "minecraft:skeleton"), null, null, null, null, null).withRewards(entries);
         original.validate(item -> !ItemNBT.getStacks(item).isEmpty());
         String json = com.reclizer.csgobox.config.BoxEditorCodec.encode(original);

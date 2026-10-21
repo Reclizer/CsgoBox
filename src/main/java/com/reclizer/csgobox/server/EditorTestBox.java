@@ -13,11 +13,11 @@ public final class EditorTestBox {
     private EditorTestBox() {}
 
     /** Returns a translation key, or an empty string on success. */
-    public static String give(ServerPlayer player, int containerId, int requestId, String name, String revision) {
+    public static String give(ServerPlayer player, int containerId, int requestId, String id, String revision) {
         if (!player.hasPermissions(2) || !player.isAlive()
                 || !(player.containerMenu instanceof CsgoBoxCraftMenu menu)
                 || menu.containerId != containerId || !menu.stillValid(player)) return "editor.csgobox.test_denied";
-        var box = CsgoBoxManage.find(name);
+        var box = CsgoBoxManage.find(id);
         if (box == null) return "message.csgobox.unknown_box";
         if (!BoxConfigStore.revision(box).equals(revision)) return "editor.csgobox.test_stale";
         if (!menu.acceptTestRequest(requestId)) return "editor.csgobox.test_duplicate";

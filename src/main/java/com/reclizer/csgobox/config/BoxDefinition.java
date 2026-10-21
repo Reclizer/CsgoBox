@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 /** The on-disk schema. Weight order remains gold, red, pink, purple, blue. */
-public record BoxDefinition(String name, String key, float drop, List<Integer> random,
+public record BoxDefinition(String id, String name, String key, float drop, List<Integer> random,
                             List<String> entity, List<String> grade1, List<String> grade2,
                             List<String> grade3, List<String> grade4, List<String> grade5, Boolean luckEnabled) {
     public BoxDefinition {
@@ -20,16 +20,26 @@ public record BoxDefinition(String name, String key, float drop, List<Integer> r
         grade5 = copy(grade5);
     }
 
-    public BoxDefinition(String name, String key, float drop, List<Integer> random, List<String> entity,
+    public BoxDefinition(String id, String name, String key, float drop, List<Integer> random, List<String> entity,
                          List<String> grade1, List<String> grade2, List<String> grade3,
                          List<String> grade4, List<String> grade5) {
-        this(name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, true);
+        this(id, name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, true);
     }
 
     public float effectiveLuck(float playerLuck) { return luckEnabled ? playerLuck : 0; }
 
     public BoxDefinition withLuckEnabled(boolean enabled) {
-        return new BoxDefinition(name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, enabled);
+        return new BoxDefinition(id, name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, enabled);
+    }
+
+    public BoxDefinition withName(String displayName) {
+        return new BoxDefinition(id, displayName, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, luckEnabled);
+    }
+
+    public static String newId() { return "csgobox:" + java.util.UUID.randomUUID(); }
+
+    public static boolean validId(String id) {
+        return id != null && id.length() <= 128 && id.matches("[a-z0-9_.-]+:[a-z0-9_./-]+");
     }
 
     private static <T> List<T> copy(List<T> list) {
@@ -48,6 +58,7 @@ public record BoxDefinition(String name, String key, float drop, List<Integer> r
     }
 
     public void validate(Predicate<String> validItem) {
+        if (!validId(id)) throw new IllegalArgumentException("Pool requires a stable namespaced id, for example csgobox:weapons_supply");
         if (name == null || name.isBlank() || !name.equals(name.trim()) || name.length() > 128)
             throw new IllegalArgumentException("Box name must contain 1-128 characters without outer spaces");
         if (key == null || !key.matches("[a-z0-9_.-]+:[a-z0-9_./-]+") || !validItem.test(key))
@@ -77,7 +88,7 @@ public record BoxDefinition(String name, String key, float drop, List<Integer> r
 
     public BoxDefinition withRewards(List<RewardEntry> rewards) {
         Objects.requireNonNull(rewards);
-        return new BoxDefinition(name, key, drop, random, entity,
+        return new BoxDefinition(id, name, key, drop, random, entity,
                 rewardsAt(rewards, 1), rewardsAt(rewards, 2), rewardsAt(rewards, 3),
                 rewardsAt(rewards, 4), rewardsAt(rewards, 5), luckEnabled);
     }
@@ -86,8 +97,8 @@ public record BoxDefinition(String name, String key, float drop, List<Integer> r
         return entries.stream().filter(e -> e.grade() == grade).map(RewardEntry::item).toList();
     }
 
-    public static BoxDefinition create(String name, List<RewardEntry> rewards) {
-        return new BoxDefinition(name, "csgobox:csgo_key0", 0, List.of(2, 5, 6, 20, 625),
+    public static BoxDefinition create(String id, String name, List<RewardEntry> rewards) {
+        return new BoxDefinition(id, name, "csgobox:csgo_key0", 0, List.of(2, 5, 6, 20, 625),
                 List.of("minecraft:zombie"), null, null, null, null, null).withRewards(rewards);
     }
 }

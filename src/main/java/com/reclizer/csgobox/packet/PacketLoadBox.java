@@ -6,9 +6,9 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 import java.util.function.Supplier;
 
-public record PacketLoadBox(int containerId, int requestId, String name) {
+public record PacketLoadBox(int containerId, int requestId, String id) {
     public PacketLoadBox(FriendlyByteBuf buf) { this(buf.readVarInt(), buf.readVarInt(), buf.readUtf(128)); }
-    public void toBytes(FriendlyByteBuf buf) { buf.writeVarInt(containerId); buf.writeVarInt(requestId); buf.writeUtf(name, 128); }
+    public void toBytes(FriendlyByteBuf buf) { buf.writeVarInt(containerId); buf.writeVarInt(requestId); buf.writeUtf(id, 128); }
     public void handle(Supplier<NetworkEvent.Context> supplier) {
         var context = supplier.get();
         context.enqueueWork(() -> {
@@ -17,7 +17,7 @@ public record PacketLoadBox(int containerId, int requestId, String name) {
                     || !(player.containerMenu instanceof CsgoBoxCraftMenu menu)
                     || menu.containerId != containerId || !menu.stillValid(player)) return;
             try {
-                var box = CsgoBoxManage.readForEditing(name);
+                var box = CsgoBoxManage.readForEditing(id);
                 Networking.sendToPlayerClient(box == null
                         ? PacketEditorState.failure(containerId, requestId, "message.csgobox.unknown_box")
                         : PacketEditorState.success(containerId, requestId, false, box), player);

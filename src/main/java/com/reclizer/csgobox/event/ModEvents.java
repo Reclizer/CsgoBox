@@ -1,6 +1,5 @@
 package com.reclizer.csgobox.event;
 
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.reclizer.csgobox.CsgoBox;
 import com.reclizer.csgobox.config.CsgoBoxManage;
 import com.reclizer.csgobox.item.ItemCsgoBox;
@@ -8,6 +7,7 @@ import com.reclizer.csgobox.item.ModItems;
 import com.reclizer.csgobox.server.BoxService;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -77,11 +77,11 @@ public final class ModEvents {
                         return 0;
                     }
                 }))
-                .then(Commands.literal("give").then(Commands.argument("name", StringArgumentType.greedyString())
+                .then(Commands.literal("give").then(Commands.argument("id", ResourceLocationArgument.id())
                         .suggests((context, builder) -> SharedSuggestionProvider.suggest(
-                                CsgoBoxManage.boxes().stream().map(box -> box.name()), builder))
+                                CsgoBoxManage.boxes().stream().map(box -> box.id()), builder))
                         .executes(context -> {
-                            var box = CsgoBoxManage.find(StringArgumentType.getString(context, "name"));
+                            var box = CsgoBoxManage.find(ResourceLocationArgument.getId(context, "id").toString());
                             if (box == null) {
                                 context.getSource().sendFailure(Component.translatable("message.csgobox.unknown_box"));
                                 return 0;

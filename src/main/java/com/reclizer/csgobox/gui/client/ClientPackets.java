@@ -34,7 +34,7 @@ public final class ClientPackets {
     }
 
     public static void catalog(PacketBoxCatalog packet) {
-        BoxCatalog.replace(packet.names());
+        BoxCatalog.replace(packet.entries());
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level != null && minecraft.player != null) {
             var parameters = new CreativeModeTab.ItemDisplayParameters(minecraft.level.enabledFeatures(),

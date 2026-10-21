@@ -19,7 +19,7 @@ public final class BoxService {
     public static void preview(ServerPlayer player) {
         if (!player.isAlive() || player.isSpectator()) return;
         ItemStack held = player.getMainHandItem();
-        BoxDefinition box = CsgoBoxManage.find(ItemCsgoBox.boxName(held));
+        BoxDefinition box = CsgoBoxManage.find(ItemCsgoBox.boxId(held));
         if (box == null) {
             player.sendSystemMessage(Component.translatable("message.csgobox.unknown_box"));
             return;
@@ -45,8 +45,8 @@ public final class BoxService {
             fail(player, token, "message.csgobox.expired");
             return;
         }
-        // Resolve the CURRENT server config. Never trust rewards or keys in legacy item NBT.
-        BoxDefinition box = CsgoBoxManage.find(ItemCsgoBox.boxName(held));
+        // Resolve the current pool by stable ID. Item NBT never selects the rewards or key.
+        BoxDefinition box = CsgoBoxManage.find(ItemCsgoBox.boxId(held));
         if (box == null) { fail(player, token, "message.csgobox.unknown_box"); return; }
         var result = BoxOpening.open(player, box, RANDOM);
         if (!result.success()) { fail(player, token, result.error()); return; }
@@ -81,6 +81,6 @@ public final class BoxService {
     public static void logout(UUID player) { SESSIONS.remove(player); }
     public static void clearSessions() { SESSIONS.clear(); }
     public static void syncCatalog(ServerPlayer player) {
-        Networking.sendToPlayerClient(new PacketBoxCatalog(CsgoBoxManage.boxes().stream().map(BoxDefinition::name).toList()), player);
+        Networking.sendToPlayerClient(new PacketBoxCatalog(CsgoBoxManage.boxes().stream().map(box -> new com.reclizer.csgobox.item.BoxCatalog.Entry(box.id(), box.name())).toList()), player);
     }
 }

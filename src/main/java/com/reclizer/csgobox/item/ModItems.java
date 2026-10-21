@@ -38,8 +38,8 @@ public class ModItems {
 
                 //entries.accept(ModItems.ITEM_CSGO_TEST.get());
 
-                for (String name : BoxCatalog.names()) {
-                    entries.accept(ItemCsgoBox.setBoxName(name, new ItemStack(ModItems.ITEM_CSGOBOX.get())));
+                for (var pool : BoxCatalog.entries()) {
+                    entries.accept(ItemCsgoBox.setBoxId(pool.id(), new ItemStack(ModItems.ITEM_CSGOBOX.get())));
                 }
             })
             .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)

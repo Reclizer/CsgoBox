@@ -38,7 +38,7 @@
   "message.csgobox.saved": "Saved box: %s",
   "message.csgobox.config_error": "Box configuration was not applied: %s",
   "message.csgobox.reloaded": "Reloaded %s box definitions.",
-  "message.csgobox.unknown_box": "No server configuration exists for this box. Ask an administrator to check its name or use /csgobox give <name>.",
+  "message.csgobox.unknown_box": "This box has no valid pool ID, or its server pool was removed. Get a new box from the editor.",
   "message.csgobox.expired": "The box preview expired. Right-click the box again.",
   "message.csgobox.missing_key": "The required key is missing. Your box was not consumed.",
   "editor.csgobox.title": "CSGOBOX / Pool editor",
@@ -57,7 +57,6 @@
   "editor.csgobox.new_mode": "New draft",
   "editor.csgobox.editing": "Editing: %s",
   "editor.csgobox.save": "Save & apply",
-  "editor.csgobox.save_as": "Save as",
   "editor.csgobox.close": "Close",
   "editor.csgobox.saving_short": "Saving...",
   "editor.csgobox.discard": "Discard & continue",
@@ -79,7 +78,6 @@
   "editor.csgobox.my_luck": "Use my luck",
   "editor.csgobox.reward_limit": "A pool can contain at most 256 reward entries.",
   "editor.csgobox.name_required": "Enter a pool name.",
-  "editor.csgobox.name_exists": "This name exists. Open it from the list or choose another name.",
   "editor.csgobox.bad_key": "Invalid key item ID.",
   "editor.csgobox.bad_weights": "Weights must be integers between 0 and 2147483647.",
   "editor.csgobox.bad_drop": "Drop chance must be between 0 and 100%.",
@@ -113,5 +111,6 @@
   "editor.csgobox.entries": "%s entries",
   "editor.csgobox.probability_hint": "Draw a tier, then select an entry uniformly within it.",
   "editor.csgobox.duplicate_hint": "Duplicate entries add up. This preview grants no items.",
-  "editor.csgobox.timeout": "Request timed out. Reload the pool to verify the server's saved state."
+  "editor.csgobox.timeout": "Request timed out. Reload the pool to verify the server's saved state.",
+  "editor.csgobox.pool_id": "ID: %s"
 }

@@ -18,7 +18,7 @@ public final class BoxOpening {
 
     public static Result open(ServerPlayer player, BoxDefinition box, RandomGenerator random) {
         ItemStack held = player.getMainHandItem();
-        if (!player.isAlive() || player.isSpectator() || held.isEmpty() || !box.name().equals(ItemCsgoBox.boxName(held)))
+        if (!player.isAlive() || player.isSpectator() || held.isEmpty() || !box.id().equals(ItemCsgoBox.boxId(held)))
             return new Result(ItemStack.EMPTY, 0, "message.csgobox.expired");
         ItemStack key = ItemNBT.parseStrict(box.key());
         int keySlot = -1;

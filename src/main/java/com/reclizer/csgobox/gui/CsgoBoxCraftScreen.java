@@ -26,7 +26,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     private final List<UiButton> catalogButtons = new ArrayList<>();
     private final String[] weights = {"625", "20", "6", "5", "2"};
     private String name = "", key = "csgobox:csgo_key0", drop = "0", entities = "minecraft:zombie";
-    private String originalName = "", revision = "", search = "", itemId = "", luck = "0";
+    private String poolId = BoxDefinition.newId(), originalId = "", revision = "", search = "", itemId = "", luck = "0";
     private String status = "", issue = "", amountError = "";
     private boolean dirty, needsValidation = true, statusError, luckEnabled = true;
     private int page, grade = 1, rewardPage, catalogPage, selected = -1;
@@ -89,19 +89,19 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         for (int i = 0; i < 12; i++) {
             int index = i;
             catalogButtons.add(button(16, 74 + i * 22, 116, Component.empty(), () -> {
-                List<String> names = filteredNames();
+                List<BoxCatalog.Entry> pools = filteredPools();
                 int offset = catalogPage * 12 + index;
-                if (offset < names.size()) guard(() -> load(names.get(offset)));
+                if (offset < pools.size()) guard(() -> load(pools.get(offset).id()));
             }, MUTED));
         }
         button(16, 344, 28, Component.literal("<"), () -> catalogPage = Math.max(0, catalogPage - 1), MUTED);
         button(104, 344, 28, Component.literal(">"), () -> {
-            if ((catalogPage + 1) * 12 < filteredNames().size()) catalogPage++;
+            if ((catalogPage + 1) * 12 < filteredPools().size()) catalogPage++;
         }, MUTED);
         button(16, 374, 116, tr("new"), () -> guard(this::newDraft), COLORS[4]);
         field(152, 46, 294, 128, name, value -> { name = value; changed(); });
         button(454, 46, 150, tr("duplicate"), () -> {
-            name = uniqueCopyName(); originalName = ""; revision = ""; changed(); rebuild();
+            name = uniqueCopyName(); poolId = BoxDefinition.newId(); originalId = ""; revision = ""; changed(); rebuild();
         }, MUTED);
         for (int i = 0; i < 3; i++) {
             int tab = i;
@@ -176,16 +176,18 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         }, luckEnabled ? COLORS[4] : MUTED);
     }
 
-    private List<String> filteredNames() {
+    private List<BoxCatalog.Entry> filteredPools() {
         String query = search.toLowerCase(Locale.ROOT);
-        return BoxCatalog.names().stream().filter(n -> n.toLowerCase(Locale.ROOT).contains(query)).toList();
+        return BoxCatalog.entries().stream().filter(p -> p.name().toLowerCase(Locale.ROOT).contains(query)
+                || p.id().contains(query)).toList();
     }
 
     private String uniqueCopyName() {
         String base = (name.isBlank() ? text("untitled") : name);
         if (base.length() > 108) base = base.substring(0, 108);
         String copy = base + text("copy_suffix");
-        for (int i = 2; BoxCatalog.names().contains(copy); i++) copy = base + text("copy_suffix") + " " + i;
+        var names = BoxCatalog.entries().stream().map(BoxCatalog.Entry::name).toList();
+        for (int i = 2; names.contains(copy); i++) copy = base + text("copy_suffix") + " " + i;
         return copy;
     }
 
@@ -201,21 +203,21 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         luckEnabled = true;
         String[] defaults = {"625", "20", "6", "5", "2"};
         System.arraycopy(defaults, 0, weights, 0, 5);
-        originalName = ""; revision = ""; selected = -1; rewardPage = 0; grade = 1; page = 0;
+        poolId = BoxDefinition.newId(); originalId = ""; revision = ""; selected = -1; rewardPage = 0; grade = 1; page = 0;
         dirty = false; amountError = ""; status = ""; needsValidation = true; rebuild();
     }
 
-    private void load(String name) {
+    private void load(String id) {
         pending = 1; pendingTicks = 0; requestId++;
         status = text("loading"); statusError = false; rebuild();
-        Networking.INSTANCE.sendToServer(new PacketLoadBox(menu.containerId, requestId, name));
+        Networking.INSTANCE.sendToServer(new PacketLoadBox(menu.containerId, requestId, id));
     }
 
     private void save() {
         validateDraft();
         if (!issue.isEmpty() || pending != 0) { fail(issue); return; }
         BoxDefinition definition = definition();
-        String expected = definition.name().equals(originalName) ? revision : "";
+        String expected = definition.id().equals(originalId) ? revision : "";
         pending = 2; pendingTicks = 0; requestId++;
         status = text("saving"); statusError = false; rebuild();
         Networking.INSTANCE.sendToServer(new PacketSaveBox(menu.containerId, requestId,
@@ -234,7 +236,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         }
         BoxDefinition box = BoxEditorCodec.decode(packet.json());
         luckEnabled = box.luckEnabled();
-        name = box.name(); originalName = box.name(); revision = packet.revision(); key = box.key();
+        name = box.name(); poolId = box.id(); originalId = box.id(); revision = packet.revision(); key = box.key();
         drop = new java.math.BigDecimal(Float.toString(box.drop())).movePointRight(2).stripTrailingZeros().toPlainString();
         entities = String.join(", ", box.entity());
         for (int i = 0; i < 5; i++) {
@@ -248,10 +250,10 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     }
 
     private void getTestBox() {
-        if (pending != 0 || dirty || originalName.isEmpty()) return;
+        if (pending != 0 || dirty || originalId.isEmpty()) return;
         pending = 3; pendingTicks = 0; requestId++;
         status = text("test_pending"); statusError = false; rebuild();
-        Networking.INSTANCE.sendToServer(new PacketTestBox(menu.containerId, requestId, originalName, revision));
+        Networking.INSTANCE.sendToServer(new PacketTestBox(menu.containerId, requestId, originalId, revision));
     }
 
     private void changed() { dirty = true; needsValidation = true; status = ""; statusError = false; }
@@ -289,7 +291,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         List<RewardEntry> entries = new ArrayList<>();
         for (int i = 0; i < 5; i++)
             for (ItemStack item : rewards.get(i)) entries.add(new RewardEntry(ItemNBT.getStacksData(item), i + 1));
-        return new BoxDefinition(name.trim(), key.trim(), Float.parseFloat(drop) / 100F, parsedWeights(),
+        return new BoxDefinition(poolId, name.trim(), key.trim(), Float.parseFloat(drop) / 100F, parsedWeights(),
                 Arrays.stream(entities.split("[,;\\s]+")).filter(s -> !s.isBlank()).distinct().toList(),
                 null, null, null, null, null, luckEnabled).withRewards(entries);
     }
@@ -298,7 +300,6 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         if (!needsValidation) return;
         needsValidation = false; issue = "";
         if (name.isBlank()) { issue = text("name_required"); return; }
-        if (!name.trim().equals(originalName) && BoxCatalog.names().contains(name.trim())) { issue = text("name_exists"); return; }
         if (!amountError.isEmpty()) { issue = amountError; return; }
         ResourceLocation keyId = ResourceLocation.tryParse(key.trim());
         if (keyId == null || !ForgeRegistries.ITEMS.containsKey(keyId) || new ItemStack(ForgeRegistries.ITEMS.getValue(keyId)).isEmpty()) {
@@ -352,29 +353,29 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         label(g, text("title"), 16, 15, TEXT);
         label(g, text("catalog"), 16, 34, MUTED);
         label(g, text("name") + (dirty ? " *" : ""), 152, 34, MUTED);
-        clipped(g, originalName.isEmpty() ? text("new_mode") : text("editing", originalName), 310, 15, 294, MUTED);
-        List<String> names = filteredNames();
-        catalogPage = Math.min(catalogPage, Math.max(0, (names.size() - 1) / 12));
+        clipped(g, text("pool_id", poolId), 310, 15, 294, MUTED);
+        List<BoxCatalog.Entry> pools = filteredPools();
+        catalogPage = Math.min(catalogPage, Math.max(0, (pools.size() - 1) / 12));
         if (discardAction == null) {
             for (int i = 0; i < catalogButtons.size(); i++) {
                 int offset = catalogPage * 12 + i;
                 var b = catalogButtons.get(i);
-                b.visible = offset < names.size();
-                if (b.visible) b.setMessage(Component.literal(names.get(offset)));
+                b.visible = offset < pools.size();
+                if (b.visible) b.showPool(pools.get(offset));
             }
-            label(g, (catalogPage+1) + "/" + Math.max(1, (names.size()+11)/12), 54, 350, MUTED);
-            if (names.isEmpty()) label(g, text("no_pools"), 22, 82, MUTED);
+            label(g, (catalogPage+1) + "/" + Math.max(1, (pools.size()+11)/12), 54, 350, MUTED);
+            if (pools.isEmpty()) label(g, text("no_pools"), 22, 82, MUTED);
             if (page == 0) renderRewards(g, mx, my);
             if (page == 1) renderRules(g);
             if (page == 2) renderProbabilities(g);
             String footer = !status.isEmpty() ? status : issue.isEmpty() ? text("ready", rewardCount()) : issue;
             if (inside(mx, my, 350, 402, 98, 20) && pending == 0)
-                footer = text(dirty || originalName.isEmpty() ? "test_save_first" : "test_hint");
+                footer = text(dirty || originalId.isEmpty() ? "test_save_first" : "test_hint");
             int footerColor = statusError || (status.isEmpty() && !issue.isEmpty()) ? 0xFFF19A9A : MUTED;
             clipped(g, footer, 16, 407, 326, footerColor);
-            testButton.active = pending == 0 && !dirty && !originalName.isEmpty();
+            testButton.active = pending == 0 && !dirty && !originalId.isEmpty();
             saveButton.active = pending == 0 && issue.isEmpty() && dirty;
-            saveButton.setMessage(tr(pending == 2 ? "saving_short" : !originalName.isEmpty() && !name.trim().equals(originalName) ? "save_as" : "save"));
+            saveButton.setMessage(tr(pending == 2 ? "saving_short" : "save"));
         } else {
             panel(g, 0, 0, imageWidth, imageHeight, 0xD0101722);
             label(g, text("unsaved"), 170, 185, TEXT);
@@ -496,7 +497,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     @Override public boolean mouseScrolled(double x, double y, double delta) {
         if (pending != 0 || discardAction != null) return true;
         if (inside(x/uiScale, y/uiScale, 8, 34, 132, 360)) {
-            catalogPage = Math.max(0, Math.min(Math.max(0, (filteredNames().size()-1)/12), catalogPage + (delta < 0 ? 1 : -1)));
+            catalogPage = Math.max(0, Math.min(Math.max(0, (filteredPools().size()-1)/12), catalogPage + (delta < 0 ? 1 : -1)));
             return true;
         }
         if (page == 0 && inside(x/uiScale, y/uiScale, 152, 140, 270, 90)) {
@@ -530,9 +531,16 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
 
     private class UiButton extends Button {
         private final int accent;
+        private BoxCatalog.Entry catalogEntry;
         UiButton(int x, int y, int width, Component label, Runnable action, int accent) {
             super(x, y, width, 20, label, ignored -> action.run(), DEFAULT_NARRATION);
             this.accent = accent;
+        }
+        void showPool(BoxCatalog.Entry pool) {
+            if (pool.equals(catalogEntry)) return;
+            catalogEntry = pool;
+            setMessage(Component.literal(pool.name()));
+            setTooltip(Tooltip.create(Component.literal(pool.name() + "\n" + pool.id())));
         }
         @Override protected void renderWidget(GuiGraphics g, int mx, int my, float partialTick) {
             boolean hover = isHoveredOrFocused();

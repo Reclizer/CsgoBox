@@ -27,7 +27,7 @@ public final class BoxConfigStore {
     }
 
     public Map<String, BoxDefinition> snapshot() { return snapshot; }
-    public synchronized BoxDefinition readForEditing(String name) throws IOException { return read().get(name); }
+    public synchronized BoxDefinition readForEditing(String id) throws IOException { return read().get(id); }
 
     /** Optimistic version of one pool; unrelated pool changes do not block a save. */
     public static String revision(BoxDefinition box) {
@@ -40,10 +40,10 @@ public final class BoxConfigStore {
 
     public synchronized void saveDefinition(BoxDefinition box, String expectedRevision) throws IOException {
         Map<String, BoxDefinition> next = new LinkedHashMap<>(read());
-        if (!revision(next.get(box.name())).equals(expectedRevision))
+        if (!revision(next.get(box.id())).equals(expectedRevision))
             throw new IllegalArgumentException("editor.csgobox.conflict");
         box.validate(validItem);
-        next.put(box.name(), box);
+        next.put(box.id(), box);
         publish(next);
     }
 
@@ -62,23 +62,13 @@ public final class BoxConfigStore {
             LinkedHashMap<String, BoxDefinition> next = new LinkedHashMap<>();
             for (BoxDefinition box : definitions) {
                 Objects.requireNonNull(box, "Null box definition").validate(validItem);
-                if (next.putIfAbsent(box.name(), box) != null)
-                    throw new IllegalArgumentException("Duplicate box name: " + box.name());
+                if (next.putIfAbsent(box.id(), box) != null)
+                    throw new IllegalArgumentException("Duplicate pool id: " + box.id());
             }
             return Collections.unmodifiableMap(next);
         } catch (JsonParseException | IllegalArgumentException | NullPointerException ex) {
             throw new IOException("Invalid box.json: " + ex.getMessage(), ex);
         }
-    }
-
-    public synchronized void saveRewards(String name, List<RewardEntry> rewards) throws IOException {
-        // Include external changes, and refuse to overwrite an invalid file.
-        Map<String, BoxDefinition> next = new LinkedHashMap<>(read());
-        BoxDefinition previous = next.get(name);
-        BoxDefinition replacement = previous == null ? BoxDefinition.create(name, rewards) : previous.withRewards(rewards);
-        replacement.validate(validItem);
-        next.put(name, replacement);
-        publish(next);
     }
 
     private void publish(Map<String, BoxDefinition> next) throws IOException {

@@ -38,7 +38,7 @@
   "message.csgobox.saved": "已保存箱子：%s",
   "message.csgobox.config_error": "箱子配置未应用：%s",
   "message.csgobox.reloaded": "已重新加载 %s 个箱子配置。",
-  "message.csgobox.unknown_box": "找不到该箱子的服务端配置。请管理员检查名称或使用 /csgobox give <名称> 获取箱子。",
+  "message.csgobox.unknown_box": "该箱子没有有效的奖池 ID，或服务端已移除对应奖池。请从编辑器重新领取箱子。",
   "message.csgobox.expired": "开箱预览已失效，请重新右键打开箱子。",
   "message.csgobox.missing_key": "缺少对应钥匙，未扣除箱子。",
   "editor.csgobox.title": "CSGOBOX · 奖池编辑器",
@@ -57,7 +57,6 @@
   "editor.csgobox.new_mode": "新建草稿",
   "editor.csgobox.editing": "正在编辑：%s",
   "editor.csgobox.save": "保存并应用",
-  "editor.csgobox.save_as": "另存并应用",
   "editor.csgobox.close": "关闭",
   "editor.csgobox.saving_short": "保存中…",
   "editor.csgobox.discard": "放弃修改并继续",
@@ -79,7 +78,6 @@
   "editor.csgobox.my_luck": "使用当前幸运值",
   "editor.csgobox.reward_limit": "一个奖池最多支持 256 个奖励条目。",
   "editor.csgobox.name_required": "请填写奖池名称。",
-  "editor.csgobox.name_exists": "同名奖池已存在，请从左侧打开编辑或换一个名称。",
   "editor.csgobox.bad_key": "钥匙物品 ID 无效。",
   "editor.csgobox.bad_weights": "权重必须是 0 到 2147483647 的整数。",
   "editor.csgobox.bad_drop": "掉落概率必须在 0 到 100% 之间。",
@@ -113,5 +111,6 @@
   "editor.csgobox.entries": "%s 条",
   "editor.csgobox.probability_hint": "先抽稀有度，再在该档条目中等概率抽取。",
   "editor.csgobox.duplicate_hint": "重复条目的概率会累加；此页不会发放奖励。",
-  "editor.csgobox.timeout": "请求超时；请重新加载奖池，确认服务端保存结果。"
+  "editor.csgobox.timeout": "请求超时；请重新加载奖池，确认服务端保存结果。",
+  "editor.csgobox.pool_id": "ID: %s"
 }

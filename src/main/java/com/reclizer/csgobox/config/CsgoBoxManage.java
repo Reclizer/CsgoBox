@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.List;
 
 /** Logical-server-only configuration facade. Clients receive explicit display packets. */
 public final class CsgoBoxManage {
@@ -31,9 +30,8 @@ public final class CsgoBoxManage {
     }
 
     public static Collection<BoxDefinition> boxes() { return STORE.snapshot().values(); }
-    public static BoxDefinition find(String name) { return STORE.snapshot().get(name); }
-    public static void save(String name, List<RewardEntry> rewards) throws IOException { STORE.saveRewards(name, rewards); }
-    public static BoxDefinition readForEditing(String name) throws IOException { return STORE.readForEditing(name); }
+    public static BoxDefinition find(String id) { return STORE.snapshot().get(id); }
+    public static BoxDefinition readForEditing(String id) throws IOException { return STORE.readForEditing(id); }
     public static void saveDefinition(BoxDefinition box, String revision) throws IOException {
         for (String entity : box.entity()) {
             var id = net.minecraft.resources.ResourceLocation.tryParse(entity);

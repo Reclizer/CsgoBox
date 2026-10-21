@@ -1,5 +1,6 @@
 [
   {
+    "id": "csgobox:weapons_supply",
     "name": "Weapons Supply Box",
     "key": "csgobox:csgo_key0",
     "drop": 0.12,
