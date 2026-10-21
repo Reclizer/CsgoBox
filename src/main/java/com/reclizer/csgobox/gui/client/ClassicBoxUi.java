@@ -31,7 +31,7 @@ final class ClassicBoxUi {
             g.pose().translate(x, y, 0);
             g.pose().scale(scale, scale, 1);
             g.renderItem(stack, 0, 0);
-            g.flush();
+            // renderItem already flushes before restoring item lighting.
         } finally { g.pose().popPose(); }
     }
 

@@ -14,22 +14,18 @@ uniform float Progress;
 out vec4 fragColor;
 
 void main() {
-    vec4 blurred = vec4(0.0);
-    float totalStrength = 0.0;
-    float totalAlpha = 0.0;
-    float totalSamples = 0.0;
-    float progRadius = floor(Radius * Progress);
-    for(float r = -progRadius; r <= progRadius; r += 1.0) {
-        vec4 sample = texture(DiffuseSampler, texCoord + oneTexel * r * BlurDir);
-
-		// Accumulate average alpha
-        totalAlpha = totalAlpha + sample.a;
-        totalSamples = totalSamples + 1.0;
-
-		// Accumulate smoothed blur
-        float strength = 1.0 - abs(r / progRadius);
-        totalStrength = totalStrength + strength;
-        blurred = blurred + sample;
+    // Keep the original radius and four-pass look, with a bounded sampling cost.
+    // Previously Radius=50 required 101 samples per pass (404 per screen pixel).
+    float radius = max(0.0, Radius * Progress);
+    if (radius < 0.5) {
+        fragColor = texture(DiffuseSampler, texCoord);
+        return;
     }
-    fragColor = vec4(blurred.rgb / (progRadius * 2.0 + 1.0), totalAlpha);
+    vec2 stepSize = oneTexel * BlurDir * (radius / 8.0);
+    vec4 blurred = vec4(0.0);
+    for (int tap = -8; tap <= 8; ++tap) {
+        blurred += texture(DiffuseSampler, texCoord + float(tap) * stepSize);
+    }
+    // Normalize alpha as well; the previous shader accumulated it without averaging.
+    fragColor = blurred / 17.0;
 }

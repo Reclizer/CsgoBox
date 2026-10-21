@@ -6,7 +6,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -15,14 +14,6 @@ import org.joml.Matrix4f;
 /** Rotate the model around its centre, without rotating the GUI depth translation. */
 public final class GuiItemMove {
     private GuiItemMove() {}
-
-    public static float renderRotAngleY(double delta, float angle) {
-        return Mth.clamp(angle + (float) Math.atan(delta / 40), -1.5F, 1.5F);
-    }
-
-    public static float renderRotAngleX(double delta, float angle) {
-        return Mth.clamp(angle + (float) Math.atan(delta / 40), -3, 3);
-    }
 
     public static void renderItemInInventoryFollowsMouse(GuiGraphics graphics, int x, int y,
             float angleX, float angleY, ItemStack item, LivingEntity player, float scale) {

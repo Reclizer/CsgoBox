@@ -3,6 +3,8 @@ package com.reclizer.csgobox.gui.client;
 import com.reclizer.csgobox.sounds.ModSounds;
 import com.reclizer.csgobox.utils.ColorTools;
 import com.reclizer.csgobox.utils.GuiItemMove;
+import com.reclizer.csgobox.utils.PreviewRotation;
+import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -11,9 +13,7 @@ import net.minecraft.world.item.ItemStack;
 public class CsLookItemScreen extends BoxScreen {
     private final ItemStack reward;
     private final int grade;
-    private float rotationX;
-    private float rotationY;
-    private boolean rotating;
+    private final PreviewRotation rotation = new PreviewRotation();
     private boolean playedSound;
 
     public CsLookItemScreen(ItemStack reward, int grade) {
@@ -24,7 +24,7 @@ public class CsLookItemScreen extends BoxScreen {
 
     @Override protected void init() {
         super.init();
-        rotating = false;
+        rotation.release(Util.getMillis());
         if (!playedSound && minecraft.player != null) {
             minecraft.player.playSound(ModSounds.CS_FINSH.get(), 1, 1);
             playedSound = true;
@@ -36,24 +36,23 @@ public class CsLookItemScreen extends BoxScreen {
     @Override protected boolean canvasClicked(double x, double y, int button) {
         if (button == 0 && x >= LAYOUT_WIDTH*0.37 && x <= LAYOUT_WIDTH*0.63
                 && y >= LAYOUT_HEIGHT*0.30 && y <= LAYOUT_HEIGHT*0.30 + LAYOUT_WIDTH*0.26) {
-            rotating = true;
+            rotation.grab(Util.getMillis());
             return true;
         }
         return false;
     }
 
     @Override protected boolean canvasDragged(int button, double dx, double dy) {
-        if (button != 0 || !rotating) return false;
-        rotationX = GuiItemMove.renderRotAngleX(dx, rotationX);
-        rotationY = GuiItemMove.renderRotAngleY(dy, rotationY);
-        return true;
+        return button == 0 && rotation.drag(dx, dy, Util.getMillis());
     }
 
     @Override protected void canvasReleased(int button) {
-        if (button == 0) rotating = false;
+        if (button == 0) rotation.release(Util.getMillis());
     }
 
     @Override protected void renderContents(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        if (!minecraft.isWindowActive()) rotation.release(Util.getMillis());
+        rotation.update(Util.getMillis());
         g.fill(LAYOUT_WIDTH*25/100, LAYOUT_HEIGHT*92/100, LAYOUT_WIDTH*75/100, LAYOUT_HEIGHT*92/100+1, 0xFFD3D3D3);
         g.fill(LAYOUT_WIDTH*37/100, LAYOUT_HEIGHT*16/100, LAYOUT_WIDTH*63/100, LAYOUT_HEIGHT*16/100+2, ColorTools.colorItems(grade));
         ClassicBoxUi.text(g, font, title, LAYOUT_WIDTH*0.45F, LAYOUT_HEIGHT*0.05F, 1.8F, 0xFFFFFFFF);
@@ -61,6 +60,6 @@ public class CsLookItemScreen extends BoxScreen {
                 LAYOUT_WIDTH*0.45F, LAYOUT_HEIGHT*0.11F, 1, 0xFFFFFFFF);
         if (minecraft.player != null)
             GuiItemMove.renderItemInInventoryFollowsMouse(g, LAYOUT_WIDTH*37/100, LAYOUT_HEIGHT*30/100,
-                    rotationX, rotationY, reward, minecraft.player, (LAYOUT_WIDTH*26/100)/16F);
+                    rotation.yaw(), rotation.pitch(), reward, minecraft.player, (LAYOUT_WIDTH*26/100)/16F);
     }
 }
