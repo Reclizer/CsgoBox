@@ -24,7 +24,12 @@ public final class CsgoBoxJeiPlugin implements IModPlugin {
     private List<AcquisitionRecipe> shown = List.of();
     @Override public ResourceLocation getPluginUid() { return new ResourceLocation(CsgoBox.MODID,"jei"); }
     @Override public void registerItemSubtypes(ISubtypeRegistration registration) {
-        registration.registerSubtypeInterpreter(ModItems.ITEM_CSGOBOX.get(), (stack, context) -> ItemCsgoBox.boxId(stack));
+        registration.registerSubtypeInterpreter(ModItems.ITEM_CSGOBOX.get(), (stack, context) -> {
+            String id=ItemCsgoBox.boxId(stack);
+            // An empty subtype is JEI's wildcard UID: hiding the unconfigured stack would
+            // blacklist every configured pool. This sentinel cannot be a valid pool ID.
+            return id.isEmpty()?"unconfigured":id;
+        });
         registration.registerSubtypeInterpreter(ModItems.ITEM_EMPTY_BOX.get(), (stack, context) -> EmptyBoxItem.appearance(stack).id());
     }
     @Override public void registerCategories(IRecipeCategoryRegistration registration) {
