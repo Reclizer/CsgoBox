@@ -25,6 +25,7 @@ public class CsboxScreen extends BoxScreen {
     private final PacketBoxPreview preview;
     private final Component unlockLabel;
     private final Component requiredKeyLabel;
+    private final Component consumptionLabel;
     private boolean requested;
     private boolean playedSound;
     private Button openButton;
@@ -42,6 +43,7 @@ public class CsboxScreen extends BoxScreen {
         this.unlockLabel = Component.translatable("gui.csgobox.csgo_box.label_box")
                 .append(" ").append(preview.box().getHoverName());
         this.requiredKeyLabel = Component.translatable("gui.csgobox.csgo_box.requires_key", preview.key().getHoverName());
+        this.consumptionLabel = Component.translatable("gui.csgobox.csgo_box.consume_"+preview.consumption(), preview.key().getHoverName());
     }
     public UUID token() { return preview.token(); }
     @Override protected UUID previewToken() { return requested ? null : token(); }
@@ -173,15 +175,12 @@ public class CsboxScreen extends BoxScreen {
         if (!preview.key().isEmpty()) {
             ClassicBoxUi.item(g, preview.key(), LAYOUT_WIDTH*0.25F, LAYOUT_HEIGHT*0.93F, 1);
             int count = availableKeys;
-            if (count > 0) label(g, Component.literal(" × " + count), 28, 94, 0.8F);
-            else {
-                // Lay out the whole translated sentence, leaving space for the icon and button.
-                float x = LAYOUT_WIDTH * 0.25F + 16 + 2;
-                float maxWidth = openButton.getX() - 4 - x;
-                float scale = Math.min(0.8F, maxWidth / Math.max(1, font.width(requiredKeyLabel)));
-                ClassicBoxUi.text(g, font, requiredKeyLabel, x, LAYOUT_HEIGHT * 0.94F, scale, 0xFFD3D3D3);
-            }
-        } else label(g, Component.translatable("gui.csgobox.csgo_box.no_key"), 25, 94, 0.8F);
+            Component line = count > 0 ? consumptionLabel.copy().append(Component.translatable("gui.csgobox.csgo_box.key_count", count)) : requiredKeyLabel;
+            float x = LAYOUT_WIDTH * 0.25F + 16 + 2;
+            float maxWidth = openButton.getX() - 4 - x;
+            float scale = Math.min(0.8F, maxWidth / Math.max(1, font.width(line)));
+            ClassicBoxUi.text(g, font, line, x, LAYOUT_HEIGHT * 0.94F, scale, 0xFFD3D3D3);
+        } else label(g, consumptionLabel, 25, 94, 0.8F);
     }
 
     // Vanilla tooltip positioning needs the real screen coordinates, outside the canvas transform.

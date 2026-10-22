@@ -1,6 +1,7 @@
 package com.reclizer.csgobox.packet;
 
 import com.reclizer.csgobox.gui.client.ClientPackets;
+import com.reclizer.csgobox.config.ConsumptionMode;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
@@ -11,8 +12,10 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 public record PacketBoxPreview(UUID token, ItemStack box, ItemStack key, List<DisplayReward> rewards,
-                               List<DisplayReward> legendaryRewards) {
+                               List<DisplayReward> legendaryRewards, String consumption) {
     public PacketBoxPreview {
+        if (!ConsumptionMode.valid(consumption) || ConsumptionMode.parse(consumption).requiresKey() && key.isEmpty())
+            throw new IllegalArgumentException("Invalid preview consumption");
         if (rewards.size() > 21 || legendaryRewards.size() > 256
                 || rewards.stream().anyMatch(r -> r.stack().isEmpty() || r.grade() < 1 || r.grade() > 5)
                 || legendaryRewards.stream().anyMatch(r -> r.stack().isEmpty() || r.grade() != 5))
@@ -20,8 +23,11 @@ public record PacketBoxPreview(UUID token, ItemStack box, ItemStack key, List<Di
         rewards = List.copyOf(rewards);
         legendaryRewards = List.copyOf(legendaryRewards);
     }
+    public PacketBoxPreview(UUID token, ItemStack box, ItemStack key, List<DisplayReward> rewards, List<DisplayReward> legendaryRewards) {
+        this(token, box, key, rewards, legendaryRewards, key.isEmpty() ? "box" : "both");
+    }
     public PacketBoxPreview(FriendlyByteBuf buf) {
-        this(buf.readUUID(), buf.readItem(), buf.readItem(), readRewards(buf, 21), readRewards(buf, 256));
+        this(buf.readUUID(), buf.readItem(), buf.readItem(), readRewards(buf, 21), readRewards(buf, 256), buf.readUtf(16));
     }
     private static List<DisplayReward> readRewards(FriendlyByteBuf buf, int limit) {
         int count = buf.readVarInt();
@@ -34,6 +40,7 @@ public record PacketBoxPreview(UUID token, ItemStack box, ItemStack key, List<Di
         buf.writeUUID(token); buf.writeItem(box); buf.writeItem(key);
         buf.writeCollection(rewards, (buffer, reward) -> reward.write(buffer));
         buf.writeCollection(legendaryRewards, (buffer, reward) -> reward.write(buffer));
+        buf.writeUtf(consumption, 16);
     }
     public void handle(Supplier<NetworkEvent.Context> supplier) {
         var context = supplier.get();

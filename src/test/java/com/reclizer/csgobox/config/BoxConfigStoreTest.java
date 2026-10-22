@@ -9,6 +9,51 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BoxConfigStoreTest {
+    @Test void consumptionDefaultsAndEditingRoundTripPreserveModes() throws IOException {
+        var store=store(VALID); store.reload();
+        var legacy=store.readForEditing("csgobox:test");
+        assertEquals(ConsumptionMode.BOTH,legacy.mode());
+        assertEquals(ConsumptionMode.BOX,BoxEditorCodec.decode(BoxEditorCodec.encode(legacy).replace("\"key\":\"csgobox:csgo_key0\"", "\"key\":\"\"")
+                .replace("\"consumption\":\"both\"", "\"consumption\":null")).mode());
+        for (var mode:ConsumptionMode.values()) {
+            var changed=legacy.withConsumption(mode.id()).withName("mode "+mode.id()).withAppearance("green").withLuckEnabled(false)
+                    .withRewards(List.of(new RewardEntry("minecraft:diamond",5)));
+            assertEquals(mode,changed.mode());
+            assertEquals(changed,BoxEditorCodec.decode(BoxEditorCodec.encode(changed)));
+            store.saveDefinition(changed,BoxConfigStore.revision(store.readForEditing(legacy.id()))); store.reload();
+            assertEquals(changed,store.readForEditing(legacy.id()));
+        }
+    }
+
+    @Test void invalidConsumptionOrMissingRequiredItemCannotReplaceLiveConfig() throws IOException {
+        var store=store(VALID); store.reload(); var before=store.snapshot();
+        for (String mode:List.of("free","","KEY","key","both")) {
+            String text=VALID.replace("\"key\":\"csgobox:csgo_key0\"", "\"key\":\"\"")
+                    .replace("\"grade1\"","\"consumption\":\""+mode+"\",\"grade1\"");
+            Files.writeString(directory.resolve("box.json"),text);
+            assertThrows(IOException.class,store::reload);
+            assertSame(before,store.snapshot());
+            assertEquals(text,Files.readString(directory.resolve("box.json")));
+        }
+    }
+
+    @Test void deletionChecksVersionAndPersistsOnlyTheSelectedRemoval() throws IOException {
+        var store=store(VALID); store.reload();
+        var first=store.readForEditing("csgobox:test");
+        var second=BoxDefinition.create("csgobox:keep","keep",List.of(new RewardEntry("minecraft:stone",1)));
+        store.saveDefinition(second,"");
+        for (String revision:List.of("","stale","0".repeat(64)))
+            assertThrows(IllegalArgumentException.class,()->store.deleteDefinition(first.id(),revision));
+        assertEquals(2,store.snapshot().size());
+        store.deleteDefinition(first.id(),BoxConfigStore.revision(first)); store.reload();
+        assertNull(store.readForEditing(first.id())); assertEquals(second,store.readForEditing(second.id()));
+        String after=Files.readString(directory.resolve("box.json"));
+        assertThrows(IllegalArgumentException.class,()->store.deleteDefinition(first.id(),BoxConfigStore.revision(first)));
+        assertEquals(after,Files.readString(directory.resolve("box.json")));
+        store.deleteDefinition(second.id(),BoxConfigStore.revision(second));
+        assertEquals(0,store.reload());
+    }
+
     @Test void appearanceSurvivesEditingDuplicationAndDiskReload() throws IOException {
         var store = store("[]"); store.reload();
         for (var appearance : BoxAppearance.values()) {

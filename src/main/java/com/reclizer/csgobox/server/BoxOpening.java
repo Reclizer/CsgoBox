@@ -20,7 +20,9 @@ public final class BoxOpening {
         ItemStack held = player.getMainHandItem();
         if (!player.isAlive() || player.isSpectator() || held.isEmpty() || !box.id().equals(ItemCsgoBox.boxId(held)))
             return new Result(ItemStack.EMPTY, 0, "message.csgobox.expired");
-        ItemStack key = com.reclizer.csgobox.utils.BoxKeys.parse(box.key());
+        var mode = box.mode();
+        if (mode.requiresKey() && box.key().isEmpty()) return new Result(ItemStack.EMPTY, 0, "message.csgobox.missing_key");
+        ItemStack key = mode.requiresKey() ? com.reclizer.csgobox.utils.BoxKeys.parse(box.key()) : ItemStack.EMPTY;
         int keySlot = -1;
         for (int i = 0; i < player.getInventory().items.size(); i++) {
             ItemStack candidate = player.getInventory().getItem(i);
@@ -32,7 +34,7 @@ public final class BoxOpening {
         if (!key.isEmpty() && keySlot < 0) return new Result(ItemStack.EMPTY, 0, "message.csgobox.missing_key");
         Result result = selectReward(player, box, random);
         // Nothing is consumed until configuration, key and reward have all been validated.
-        held.shrink(1);
+        if (mode.consumesBox()) held.shrink(1);
         if (keySlot >= 0) player.getInventory().getItem(keySlot).shrink(1);
         BoxService.deliver(player, result.reward().copy());
         player.getInventory().setChanged();

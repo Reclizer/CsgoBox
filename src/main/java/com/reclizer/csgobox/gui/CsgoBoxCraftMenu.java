@@ -11,6 +11,12 @@ import net.minecraft.world.item.ItemStack;
 /** Read-only sample slots; only the separate, server-validated test request grants items. */
 public class CsgoBoxCraftMenu extends AbstractContainerMenu {
     private int lastTestRequest = -1;
+    private int lastDeleteRequest;
+    public boolean acceptDeleteRequest(int requestId) {
+        if (requestId <= lastDeleteRequest) return false;
+        lastDeleteRequest = requestId;
+        return true;
+    }
 
     public boolean acceptTestRequest(int requestId) {
         if (requestId <= lastTestRequest) return false;

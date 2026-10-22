@@ -10,7 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.gameevent.GameEvent;
 import java.util.random.RandomGenerator;
 
-/** A server-thread transaction: claim the world box once, remove it without loot, then consume/deliver. */
+/** A server-thread transaction: claim the box, charge and deliver, then release a reusable box. */
 public final class PlacedBoxOpening {
     private PlacedBoxOpening() {}
     private static BoxOpening.Result fail(String key) { return new BoxOpening.Result(ItemStack.EMPTY, 0, key); }
@@ -24,7 +24,9 @@ public final class PlacedBoxOpening {
             return fail("message.csgobox.placed_unavailable");
         var box = CsgoBoxManage.find(entity.poolId());
         if (box == null) return fail("message.csgobox.unknown_box");
-        ItemStack required = BoxKeys.parse(box.key());
+        var mode = box.mode();
+        if (mode.requiresKey() && box.key().isEmpty()) return fail("message.csgobox.hold_key");
+        ItemStack required = mode.requiresKey() ? BoxKeys.parse(box.key()) : ItemStack.EMPTY;
         ItemStack key = player.getItemInHand(hand);
         if (!required.isEmpty() && !BoxKeys.matches(required, key)) {
             // Vanilla normally attempts main hand first. A held offhand key works as well.
@@ -33,15 +35,19 @@ public final class PlacedBoxOpening {
         }
         BoxOpening.Result result = BoxOpening.selectReward(player, box, random);
         if (!entity.claim()) return fail("message.csgobox.placed_unavailable");
-        if (!level.removeBlock(pos, false)) {
+        if (mode.consumesBox() && !level.removeBlock(pos, false)) {
             entity.releaseClaim();
             return fail("message.csgobox.placed_unavailable");
         }
-        if (!required.isEmpty()) key.shrink(1);
-        BoxService.deliver(player, result.reward().copy());
-        player.getInventory().setChanged();
-        player.containerMenu.broadcastChanges();
-        level.gameEvent(player, GameEvent.BLOCK_DESTROY, pos);
-        return result;
+        try {
+            if (!required.isEmpty()) key.shrink(1);
+            BoxService.deliver(player, result.reward().copy());
+            player.getInventory().setChanged();
+            player.containerMenu.broadcastChanges();
+            level.gameEvent(player, mode.consumesBox() ? GameEvent.BLOCK_DESTROY : GameEvent.BLOCK_OPEN, pos);
+            return result;
+        } finally {
+            if (!mode.consumesBox()) entity.releaseClaim();
+        }
     }
 }

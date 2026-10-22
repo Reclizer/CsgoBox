@@ -9,12 +9,13 @@ public record BoxDefinition(String id, String name, String key, float drop, List
                             List<String> entity, List<String> grade1, List<String> grade2,
                             List<String> grade3, List<String> grade4, List<String> grade5, Boolean luckEnabled,
                             List<Integer> displayOrder, AcquisitionDefinition acquisition, AcquisitionDefinition keyAcquisition,
-                            String appearance) {
+                            String appearance, String consumption) {
     public static final int RECOMMENDED_REGULAR_LIMIT = 20;
     public BoxDefinition {
         // Missing in legacy JSON: retain the previous luck-sensitive behavior.
         luckEnabled = luckEnabled == null ? true : luckEnabled;
         appearance = appearance == null ? BoxAppearance.CLASSIC.id() : appearance;
+        consumption = consumption == null ? key == null || key.isBlank() ? "box" : "both" : consumption;
         random = copy(random);
         entity = copy(entity);
         grade1 = copy(grade1);
@@ -34,6 +35,14 @@ public record BoxDefinition(String id, String name, String key, float drop, List
         // Retain the old JSON fields as mirrors for existing configs/tools; acquisition is authoritative.
         drop = acquisition.drop().chance();
         entity = acquisition.drop().entities();
+    }
+
+    public BoxDefinition(String id, String name, String key, float drop, List<Integer> random, List<String> entity,
+                         List<String> grade1, List<String> grade2, List<String> grade3, List<String> grade4,
+                         List<String> grade5, Boolean luckEnabled, List<Integer> displayOrder,
+                         AcquisitionDefinition acquisition, AcquisitionDefinition keyAcquisition, String appearance) {
+        this(id, name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, luckEnabled,
+                displayOrder, acquisition, keyAcquisition, appearance, null);
     }
 
     public BoxDefinition(String id, String name, String key, float drop, List<Integer> random, List<String> entity,
@@ -60,17 +69,27 @@ public record BoxDefinition(String id, String name, String key, float drop, List
 
     public BoxDefinition withLuckEnabled(boolean enabled) {
         return new BoxDefinition(id, name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, enabled,
-                displayOrder, acquisition, keyAcquisition, appearance);
+                displayOrder, acquisition, keyAcquisition, appearance, consumption);
     }
 
     public BoxDefinition withName(String displayName) {
         return new BoxDefinition(id, displayName, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, luckEnabled,
-                displayOrder, acquisition, keyAcquisition, appearance);
+                displayOrder, acquisition, keyAcquisition, appearance, consumption);
     }
 
     public BoxDefinition withAppearance(String value) {
         return new BoxDefinition(id, name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, luckEnabled,
-                displayOrder, acquisition, keyAcquisition, value);
+                displayOrder, acquisition, keyAcquisition, value, consumption);
+    }
+
+    public ConsumptionMode mode() { return ConsumptionMode.parse(consumption); }
+    public BoxDefinition withConsumption(String value) {
+        return new BoxDefinition(id, name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, luckEnabled,
+                displayOrder, acquisition, keyAcquisition, appearance, value);
+    }
+
+    public static int suggestedCount(int grade) {
+        return switch (grade) { case 1 -> 7; case 2 -> 5; case 3 -> 3; case 4 -> 2; default -> 0; };
     }
 
     public List<RewardEntry> regularRewardsInOrder() {
@@ -106,6 +125,8 @@ public record BoxDefinition(String id, String name, String key, float drop, List
     }
 
     public void validate(Predicate<String> validItem) {
+        if (!ConsumptionMode.valid(consumption)) throw new IllegalArgumentException("editor.csgobox.bad_consumption");
+        if (mode().requiresKey() && (key == null || key.isBlank())) throw new IllegalArgumentException("editor.csgobox.required_item_missing");
         if (!BoxAppearance.valid(appearance)) throw new IllegalArgumentException("editor.csgobox.bad_appearance");
         if (!validId(id)) throw new IllegalArgumentException("Pool requires a stable namespaced id, for example csgobox:weapons_supply");
         if (name == null || name.isBlank() || !name.equals(name.trim()) || name.length() > 128)
@@ -155,7 +176,7 @@ public record BoxDefinition(String id, String name, String key, float drop, List
         ordered.forEach(e -> nextOrder.add(e.grade()));
         return new BoxDefinition(id, name, key, drop, random, entity,
                 rewardsAt(rewards, 1), rewardsAt(rewards, 2), rewardsAt(rewards, 3),
-                rewardsAt(rewards, 4), rewardsAt(rewards, 5), luckEnabled, nextOrder, acquisition, keyAcquisition, appearance);
+                rewardsAt(rewards, 4), rewardsAt(rewards, 5), luckEnabled, nextOrder, acquisition, keyAcquisition, appearance, consumption);
     }
 
     private static List<String> rewardsAt(List<RewardEntry> entries, int grade) {

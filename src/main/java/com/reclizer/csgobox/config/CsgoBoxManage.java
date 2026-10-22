@@ -35,4 +35,5 @@ public final class CsgoBoxManage {
     public static void saveDefinition(BoxDefinition box, String revision) throws IOException {
         STORE.saveDefinition(box, revision);
     }
+    public static void deleteDefinition(String id, String revision) throws IOException { STORE.deleteDefinition(id, revision); }
 }

@@ -27,6 +27,9 @@ public record PacketEditorState(int containerId, int requestId, boolean saved, S
     public static PacketEditorState testResult(int container, int request, String error) {
         return new PacketEditorState(container, request, false, "", "", error);
     }
+    public static PacketEditorState deleteResult(int container, int request, String error) {
+        return new PacketEditorState(container, request, false, "", "", error);
+    }
     public void handle(Supplier<NetworkEvent.Context> supplier) {
         var context = supplier.get();
         context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> receive(this)));

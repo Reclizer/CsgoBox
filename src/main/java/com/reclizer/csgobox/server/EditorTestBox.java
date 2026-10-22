@@ -21,7 +21,7 @@ public final class EditorTestBox {
         if (box == null) return "message.csgobox.unknown_box";
         if (!BoxConfigStore.revision(box).equals(revision)) return "editor.csgobox.test_stale";
         if (!menu.acceptTestRequest(requestId)) return "editor.csgobox.test_duplicate";
-        ItemStack key = com.reclizer.csgobox.utils.BoxKeys.parse(box.key());
+        ItemStack key = box.mode().requiresKey() ? com.reclizer.csgobox.utils.BoxKeys.parse(box.key()) : ItemStack.EMPTY;
         BoxService.deliver(player, ItemCsgoBox.setBoxInfo(box, new ItemStack(ModItems.ITEM_CSGOBOX.get())));
         if (!key.isEmpty()) BoxService.deliver(player, key);
         player.getInventory().setChanged();

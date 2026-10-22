@@ -46,7 +46,8 @@
       "minecraft:netherite_pickaxe.withTags{Damage:0}",
       "minecraft:netherite_shovel.withTags{Damage:0}",
       "minecraft:netherite_hoe.withTags{Damage:0}"
-    ]
+    ],
+    "consumption": "both"
   },
   {
     "id": "csgobox:example_classic",
@@ -146,7 +147,8 @@
         "maxUses": 12,
         "xp": 5
       }
-    }
+    },
+    "consumption": "both"
   },
   {
     "id": "csgobox:example_gold",
@@ -246,7 +248,8 @@
         "maxUses": 12,
         "xp": 5
       }
-    }
+    },
+    "consumption": "both"
   },
   {
     "id": "csgobox:example_orange",
@@ -346,7 +349,8 @@
         "maxUses": 12,
         "xp": 5
       }
-    }
+    },
+    "consumption": "both"
   },
   {
     "id": "csgobox:example_green",
@@ -446,7 +450,8 @@
         "maxUses": 12,
         "xp": 5
       }
-    }
+    },
+    "consumption": "both"
   },
   {
     "id": "csgobox:example_rose_blue",
@@ -546,7 +551,8 @@
         "maxUses": 12,
         "xp": 5
       }
-    }
+    },
+    "consumption": "both"
   },
   {
     "id": "csgobox:example_yellow_metal",
@@ -646,6 +652,7 @@
         "maxUses": 12,
         "xp": 5
       }
-    }
+    },
+    "consumption": "both"
   }
 ]

@@ -97,7 +97,8 @@
         "maxUses": 12,
         "xp": 5
       }
-    }
+    },
+    "consumption": "both"
   },
   {
     "id": "csgobox:example_gold",
@@ -197,7 +198,8 @@
         "maxUses": 12,
         "xp": 5
       }
-    }
+    },
+    "consumption": "both"
   },
   {
     "id": "csgobox:example_orange",
@@ -297,7 +299,8 @@
         "maxUses": 12,
         "xp": 5
       }
-    }
+    },
+    "consumption": "both"
   },
   {
     "id": "csgobox:example_green",
@@ -397,7 +400,8 @@
         "maxUses": 12,
         "xp": 5
       }
-    }
+    },
+    "consumption": "both"
   },
   {
     "id": "csgobox:example_rose_blue",
@@ -497,7 +501,8 @@
         "maxUses": 12,
         "xp": 5
       }
-    }
+    },
+    "consumption": "both"
   },
   {
     "id": "csgobox:example_yellow_metal",
@@ -597,6 +602,7 @@
         "maxUses": 12,
         "xp": 5
       }
-    }
+    },
+    "consumption": "both"
   }
 ]

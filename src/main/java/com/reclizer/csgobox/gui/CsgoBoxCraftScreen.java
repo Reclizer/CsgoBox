@@ -37,12 +37,14 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     private String status = "", issue = "", amountError = "";
     private boolean dirty, needsValidation = true, statusError, luckEnabled = true;
     private BoxAppearance appearance = BoxAppearance.CLASSIC;
+    private ConsumptionMode consumption = ConsumptionMode.BOX;
+    private boolean deleteConfirm;
     private final Map<BoxAppearance, ItemStack> appearanceSamples = new EnumMap<>(BoxAppearance.class);
     private int page, grade = 1, rewardPage, catalogPage, selected = -1;
     private int requestId, pending, pendingTicks;
     private float uiScale = 1;
     private EditBox amountField;
-    private UiButton saveButton, testButton;
+    private UiButton saveButton, testButton, consumptionButton;
     private Runnable discardAction;
     private ItemStack tooltip = ItemStack.EMPTY;
     private String tooltipChance = "";
@@ -89,6 +91,12 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         fields.clear();
         catalogButtons.clear();
         amountField = null;
+        consumptionButton = null;
+        if (deleteConfirm) {
+            button(170, 258, 132, tr("delete_confirm"), this::deleteSaved, 0xFFF0747A);
+            button(318, 258, 132, tr("cancel"), () -> { deleteConfirm = false; rebuild(); }, MUTED);
+            return;
+        }
         if (discardAction != null) {
             button(170, 238, 132, tr("discard"), () -> {
                 Runnable action = discardAction; discardAction = null; dirty = false; action.run();
@@ -109,7 +117,9 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         button(104, 344, 28, Component.literal(">"), () -> {
             if ((catalogPage + 1) * 12 < filteredPools().size()) catalogPage++;
         }, MUTED);
-        button(16, 374, 116, tr("new"), () -> guard(this::newDraft), COLORS[4]);
+        button(16, 374, 56, tr("new"), () -> guard(this::newDraft), COLORS[4]);
+        var deleteButton = button(78, 374, 54, tr("delete"), () -> { deleteConfirm = true; rebuild(); }, 0xFFF0747A);
+        deleteButton.active = pending == 0 && !originalId.isEmpty();
         field(152, 46, 294, 128, name, value -> { name = value; changed(); });
         button(454, 46, 150, tr("duplicate"), () -> {
             name = uniqueCopyName(); poolId = BoxDefinition.newId(); originalId = ""; revision = ""; changed(); rebuild();
@@ -177,10 +187,11 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
                         ? text("tacz_sample_required") : text("bad_item"));
             }
         }, MUTED);
-        field(472, 250, 105, 8192, key, value -> { key = value; changed(); });
-        button(582, 250, 22, Component.literal("×"), () -> {
-            key = ""; keyAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled()); changed(); rebuild();
-        }, MUTED);
+        field(472, 250, 105, 8192, key, this::setKeyText);
+        button(582, 250, 22, Component.literal("×"), () -> setKeySample(ItemStack.EMPTY), MUTED);
+        consumptionButton = button(350, 304, 254, tr("consumption", Component.translatable(consumption.translationKey())), () -> {
+            consumption = consumption.next(); changed(); rebuild();
+        }, COLORS[4]);
     }
 
     private AcquisitionDraft acquisition() { return acquireKey ? keyAcquisition : boxAcquisition; }
@@ -266,6 +277,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         keyAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled());
         luckEnabled = true;
         appearance = BoxAppearance.CLASSIC;
+        consumption = ConsumptionMode.BOX; deleteConfirm = false;
         String[] defaults = {"625", "20", "6", "5", "2"};
         System.arraycopy(defaults, 0, weights, 0, 5);
         poolId = BoxDefinition.newId(); originalId = ""; revision = ""; selected = -1; rewardPage = 0; grade = 1; page = 0;
@@ -289,12 +301,25 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
                 BoxEditorCodec.encode(definition), expected));
     }
 
+    private boolean hasDialog() { return discardAction != null || deleteConfirm; }
+
+    private void deleteSaved() {
+        if (pending != 0 || originalId.isEmpty()) return;
+        deleteConfirm = false; pending = 4; pendingTicks = 0; requestId++;
+        status = text("deleting"); statusError = false; rebuild();
+        Networking.INSTANCE.sendToServer(new PacketDeleteBox(menu.containerId, requestId, originalId, revision));
+    }
+
     public void receive(PacketEditorState packet) {
         if (packet.containerId() != menu.containerId || packet.requestId() != requestId || pending == 0) return;
         boolean testResponse = pending == 3;
+        boolean deleteResponse = pending == 4;
         pending = 0;
         if (!packet.error().isEmpty()) {
             fail(Component.translatable(packet.error()).getString()); rebuild(); return;
+        }
+        if (deleteResponse) {
+            newDraft(); status = text("deleted"); statusError = false; return;
         }
         if (testResponse) {
             status = text("test_given"); statusError = false; rebuild(); return;
@@ -302,6 +327,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         BoxDefinition box = BoxEditorCodec.decode(packet.json());
         luckEnabled = box.luckEnabled();
         appearance = BoxAppearance.byId(box.appearance());
+        consumption = box.mode();
         name = box.name(); poolId = box.id(); originalId = box.id(); revision = packet.revision(); key = box.key();
         displayOrder.clear(); displayOrder.addAll(box.displayOrder()); sampleCache.clear();
         boxAcquisition = new AcquisitionDraft(box.acquisition());
@@ -368,7 +394,8 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         BoxDefinition grouped = BoxDefinition.create(poolId, name.trim(), entries);
         return new BoxDefinition(poolId, name.trim(), key.trim(), 0, parsedWeights(), List.of(),
                 grouped.grade1(), grouped.grade2(), grouped.grade3(), grouped.grade4(), grouped.grade5(), luckEnabled,
-                displayOrder, boxAcquisition.definition(), key.isBlank() ? AcquisitionDefinition.disabled() : keyAcquisition.definition(), appearance.id());
+                displayOrder, boxAcquisition.definition(), key.isBlank() ? AcquisitionDefinition.disabled() : keyAcquisition.definition(),
+                appearance.id(), consumption.id());
     }
 
     private void validateDraft() {
@@ -422,7 +449,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         clipped(g, text("pool_id", poolId), 310, 15, 294, MUTED);
         List<BoxCatalog.Entry> pools = filteredPools();
         catalogPage = Math.min(catalogPage, Math.max(0, (pools.size() - 1) / 12));
-        if (discardAction == null) {
+        if (!hasDialog()) {
             for (int i = 0; i < catalogButtons.size(); i++) {
                 int offset = catalogPage * 12 + i;
                 var b = catalogButtons.get(i);
@@ -445,8 +472,16 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             saveButton.setMessage(tr(pending == 2 ? "saving_short" : "save"));
         } else {
             panel(g, 0, 0, imageWidth, imageHeight, 0xD0101722);
-            label(g, text("unsaved"), 170, 185, TEXT);
-            label(g, text("discard_hint"), 170, 207, MUTED);
+            if (deleteConfirm) {
+                label(g, text("delete_title"), 170, 158, 0xFFF0747A);
+                clipped(g, BoxCatalog.displayName(originalId), 170, 179, 280, TEXT);
+                clipped(g, originalId, 170, 198, 280, MUTED);
+                clipped(g, text("delete_warning"), 170, 220, 280, MUTED);
+                if (dirty) clipped(g, text("delete_dirty"), 170, 237, 280, 0xFFF19A9A);
+            } else {
+                label(g, text("unsaved"), 170, 185, TEXT);
+                label(g, text("discard_hint"), 170, 207, MUTED);
+            }
         }
         for (Renderable widget : renderables) widget.render(g, mx, my, partialTick);
         if (sampleDragging && !pressedSample.isEmpty()) {
@@ -455,7 +490,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             g.pose().popPose();
         }
         g.pose().popPose();
-        if (!tooltip.isEmpty() && discardAction == null && pressedSample.isEmpty()) {
+        if (!tooltip.isEmpty() && !hasDialog() && pressedSample.isEmpty()) {
             List<Component> lines = new ArrayList<>(getTooltipFromItem(minecraft, tooltip));
             if (!tooltipChance.isEmpty()) lines.add(Component.literal(tooltipChance));
             g.renderTooltip(font, lines, tooltip.getTooltipImage(), tooltip, mouseX, mouseY);
@@ -464,9 +499,17 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
 
     private void renderRewards(GuiGraphics g, int mx, int my) {
         double chance = chances(0)[grade-1];
+        int suggested = BoxDefinition.suggestedCount(grade);
+        clipped(g, text(suggested == 0 ? "suggestion_gold" : "suggestion", suggested, current().size()), 152, 130, 270, MUTED);
         for (int i = 0; i < PAGE_SIZE; i++) {
             int x = 152 + (i%9)*30, y = 140 + (i/9)*30, index = rewardPage*PAGE_SIZE+i;
             panel(g, x, y, 26, 26, index == selected ? 0xFF40516A : 0xFF0E1621);
+            if (index < suggested) {
+                int color = 0xAA000000 | COLORS[grade-1] & 0xFFFFFF;
+                panel(g, x, y, 26, 1, color); panel(g, x, y+25, 26, 1, color);
+                panel(g, x, y, 1, 26, color); panel(g, x+25, y, 1, 26, color);
+                if (index >= current().size()) label(g, "+", x+10, y+9, COLORS[grade-1]);
+            }
             if (index >= current().size()) continue;
             panel(g, x, y+24, 26, 2, COLORS[grade-1]);
             ItemStack stack = current().get(index);
@@ -491,11 +534,12 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         label(g, text("key"), 438, 231, MUTED);
         sampleSlot(g, mx, my, 438, 242, key, false);
         renderSamples(g, mx, my);
-        clipped(g, text("sample_drag_key"), 350, 307, 254, TEXT);
-        label(g, text("regular_total", displayOrder.size(), BoxDefinition.RECOMMENDED_REGULAR_LIMIT), 350, 326,
+        consumptionButton.setMessage(tr("consumption", Component.translatable(consumption.translationKey())));
+        clipped(g, text(consumption == ConsumptionMode.BOX ? "consume_box_hint" : consumption == ConsumptionMode.KEY ? "consume_key_hint" : "consume_both_hint"), 350, 329, 254, MUTED);
+        label(g, text("regular_total", displayOrder.size(), BoxDefinition.RECOMMENDED_REGULAR_LIMIT), 350, 346,
                 displayOrder.size() > BoxDefinition.RECOMMENDED_REGULAR_LIMIT ? COLORS[4] : MUTED);
-        clipped(g, text("regular_limit_hint"), 350, 343, 254, MUTED);
-        label(g, text("reward_total", rewardCount()), 350, 370, COLORS[4]);
+        clipped(g, text("regular_limit_hint"), 350, 362, 254, MUTED);
+        label(g, text("reward_total", rewardCount()), 350, 379, COLORS[4]);
     }
 
     private void renderSamples(GuiGraphics g, int mx, int my) {
@@ -625,7 +669,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     @Override public boolean mouseClicked(double x, double y, int button) {
         double mx = x/uiScale, my = y/uiScale;
         if (pending != 0) return true;
-        if (discardAction == null && page == 0) {
+        if (!hasDialog() && page == 0) {
             for (int i = 0; i < PAGE_SIZE; i++) {
                 int index = rewardPage*PAGE_SIZE+i;
                 if (index < current().size() && inside(mx, my, 152+i%9*30, 140+i/9*30, 26, 26)) {
@@ -639,7 +683,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
                 return true;
             }
         }
-        if (discardAction == null && page == 1 && !(acquireKey && key.isBlank())) {
+        if (!hasDialog() && page == 1 && !(acquireKey && key.isBlank())) {
             int target = acquisitionTargetAt(mx, my);
             if (target >= 0) {
                 sampleTarget = target;
@@ -647,7 +691,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
                 return true;
             }
         }
-        if (discardAction == null && (page == 0 || page == 1 && !(acquireKey && key.isBlank()))) {
+        if (!hasDialog() && (page == 0 || page == 1 && !(acquireKey && key.isBlank()))) {
             for (var slot : menu.slots) if (inside(mx, my, slot.x-1, slot.y-1, 18, 18)) {
                 if (button == 0 && !slot.getItem().isEmpty()) {
                     pressedSample = slot.getItem().copy(); samplePressX = mx; samplePressY = my; sampleDragging = false;
@@ -668,12 +712,21 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         return -1;
     }
 
+    private void setKeyText(String value) {
+        boolean wasEmpty = key.isBlank();
+        key = value;
+        if (key.isBlank()) {
+            consumption = ConsumptionMode.BOX;
+            keyAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled());
+        } else if (wasEmpty && consumption == ConsumptionMode.BOX) consumption = ConsumptionMode.BOTH;
+        sampleCache.clear(); changed();
+    }
+
     private void setKeySample(ItemStack sample) {
         ItemStack copy = sample.copy();
         if (!copy.isEmpty()) copy.setCount(1);
-        key = copy.isEmpty() ? "" : ItemNBT.getStacksData(copy);
-        if (key.isEmpty()) keyAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled());
-        sampleCache.clear(); changed(); rebuild();
+        setKeyText(copy.isEmpty() ? "" : ItemNBT.getStacksData(copy));
+        rebuild();
     }
 
     private void setAcquisitionSample(ItemStack sample, int target) {
@@ -697,12 +750,12 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             ItemStack sample = pressedSample;
             boolean dragged = sampleDragging;
             pressedSample = ItemStack.EMPTY; sampleDragging = false;
-            if (pending != 0 || discardAction != null) return true;
+            if (pending != 0 || hasDialog()) return true;
             if (page == 0) {
                 if (dragged && inside(mx, my, 438, 242, 26, 26)) setKeySample(sample);
-                else if (!dragged || inside(mx, my, 152, 140, 270, 90)) addSample(sample);
+                else if (dragged && inside(mx, my, 152, 140, 270, 90)) addSample(sample);
             } else if (page == 1 && !(acquireKey && key.isBlank())) {
-                int target = dragged ? acquisitionTargetAt(mx, my) : sampleTarget;
+                int target = dragged ? acquisitionTargetAt(mx, my) : -1;
                 if (target >= 0) setAcquisitionSample(sample, target);
             }
             return true;
@@ -717,7 +770,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         return super.mouseDragged(x/uiScale, y/uiScale, button, dx/uiScale, dy/uiScale);
     }
     @Override public boolean mouseScrolled(double x, double y, double delta) {
-        if (pending != 0 || discardAction != null) return true;
+        if (pending != 0 || hasDialog()) return true;
         if (inside(x/uiScale, y/uiScale, 8, 34, 132, 360)) {
             catalogPage = Math.max(0, Math.min(Math.max(0, (filteredPools().size()-1)/12), catalogPage + (delta < 0 ? 1 : -1)));
             return true;
@@ -732,7 +785,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     @Override public boolean keyPressed(int key, int scan, int modifiers) {
         if (key == 256) { onClose(); return true; }
         if (pending != 0) return true;
-        if (hasControlDown() && key == 83 && discardAction == null) { save(); return true; }
+        if (hasControlDown() && key == 83 && !hasDialog()) { save(); return true; }
         if (getFocused() instanceof EditBox input && input.isFocused() && key != 258) return input.keyPressed(key, scan, modifiers);
         return super.keyPressed(key, scan, modifiers);
     }
@@ -744,7 +797,8 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         }
     }
     @Override public void onClose() {
-        if (pending == 2 || pending == 3) return;
+        if (pending == 2 || pending == 3 || pending == 4) return;
+        if (deleteConfirm) { deleteConfirm = false; rebuild(); return; }
         if (discardAction != null) { discardAction = null; rebuild(); return; }
         if (pending == 1) { pending = 0; requestId++; }
         guard(() -> super.onClose());

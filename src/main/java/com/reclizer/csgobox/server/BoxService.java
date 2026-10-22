@@ -38,7 +38,8 @@ public final class BoxService {
         var legendary = box.grade5().stream().map(value -> new DisplayReward(ItemNBT.parseStrict(value), 5)).toList();
         return new PacketBoxPreview(token,
                 ItemCsgoBox.setBoxInfo(box, new ItemStack(ModItems.ITEM_CSGOBOX.get())),
-                com.reclizer.csgobox.utils.BoxKeys.parse(box.key()), display, legendary);
+                box.mode().requiresKey() ? com.reclizer.csgobox.utils.BoxKeys.parse(box.key()) : ItemStack.EMPTY,
+                display, legendary, box.consumption());
     }
 
     public static void keepPreviewAlive(ServerPlayer player, UUID token) {

@@ -53,6 +53,17 @@ public final class BoxConfigStore {
         publish(next);
     }
 
+    public synchronized void deleteDefinition(String id, String expectedRevision) throws IOException {
+        if (!BoxDefinition.validId(id) || expectedRevision == null || !expectedRevision.matches("[a-f0-9]{64}"))
+            throw new IllegalArgumentException("editor.csgobox.conflict");
+        Map<String, BoxDefinition> next = new LinkedHashMap<>(read());
+        BoxDefinition existing = next.get(id);
+        if (existing == null) throw new IllegalArgumentException("message.csgobox.unknown_box");
+        if (!revision(existing).equals(expectedRevision)) throw new IllegalArgumentException("editor.csgobox.conflict");
+        next.remove(id);
+        publish(next);
+    }
+
     public synchronized int reload() throws IOException {
         Map<String, BoxDefinition> next = read();
         snapshot = next;

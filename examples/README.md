@@ -1,6 +1,6 @@
 # 箱体外观示例
 
-`box-appearances.json` 是可直接读取的奖池数组，包含六个独立 ID；奖励仅使用原版物品，不需要 TaCZ 或 GeckoLib。各示例使用 `csgobox:csgo_key0`，合成、掉落和交易默认关闭，可在编辑器里配置。
+`box-appearances.json` 是可直接读取的奖池数组，包含六个独立 ID；奖励仅使用原版物品，不需要 TaCZ 或 GeckoLib。各示例使用 `csgobox:csgo_key0`，`consumption` 为 `both`，每次消耗一个箱子和一把钥匙。合成、掉落和交易默认关闭，可在编辑器里配置。奖励页也可切换为 `box`（仅箱子）或 `key`（仅钥匙，保留箱体）。
 
 | appearance | 外观 | 示例奖池 ID |
 |---|---|---|
