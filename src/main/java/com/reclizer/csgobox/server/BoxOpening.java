@@ -30,15 +30,19 @@ public final class BoxOpening {
             }
         }
         if (!key.isEmpty() && keySlot < 0) return new Result(ItemStack.EMPTY, 0, "message.csgobox.missing_key");
-        int grade = WeightedSelection.grade(random, box.random(), g -> !box.items(g).isEmpty(), box.effectiveLuck(player.getLuck()));
-        List<String> pool = box.items(grade);
-        ItemStack reward = ItemNBT.parseStrict(pool.get(random.nextInt(pool.size())));
+        Result result = selectReward(player, box, random);
         // Nothing is consumed until configuration, key and reward have all been validated.
         held.shrink(1);
         if (keySlot >= 0) player.getInventory().getItem(keySlot).shrink(1);
-        BoxService.deliver(player, reward.copy());
+        BoxService.deliver(player, result.reward().copy());
         player.getInventory().setChanged();
         player.containerMenu.broadcastChanges();
-        return new Result(reward, grade, null);
+        return result;
+    }
+
+    static Result selectReward(ServerPlayer player, BoxDefinition box, RandomGenerator random) {
+        int grade = WeightedSelection.grade(random, box.random(), g -> !box.items(g).isEmpty(), box.effectiveLuck(player.getLuck()));
+        List<String> pool = box.items(grade);
+        return new Result(ItemNBT.parseStrict(pool.get(random.nextInt(pool.size()))), grade, null);
     }
 }

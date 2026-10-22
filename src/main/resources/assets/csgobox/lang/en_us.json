@@ -158,5 +158,10 @@
   "editor.csgobox.key_count_one": "The key sample must have a count of one.",
   "editor.csgobox.bad_profession": "Choose a valid trading villager profession ID.",
   "editor.csgobox.bad_acquisition_numbers": "Invalid acquisition count, chance or level.",
-  "gui.csgobox.csgo_box.no_key": "No key required"
+  "gui.csgobox.csgo_box.no_key": "No key required",
+  "block.csgobox.csgo_box": "Reward Box",
+  "tooltips.csgobox.place_box": "Sneak-use to place; use a held key to open directly",
+  "message.csgobox.ground_reward": "Received: %s × %s",
+  "message.csgobox.hold_key": "Hold the matching key in your main hand or offhand.",
+  "message.csgobox.placed_unavailable": "Cannot open this box: already opened or interaction is not allowed here."
 }

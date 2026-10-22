@@ -17,10 +17,29 @@ import net.minecraftforge.fml.util.thread.EffectiveSide;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class ItemCsgoBox extends Item {
+public class ItemCsgoBox extends BlockItem {
     public static final String POOL_ID_TAG = "PoolId";
 
-    public ItemCsgoBox() { super(new Properties().stacksTo(16).rarity(Rarity.EPIC)); }
+    public ItemCsgoBox() { super(com.reclizer.csgobox.block.ModBlocks.BOX.get(), new Properties().stacksTo(16).rarity(Rarity.EPIC)); }
+
+    @Override public net.minecraft.world.InteractionResult useOn(net.minecraft.world.item.context.UseOnContext context) {
+        Player player = context.getPlayer();
+        if (player == null || !player.isShiftKeyDown()) return net.minecraft.world.InteractionResult.PASS;
+        String id = boxId(context.getItemInHand());
+        if (id.isEmpty() || !context.getLevel().isClientSide && CsgoBoxManage.find(id) == null) {
+            if (!context.getLevel().isClientSide) player.displayClientMessage(Component.translatable("message.csgobox.unknown_box"), true);
+            return net.minecraft.world.InteractionResult.FAIL;
+        }
+        return super.useOn(context);
+    }
+
+    @Override protected boolean updateCustomBlockEntityTag(net.minecraft.core.BlockPos pos, Level level, Player player,
+                                                          ItemStack stack, net.minecraft.world.level.block.state.BlockState state) {
+        if (!(level.getBlockEntity(pos) instanceof com.reclizer.csgobox.block.PlacedBoxEntity box)) return false;
+        // Deliberately ignore arbitrary BlockEntityTag data. Only the item identity may be transferred.
+        box.setPoolId(boxId(stack));
+        return true;
+    }
 
     public static String boxId(ItemStack stack) {
         CompoundTag tag = stack.getTag();
@@ -56,6 +75,7 @@ public class ItemCsgoBox extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (hand != InteractionHand.MAIN_HAND) return InteractionResultHolder.pass(stack);
+        if (player.isShiftKeyDown()) return InteractionResultHolder.pass(stack);
         if (player instanceof ServerPlayer serverPlayer) BoxService.preview(serverPlayer);
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
     }
@@ -74,6 +94,7 @@ public class ItemCsgoBox extends Item {
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltips.csgobox.item.cs_box").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltips.csgobox.place_box").withStyle(ChatFormatting.GRAY));
         if (flag.isAdvanced() && !boxId(stack).isEmpty())
             tooltip.add(Component.literal(boxId(stack)).withStyle(ChatFormatting.DARK_GRAY));
     }

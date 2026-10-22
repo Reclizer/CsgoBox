@@ -158,5 +158,10 @@
   "editor.csgobox.key_count_one": "钥匙样本的数量必须为 1。",
   "editor.csgobox.bad_profession": "请选择有效的可交易村民职业 ID。",
   "editor.csgobox.bad_acquisition_numbers": "获取方式中的数量、概率或等级无效。",
-  "gui.csgobox.csgo_box.no_key": "无需钥匙即可打开"
+  "gui.csgobox.csgo_box.no_key": "无需钥匙即可打开",
+  "block.csgobox.csgo_box": "奖励箱",
+  "tooltips.csgobox.place_box": "Shift＋右键地面放置，手持钥匙右键直接开箱",
+  "message.csgobox.ground_reward": "开箱获得：%s × %s",
+  "message.csgobox.hold_key": "请将对应钥匙拿在主手或副手中。",
+  "message.csgobox.placed_unavailable": "无法打开此箱子：已被打开，或当前位置不允许操作。"
 }

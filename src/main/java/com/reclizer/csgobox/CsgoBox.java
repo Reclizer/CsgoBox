@@ -28,6 +28,7 @@ public class CsgoBox {
         bus.addListener(this::commonSetup);
         ModSounds.SOUNDS.register(bus);
         RecModMenus.register(bus);
+        com.reclizer.csgobox.block.ModBlocks.register(bus);
         ModItems.register(bus);
         ModItems.registerTab(bus);
     }
