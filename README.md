@@ -2,6 +2,10 @@
 
 Minecraft **1.20.1 / Forge 47.2.20 / Java 17** 的开箱模组。
 
+从 [GitHub Releases](https://github.com/Reclizer/CsgoBox/releases/latest) 下载最新 JAR，放入客户端和服务端的 `mods/` 目录。JEI、TaCZ 均为可选模组，不包含在发布文件内。
+
+更新内容见 [CHANGELOG.md](CHANGELOG.md)。源码位于 `src/`，范例配置位于 `examples/`，可编辑模型位于 `blockbench/`，模型导出脚本位于 `tools/`。运行目录、构建缓存和测试截图不纳入仓库。
+
 ## 构建和测试
 
 Windows：
@@ -24,7 +28,7 @@ GameTest 在 `run-gametest/` 下使用独立的开发环境，请勿将该目录
 
 普通 `runClient` 停留在主菜单，进入或新建世界不会改变玩家的模式、位置、背包或场景。地面测试场景只允许手动创建：在临时测试副本中配置 QA 奖池并启用 JVM 参数 `-Dcsgobox.groundFixtureCommands=true` 后，执行 `/csgobox_test_ground prepare`（布置场景）或 `/csgobox_test_ground demo`（布置并演示）。这些命令会重置测试玩家背包和固定坐标附近方块，仅用于可丢弃的测试世界。旧的 `groundFixture`、`groundAutoOpen` 参数不再自动布景；测试命令不包含在发布 JAR 中。
 
-五款箱体的 Blockbench 编辑工程和原贴图位于 `blockbench/appearances/<外观>/`。物品使用 Java 闭合模型，地面使用独立箱体与箱盖分件。修改源分件后运行 `python tools/export_ground_models.py` 重新生成运行资源，具体路径及导回说明见 `blockbench/README.md`。旧款做旧金箱的根目录工程仅保留归档。
+五款箱体的 Blockbench 编辑工程和原贴图位于 `blockbench/appearances/<外观>/`。物品使用 Java 闭合模型，地面使用独立箱体与箱盖分件。修改源分件后运行 `python tools/export_ground_models.py` 重新生成运行资源，具体路径及导回说明见 [blockbench/README.md](blockbench/README.md)。
 
 ## 配置与使用
 
@@ -149,9 +153,9 @@ tacz3dPreview = true
 
 当前版本 **1.13.1、网络协议 15**，协议与 1.13.0 相同。从更早版本升级时，因移除旧款外观后方块状态集合变化，客户端和服务端需要一起更新。地面箱支持三种消耗模式：仅钥匙可在掉奖 2 秒后自动关盖复位，破坏时保留可用原箱子；另外两种变为装饰空箱。开箱中被破坏会结算已固定的奖励，避免重复发放。保留原箱底与模型、抬高并倾斜 30° 的滑条及独立 GUI 光照。分页、获取方式列表、JEI、检视和图标修复继续保留。旧款 `classic` 外观已移除；引用它的自定义奖池需改为 `gold` 等有效外观。
 
-不提供旧示例箱的名称回退或 NBT 迁移；旧箱子需从创造目录、编辑器或命令重新获取。已有配置文件需为每个奖池填写唯一 `id`，缺失时会明确报错，不会清空或静默重建配置。当前工作区的配置已补充 ID 并保留全部奖励，修改前备份位于工作目录。奖励物品的 TaCZ 数据、附魔及其他 NBT 不变。
+不提供旧示例箱的名称回退或 NBT 迁移；旧箱子需从创造目录、编辑器或命令重新获取。已有配置文件需为每个奖池填写唯一 `id`，缺失时会明确报错，不会清空或静默重建配置。奖励物品的 TaCZ 数据、附魔及其他 NBT 不变。
 
-重构范围、issue 对应关系和验证记录见 [REFACTOR.md](REFACTOR.md)。
+版本更新及验证记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 箱体外观
 

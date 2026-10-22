@@ -7,3 +7,11 @@ run-gametest/
 out/
 *.iml
 *.log
+
+# IDE metadata and JVM diagnostics generated during development.
+.classpath
+.project
+.settings/
+*.hprof
+hs_err_pid*.log
+replay_pid*.log
