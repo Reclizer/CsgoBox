@@ -144,7 +144,7 @@
   "editor.csgobox.key_disabled_hint": "未设置钥匙。请先到奖励页拖入钥匙物品。",
   "editor.csgobox.sample_drag_key": "拖入奖励区或开箱所需物品槽",
   "editor.csgobox.regular_total": "常规奖励 %s / 建议 %s",
-  "editor.csgobox.regular_limit_hint": "仅前 20 项展示，后续仍参与抽奖",
+  "editor.csgobox.regular_limit_hint": "每页 20 格，超出可在开箱列表翻页",
   "editor.csgobox.hidden_reward": "仅参与抽奖，不在开箱预览展示",
   "editor.csgobox.weight": "权重",
   "editor.csgobox.overview_total": "常规 %s 项 · 金色 %s 项 · 开箱预览 %s 项常规",
@@ -204,5 +204,17 @@
   "gui.csgobox.csgo_box.consume_box": "消耗 1 个箱子",
   "gui.csgobox.csgo_box.consume_key": "消耗 1 个 %s（保留箱子）",
   "gui.csgobox.csgo_box.consume_both": "消耗箱子和 1 个 %s",
-  "gui.csgobox.csgo_box.key_count": "（持有 %s）"
+  "gui.csgobox.csgo_box.key_count": "（持有 %s）",
+  "editor.csgobox.acquisition_methods": "获取方式",
+  "jei.csgobox.title": "箱子与钥匙获取方式",
+  "jei.csgobox.crafting": "工作台合成",
+  "jei.csgobox.drop": "实体掉落",
+  "jei.csgobox.trade": "村民交易",
+  "jei.csgobox.none": "未配置获取方式",
+  "jei.csgobox.no_method": "当前未启用获取规则",
+  "jei.csgobox.admin_grant": "可由管理员发放或配置获取方式",
+  "jei.csgobox.chance": "掉落概率：%s",
+  "jei.csgobox.trade_details": "等级 %s · 最多 %s 次 · 经验 %s",
+  "jei.csgobox.trade_candidate": "加入交易候选，不保证每位村民都有",
+  "jei.csgobox.shaped": "有序合成，支持移动和左右镜像"
 }

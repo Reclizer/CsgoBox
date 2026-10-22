@@ -15,7 +15,7 @@ import java.util.*;
 @PrefixGameTestTemplate(false)
 public final class InspectionGameTests {
     @GameTest(template = "empty")
-    public static void previewIncludesAllLegendaryIconsWithoutChangingMainLimitOrTooltip(GameTestHelper helper) {
+    public static void previewIncludesAllRegularAndLegendaryIconsWithoutChangingTooltip(GameTestHelper helper) {
         var entries = new ArrayList<RewardEntry>();
         for (int i = 0; i < 25; i++) entries.add(new RewardEntry("minecraft:stone", 1));
         entries.add(new RewardEntry("minecraft:netherite_sword.withTags{display:{Name:'{\"text\":\"Gold sword\"}'},Enchantments:[{id:\"minecraft:sharpness\",lvl:4s}]}", 5));
@@ -23,14 +23,14 @@ public final class InspectionGameTests {
         var box = BoxDefinition.create("csgobox:inspect-test", "Inspection", entries);
         var token = UUID.randomUUID();
         var packet = BoxService.previewData(token, box);
-        helper.assertTrue(packet.rewards().size() == 21 && packet.rewards().get(20).grade() == 5, "Main preview lost twenty regular rewards or mystery badge");
+        helper.assertTrue(packet.rewards().size() == 26 && packet.rewards().get(25).grade() == 5, "Main preview lost regular rewards or mystery badge");
         helper.assertTrue(packet.legendaryRewards().size() == 2 && packet.legendaryRewards().get(0).stack().is(Items.NETHERITE_SWORD)
                 && packet.legendaryRewards().get(1).stack().is(Items.DIAMOND_AXE), "Nested list did not include real legendary icons");
         var buffer = new FriendlyByteBuf(Unpooled.buffer());
         try {
             packet.toBytes(buffer);
             var decoded = new PacketBoxPreview(buffer);
-            helper.assertTrue(token.equals(decoded.token()) && decoded.legendaryRewards().size() == 2 && decoded.rewards().size() == 21, "Preview codec lost navigation data");
+            helper.assertTrue(token.equals(decoded.token()) && decoded.legendaryRewards().size() == 2 && decoded.rewards().size() == 26, "Preview codec lost navigation data");
             helper.assertTrue(ItemStack.matches(ItemNBT.parseStrict(box.grade5().get(0)), decoded.legendaryRewards().get(0).stack()), "Legendary NBT was not preserved for inspection");
             helper.assertTrue(buffer.readableBytes() == 0, "Preview codec left unread bytes");
         } finally { buffer.release(); }
@@ -51,7 +51,7 @@ public final class InspectionGameTests {
         } finally { buffer.release(); }
         var noGold = BoxService.previewData(UUID.randomUUID(), BoxDefinition.create("csgobox:inspect-plain", "Plain", List.of(new RewardEntry("minecraft:stone", 1))));
         helper.assertTrue(noGold.legendaryRewards().isEmpty() && noGold.rewards().size() == 1, "Non-legendary pool gained a badge");
-        for (int count : List.of(-1, 22)) assertBadCount(helper, count, false);
+        for (int count : List.of(-1, 257)) assertBadCount(helper, count, false);
         for (int count : List.of(-1, 257)) assertBadCount(helper, count, true);
         boolean badGrade = false;
         try { new PacketBoxPreview(UUID.randomUUID(), new ItemStack(Items.CHEST), ItemStack.EMPTY, List.of(), List.of(new DisplayReward(new ItemStack(Items.STONE), 1))); }

@@ -113,6 +113,7 @@ public final class BoxService {
             var names = REWARD_NAMES.compute(box.id(), (id, cached) -> cached != null && cached.definition() == box
                     ? cached : new CachedNames(box, rewardNames(box)));
             Networking.sendToPlayerClient(names.packet(), player);
+            Networking.sendToPlayerClient(new PacketAcquisition(com.reclizer.csgobox.config.AcquisitionSummary.of(box)), player);
         }
     }
 }

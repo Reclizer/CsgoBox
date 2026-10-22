@@ -144,7 +144,7 @@
   "editor.csgobox.key_disabled_hint": "No key set. Add a key on the Rewards tab first.",
   "editor.csgobox.sample_drag_key": "Drag to the reward grid or required-item slot",
   "editor.csgobox.regular_total": "Regular rewards %s / suggested %s",
-  "editor.csgobox.regular_limit_hint": "First 20 shown; later entries still roll",
+  "editor.csgobox.regular_limit_hint": "20 slots per page; extra rewards use later pages",
   "editor.csgobox.hidden_reward": "Draw eligible; hidden from opening preview",
   "editor.csgobox.weight": "Weight",
   "editor.csgobox.overview_total": "Regular %s · gold %s · preview %s regular",
@@ -204,5 +204,17 @@
   "gui.csgobox.csgo_box.consume_box": "Consumes one box",
   "gui.csgobox.csgo_box.consume_key": "Consumes one %s; keeps box",
   "gui.csgobox.csgo_box.consume_both": "Consumes box and one %s",
-  "gui.csgobox.csgo_box.key_count": " (owned: %s)"
+  "gui.csgobox.csgo_box.key_count": " (owned: %s)",
+  "editor.csgobox.acquisition_methods": "Methods",
+  "jei.csgobox.title": "Case and key acquisition",
+  "jei.csgobox.crafting": "Crafting table",
+  "jei.csgobox.drop": "Entity drop",
+  "jei.csgobox.trade": "Villager trade",
+  "jei.csgobox.none": "No acquisition configured",
+  "jei.csgobox.no_method": "No acquisition rule is enabled",
+  "jei.csgobox.admin_grant": "Ask an operator to grant it or configure a method",
+  "jei.csgobox.chance": "Drop chance: %s",
+  "jei.csgobox.trade_details": "Level %s · Uses %s · XP %s",
+  "jei.csgobox.trade_candidate": "Random trade candidate; not every villager offers it",
+  "jei.csgobox.shaped": "Shaped recipe; movable and mirrorable"
 }

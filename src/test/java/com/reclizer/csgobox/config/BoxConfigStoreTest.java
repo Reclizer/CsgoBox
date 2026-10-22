@@ -80,7 +80,7 @@ class BoxConfigStoreTest {
         }
     }
 
-    @Test void previewLimitSurvivesReloadWithoutRemovingHiddenOrGoldRewards() throws IOException {
+    @Test void paginatedPreviewSurvivesReloadWithAllRegularAndGoldRewards() throws IOException {
         var store = store("[]"); store.reload();
         var entries = new java.util.ArrayList<RewardEntry>();
         entries.add(new RewardEntry("minecraft:diamond", 5));
@@ -88,8 +88,8 @@ class BoxConfigStoreTest {
         var box = BoxDefinition.create("csgobox:limit", "limit", entries);
         entries.add(new RewardEntry("minecraft:emerald", 1));
         box = box.withRewards(entries);
-        assertEquals(20, box.previewRewards().size());
-        assertTrue(box.previewRewards().stream().allMatch(e -> e.grade() == 4));
+        assertEquals(21, box.previewRewards().size());
+        assertEquals("minecraft:emerald", box.previewRewards().get(20).item());
         assertEquals(1, box.grade1().size()); assertEquals(1, box.grade5().size());
         store.saveDefinition(box, ""); store.reload();
         assertEquals(box, store.readForEditing(box.id()));

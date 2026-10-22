@@ -53,14 +53,14 @@ public final class AcquisitionGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void hiddenRewardsRemainDrawableAndNoKeyIsRequired(GameTestHelper helper) {
+    public static void laterPageRewardsRemainDrawableAndNoKeyIsRequired(GameTestHelper helper) {
         var entries = new ArrayList<RewardEntry>();
         for (int i = 0; i < 20; i++) entries.add(new RewardEntry("minecraft:stone", 1));
         entries.add(new RewardEntry("minecraft:emerald.withCount(3)", 1));
         entries.add(new RewardEntry("minecraft:diamond", 5));
         var box = box("", null, null).withRewards(entries);
-        helper.assertTrue(box.previewRewards().size() == 20 && box.previewRewards().stream()
-                .noneMatch(e -> e.item().contains("emerald")), "Preview did not hide entry 21");
+        helper.assertTrue(box.previewRewards().size() == 21 && box.previewRewards().get(20).item().contains("emerald"),
+                "Preview omitted the later-page reward");
         var player = player(helper); held(player, box);
         player.getInventory().setItem(1, new ItemStack(Items.TRIPWIRE_HOOK, 4));
         var result = BoxOpening.open(player, box, new Random(0) {

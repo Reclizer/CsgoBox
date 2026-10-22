@@ -16,7 +16,7 @@ public record PacketBoxPreview(UUID token, ItemStack box, ItemStack key, List<Di
     public PacketBoxPreview {
         if (!ConsumptionMode.valid(consumption) || ConsumptionMode.parse(consumption).requiresKey() && key.isEmpty())
             throw new IllegalArgumentException("Invalid preview consumption");
-        if (rewards.size() > 21 || legendaryRewards.size() > 256
+        if (rewards.size() > 256 || legendaryRewards.size() > 256
                 || rewards.stream().anyMatch(r -> r.stack().isEmpty() || r.grade() < 1 || r.grade() > 5)
                 || legendaryRewards.stream().anyMatch(r -> r.stack().isEmpty() || r.grade() != 5))
             throw new IllegalArgumentException("Invalid preview rewards");
@@ -27,7 +27,7 @@ public record PacketBoxPreview(UUID token, ItemStack box, ItemStack key, List<Di
         this(token, box, key, rewards, legendaryRewards, key.isEmpty() ? "box" : "both");
     }
     public PacketBoxPreview(FriendlyByteBuf buf) {
-        this(buf.readUUID(), buf.readItem(), buf.readItem(), readRewards(buf, 21), readRewards(buf, 256), buf.readUtf(16));
+        this(buf.readUUID(), buf.readItem(), buf.readItem(), readRewards(buf, 256), readRewards(buf, 256), buf.readUtf(16));
     }
     private static List<DisplayReward> readRewards(FriendlyByteBuf buf, int limit) {
         int count = buf.readVarInt();

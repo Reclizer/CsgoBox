@@ -35,6 +35,7 @@ public final class ClientPackets {
 
     public static void catalog(PacketBoxCatalog packet) {
         BoxCatalog.replace(packet.entries());
+        ClientAcquisitions.reset(packet.entries().stream().map(BoxCatalog.Entry::id).toList());
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level != null && minecraft.player != null) {
             var parameters = new CreativeModeTab.ItemDisplayParameters(minecraft.level.enabledFeatures(),
@@ -45,5 +46,7 @@ public final class ClientPackets {
     }
 
     @SubscribeEvent
-    public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { BoxCatalog.replace(java.util.List.of()); }
+    public static void logout(ClientPlayerNetworkEvent.LoggingOut event) {
+        BoxCatalog.replace(java.util.List.of()); ClientAcquisitions.reset(java.util.List.of());
+    }
 }

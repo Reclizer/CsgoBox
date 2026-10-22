@@ -100,7 +100,7 @@ public record BoxDefinition(String id, String name, String key, float drop, List
     }
 
     public List<RewardEntry> previewRewards() {
-        return regularRewardsInOrder().stream().limit(RECOMMENDED_REGULAR_LIMIT).toList();
+        return regularRewardsInOrder();
     }
 
     public static String newId() { return "csgobox:" + java.util.UUID.randomUUID(); }

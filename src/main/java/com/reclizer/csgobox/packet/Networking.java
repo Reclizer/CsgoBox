@@ -8,7 +8,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import java.util.Optional;
 
 public final class Networking {
-    private static final String PROTOCOL = "11";
+    private static final String PROTOCOL = "12";
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(CsgoBox.MODID, "network"), () -> PROTOCOL, PROTOCOL::equals, PROTOCOL::equals);
 
@@ -35,6 +35,8 @@ public final class Networking {
                 PacketPreviewHeartbeat::new, PacketPreviewHeartbeat::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         INSTANCE.registerMessage(10, PacketDeleteBox.class, PacketDeleteBox::toBytes,
                 PacketDeleteBox::new, PacketDeleteBox::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        INSTANCE.registerMessage(11, PacketAcquisition.class, PacketAcquisition::toBytes,
+                PacketAcquisition::new, PacketAcquisition::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 
     public static void sendToPlayerClient(Object message, ServerPlayer player) {

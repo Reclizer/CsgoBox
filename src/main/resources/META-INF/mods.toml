@@ -61,3 +61,9 @@ description='''${mod_description}'''
    versionRange="${minecraft_version_range}"
    ordering="NONE"
    side="BOTH"
+[[dependencies.${mod_id}]]
+   modId="jei"
+   mandatory=false
+   versionRange="[15.20.0.106,16)"
+   ordering="AFTER"
+   side="CLIENT"

@@ -29,6 +29,8 @@ public class CsboxScreen extends BoxScreen {
     private boolean requested;
     private boolean playedSound;
     private Button openButton;
+    private Button previousPage, nextPage;
+    private int page;
     private final PreviewRotation rotation = new PreviewRotation();
     private DisplayReward hovered;
     private final HoverCache<List<Component>> tooltip = new HoverCache<>();
@@ -74,6 +76,22 @@ public class CsboxScreen extends BoxScreen {
         openButton.active = !requested && (preview.key().isEmpty() || keyCount() > 0);
         addRenderableWidget(ClassicBoxUi.action(font, LAYOUT_WIDTH, LAYOUT_HEIGHT, 72, "back_box",
                 Component.translatable("gui.csgobox.csgo_box.back_box"), button -> onClose()));
+        previousPage = addRenderableWidget(Button.builder(Component.literal("↑"), b -> changePage(-1)).bounds(452, 158, 15, 16).build());
+        nextPage = addRenderableWidget(Button.builder(Component.literal("↓"), b -> changePage(1)).bounds(452, 204, 15, 16).build());
+        updatePageButtons();
+    }
+
+    private int pages() { return Math.max(1, (rewards().size()+PAGE_SIZE-1)/PAGE_SIZE); }
+    private void updatePageButtons() {
+        page = Math.min(page, pages()-1);
+        previousPage.visible = nextPage.visible = pages() > 1;
+        previousPage.active = !requested && page > 0;
+        nextPage.active = !requested && page+1 < pages();
+    }
+    private void changePage(int delta) {
+        if (requested) return;
+        page = Math.max(0, Math.min(pages()-1, page+delta));
+        hovered = null; tooltip.clear(); updatePageButtons();
     }
 
     private int keyCount() {
@@ -88,6 +106,7 @@ public class CsboxScreen extends BoxScreen {
         super.tick();
         availableKeys = keyCount();
         if (openButton != null) openButton.active = !requested && (preview.key().isEmpty() || availableKeys > 0);
+        if (previousPage != null) updatePageButtons();
     }
 
     @Override protected boolean canvasDragged(int button, double dx, double dy) {
@@ -99,7 +118,8 @@ public class CsboxScreen extends BoxScreen {
     }
 
     @Override protected boolean canvasScrolled(double x, double y, double delta) {
-        return false;
+        if (requested || pages() <= 1 || delta == 0 || x < 14 || x > 470 || y < 143 || y > 243) return false;
+        changePage(delta < 0 ? 1 : -1); return true;
     }
 
     @Override protected boolean canvasClicked(double x, double y, int button) {
@@ -121,13 +141,11 @@ public class CsboxScreen extends BoxScreen {
     }
 
     private DisplayReward rewardAt(double mouseX, double mouseY) {
-        if (rewards().size() > PAGE_SIZE && rewards().get(PAGE_SIZE).grade() == 5
-                && mouseX >= 444 && mouseX < 466 && mouseY >= 122 && mouseY < 142) return rewards().get(PAGE_SIZE);
-        for (int n = 0; n < Math.min(rewards().size(), PAGE_SIZE); n++) {
+        for (int n = 0; n < Math.min(rewards().size()-page*PAGE_SIZE, PAGE_SIZE); n++) {
             int x = LAYOUT_WIDTH*4/100 + n%10*LAYOUT_WIDTH*9/100;
             int y = LAYOUT_HEIGHT*(n < 10 ? 55 : 73)/100;
             if (mouseX >= x && mouseX < x+LAYOUT_WIDTH*8/100 && mouseY >= y && mouseY < y+LAYOUT_HEIGHT*17/100)
-                return rewards().get(n);
+                return rewards().get(page*PAGE_SIZE+n);
         }
         return null;
     }
@@ -149,15 +167,16 @@ public class CsboxScreen extends BoxScreen {
         label(g, Component.translatable("gui.csgobox.csgo_box.label_items").withStyle(bold), 3, 50.3F, 0.8F);
 
         hovered = rotation.isDragging() || requested ? null : rewardAt(mouseX, mouseY);
-        for (int n = 0; n < Math.min(rewards().size(), PAGE_SIZE); n++) {
+        for (int n = 0; n < Math.min(rewards().size()-page*PAGE_SIZE, PAGE_SIZE); n++) {
+            int rewardIndex = page*PAGE_SIZE+n;
             int index = n%PAGE_SIZE, column = index%10, row = index/10;
             int x = LAYOUT_WIDTH*4/100 + column*LAYOUT_WIDTH*9/100, y = LAYOUT_HEIGHT*(row == 0 ? 55 : 73)/100;
-            DisplayReward entry = rewards().get(n);
-            ClassicBoxUi.previewCard(g, entry.stack(), entry.grade(), x, y, LAYOUT_WIDTH, LAYOUT_HEIGHT, rewardLayouts.get(n));
+            DisplayReward entry = rewards().get(rewardIndex);
+            ClassicBoxUi.previewCard(g, entry.stack(), entry.grade(), x, y, LAYOUT_WIDTH, LAYOUT_HEIGHT, rewardLayouts.get(rewardIndex));
             if (hovered == entry) ClassicBoxUi.hoverFrame(g, x, y, LAYOUT_WIDTH*8/100, LAYOUT_HEIGHT*11/100, 0xFFE9D49E);
             // Long names wrap inside their original card column instead of spilling into adjacent cards.
             int line = 0;
-            for (var part : rewardNames.get(n)) {
+            for (var part : rewardNames.get(rewardIndex)) {
                 g.pose().pushPose();
                 try {
                     g.pose().translate(LAYOUT_WIDTH*0.04F + column*LAYOUT_WIDTH*0.09F, LAYOUT_HEIGHT*(row == 0 ? 0.67F : 0.85F) + line*6F, 300);
@@ -167,11 +186,7 @@ public class CsboxScreen extends BoxScreen {
                 line++;
             }
         }
-        if (rewards().size() > PAGE_SIZE && rewards().get(PAGE_SIZE).grade() == 5) {
-            // Twenty regular cards retain their original grid; the extra gold badge uses the former page controls.
-            ClassicBoxUi.gold(g, 447, 124, 17, 17);
-            if (hovered == rewards().get(PAGE_SIZE)) ClassicBoxUi.hoverFrame(g, 444, 122, 22, 20, 0xFFE9D49E);
-        }
+        if (pages() > 1) ClassicBoxUi.centeredText(g, font, Component.literal((page+1)+"/"+pages()), 459, 187, .55F, 21, 0xFFD3D3D3);
         if (!preview.key().isEmpty()) {
             ClassicBoxUi.item(g, preview.key(), LAYOUT_WIDTH*0.25F, LAYOUT_HEIGHT*0.93F, 1);
             int count = availableKeys;

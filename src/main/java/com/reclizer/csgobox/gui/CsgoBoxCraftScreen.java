@@ -19,6 +19,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     private static final int[] COLORS = {0xFF6097FF, 0xFF9D7BFF, 0xFFDC73E8, 0xFFF0747A, 0xFFEFC66B};
     private static final int TEXT = 0xFFE6ECF5, MUTED = 0xFF93A2B8;
     private static final int PAGE_SIZE = 27;
+    private static final String[] ACQUISITION_METHODS = {"crafting", "dropping", "trading"};
     private final List<List<ItemStack>> rewards = new ArrayList<>();
     private final List<EditBox> fields = new ArrayList<>();
     private final List<UiButton> catalogButtons = new ArrayList<>();
@@ -205,11 +206,11 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         button(282, 108, 120, tr("acquire_key"), () -> { acquireKey = true; sampleTarget = 0; rebuild(); }, acquireKey ? COLORS[4] : MUTED);
         if (acquireKey && key.isBlank()) return;
         var a = acquisition();
-        for (int i = 0; i < 3; i++) {
-            int tab = i;
+        for (int i = 0; i < ACQUISITION_METHODS.length; i++) {
+            int method = i;
             boolean enabled = i == 0 ? a.crafting : i == 1 ? a.dropping : a.trading;
-            button(152 + i * 152, 138, 144, tr(new String[]{"crafting", "dropping", "trading"}[i]).copy().append(enabled ? " ✓" : ""),
-                    () -> { acquisitionPage = tab; sampleTarget = 0; rebuild(); }, acquisitionPage == i ? COLORS[4] : MUTED);
+            button(152, 150+i*32, 88, tr(ACQUISITION_METHODS[i]).copy().append(enabled ? " ✓" : ""),
+                    () -> { acquisitionPage = method; sampleTarget = 0; rebuild(); }, acquisitionPage == i ? COLORS[4] : MUTED);
         }
         boolean enabled = acquisitionPage == 0 ? a.crafting : acquisitionPage == 1 ? a.dropping : a.trading;
         button(484, 108, 120, tr(enabled ? "method_on" : "method_off"), () -> {
@@ -219,23 +220,23 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             changed(); rebuild();
         }, enabled ? COLORS[0] : MUTED);
         if (acquisitionPage == 0) {
-            acquisitionField(353, 211, 60, 2, a.craftCount, value -> a.craftCount = value);
+            acquisitionField(450, 211, 60, 2, a.craftCount, value -> a.craftCount = value);
         } else if (acquisitionPage == 1) {
-            acquisitionField(152, 190, 100, 16, a.dropChance, value -> a.dropChance = value);
-            acquisitionField(280, 190, 70, 2, a.dropCount, value -> a.dropCount = value);
-            acquisitionField(152, 238, 452, 8192, a.entities, value -> a.entities = value);
+            acquisitionField(252, 190, 100, 16, a.dropChance, value -> a.dropChance = value);
+            acquisitionField(380, 190, 70, 2, a.dropCount, value -> a.dropCount = value);
+            acquisitionField(252, 238, 352, 8192, a.entities, value -> a.entities = value);
         } else {
-            acquisitionField(152, 181, 220, 128, a.profession, value -> a.profession = value);
-            acquisitionField(390, 181, 54, 1, a.level, value -> a.level = value);
-            acquisitionField(461, 181, 64, 4, a.uses, value -> a.uses = value);
-            acquisitionField(542, 181, 62, 3, a.xp, value -> a.xp = value);
-            acquisitionField(183, 228, 46, 2, a.costCount, value -> a.costCount = value);
-            acquisitionField(270, 228, 46, 2, a.secondCount, value -> a.secondCount = value);
-            acquisitionField(363, 228, 50, 2, a.tradeCount, value -> a.tradeCount = value);
+            acquisitionField(252, 169, 154, 128, a.profession, value -> a.profession = value);
+            acquisitionField(420, 169, 44, 1, a.level, value -> a.level = value);
+            acquisitionField(477, 169, 55, 4, a.uses, value -> a.uses = value);
+            acquisitionField(547, 169, 57, 3, a.xp, value -> a.xp = value);
+            acquisitionField(283, 228, 40, 2, a.costCount, value -> a.costCount = value);
+            acquisitionField(368, 228, 40, 2, a.secondCount, value -> a.secondCount = value);
+            acquisitionField(459, 228, 44, 2, a.tradeCount, value -> a.tradeCount = value);
         }
         if (acquisitionPage != 1) {
-            field(152, 270, 350, 8192, itemId, value -> itemId = value);
-            button(512, 270, 92, tr("set_sample"), () -> {
+            field(252, 270, 240, 8192, itemId, value -> itemId = value);
+            button(502, 270, 102, tr("set_sample"), () -> {
                 try { setAcquisitionSample(ItemNBT.parseStrict(itemId.trim()), sampleTarget); }
                 catch (RuntimeException ex) { fail(text("bad_item")); }
             }, MUTED);
@@ -515,11 +516,9 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             ItemStack stack = current().get(index);
             g.renderItem(stack, leftPos+x+5, topPos+y+4);
             g.renderItemDecorations(font, stack, leftPos+x+5, topPos+y+4);
-            if (!previewVisible(grade, index)) label(g, "—", x+1, y+1, MUTED);
             if (inside(mx, my, x, y, 26, 26)) {
                 tooltip = stack;
                 tooltipChance = text("entry_chance", percent(chance/current().size()));
-                if (!previewVisible(grade, index)) tooltipChance += " · " + text("hidden_reward");
             }
         }
         label(g, text("page_count", rewardPage+1, Math.max(1, (current().size()+PAGE_SIZE-1)/PAGE_SIZE), current().size()), 190, 244, MUTED);
@@ -555,13 +554,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         }
     }
 
-    private boolean previewVisible(int tier, int index) {
-        if (tier == 5) return true;
-        int ordinal = 0;
-        for (int i = 0; i < Math.min(displayOrder.size(), BoxDefinition.RECOMMENDED_REGULAR_LIMIT); i++)
-            if (displayOrder.get(i) == tier && ordinal++ == index) return true;
-        return false;
-    }
+
 
     private void sampleSlot(GuiGraphics g, int mx, int my, int x, int y, String value, boolean selected) {
         panel(g, x, y, 26, 26, selected ? 0xFF40516A : 0xFF0E1621);
@@ -577,31 +570,33 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             label(g, text("key_disabled_hint"), 152, 150, MUTED); return;
         }
         var a = acquisition();
+        label(g, text("acquisition_methods"), 152, 135, MUTED);
+        panel(g, 244, 146, 1, 139, 0xFF304057);
         if (acquisitionPage == 0) {
-            label(g, text("recipe_grid"), 152, 166, TEXT);
+            label(g, text("recipe_grid"), 252, 151, TEXT);
             for (int i = 0; i < 9; i++)
-                sampleSlot(g, mx, my, 152+i%3*28, 181+i/3*28, a.ingredients.get(i), sampleTarget == i);
-            label(g, "→", 249, 213, MUTED);
-            renderAcquisitionOutput(g, 285, 208);
-            label(g, text("output_count"), 353, 197, MUTED);
-            clipped(g, text("recipe_hint"), 432, 209, 172, MUTED);
+                sampleSlot(g, mx, my, 252+i%3*28, 174+i/3*28, a.ingredients.get(i), sampleTarget == i);
+            label(g, "→", 349, 213, MUTED);
+            renderAcquisitionOutput(g, 385, 208);
+            label(g, text("output_count"), 450, 197, MUTED);
+            clipped(g, text("recipe_hint"), 252, 259, 352, MUTED);
         } else if (acquisitionPage == 1) {
-            label(g, text("acquisition_drop_chance"), 152, 174, TEXT);
-            label(g, text("output_count"), 280, 174, MUTED);
-            label(g, text("entities"), 152, 222, TEXT);
-            clipped(g, text("entities_hint"), 152, 268, 452, MUTED);
+            label(g, text("acquisition_drop_chance"), 252, 174, TEXT);
+            label(g, text("output_count"), 380, 174, MUTED);
+            label(g, text("entities"), 252, 222, TEXT);
+            clipped(g, text("entities_hint"), 252, 268, 352, MUTED);
         } else {
-            label(g, text("profession"), 152, 167, MUTED);
-            label(g, text("trade_level"), 390, 167, MUTED);
-            label(g, text("trade_uses"), 461, 167, MUTED);
-            label(g, text("trade_xp"), 542, 167, MUTED);
-            label(g, text("cost"), 152, 208, MUTED);
-            label(g, text("second_cost"), 239, 208, MUTED);
-            label(g, text("output_count"), 326, 208, MUTED);
-            sampleSlot(g, mx, my, 152, 225, a.cost, sampleTarget == 0);
-            sampleSlot(g, mx, my, 239, 225, a.secondCost, sampleTarget == 1);
-            renderAcquisitionOutput(g, 326, 225);
-            clipped(g, text("trade_hint"), 432, 225, 172, MUTED);
+            label(g, text("profession"), 252, 155, MUTED);
+            label(g, text("trade_level"), 420, 155, MUTED);
+            label(g, text("trade_uses"), 477, 155, MUTED);
+            label(g, text("trade_xp"), 547, 155, MUTED);
+            label(g, text("cost"), 252, 208, MUTED);
+            label(g, text("second_cost"), 337, 208, MUTED);
+            label(g, text("output_count"), 422, 208, MUTED);
+            sampleSlot(g, mx, my, 252, 225, a.cost, sampleTarget == 0);
+            sampleSlot(g, mx, my, 337, 225, a.secondCost, sampleTarget == 1);
+            renderAcquisitionOutput(g, 422, 225);
+            clipped(g, text("trade_hint"), 515, 225, 89, MUTED);
         }
         renderSamples(g, mx, my);
         clipped(g, text("acquisition_sample_hint"), 350, 307, 254, TEXT);
@@ -704,10 +699,10 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
 
     private int acquisitionTargetAt(double mx, double my) {
         if (acquisitionPage == 0) {
-            for (int i = 0; i < 9; i++) if (inside(mx, my, 152+i%3*28, 181+i/3*28, 26, 26)) return i;
+            for (int i = 0; i < 9; i++) if (inside(mx, my, 252+i%3*28, 174+i/3*28, 26, 26)) return i;
         } else if (acquisitionPage == 2) {
-            if (inside(mx, my, 152, 225, 26, 26)) return 0;
-            if (inside(mx, my, 239, 225, 26, 26)) return 1;
+            if (inside(mx, my, 252, 225, 26, 26)) return 0;
+            if (inside(mx, my, 337, 225, 26, 26)) return 1;
         }
         return -1;
     }

@@ -36,7 +36,20 @@ minecraft {
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
-repositories { mavenCentral() }
+repositories {
+    mavenCentral()
+    maven { url 'https://maven.blamejared.com'; content { includeGroup 'mezz.jei' } }
+}
+
+// Optional client integration. Only API classes are used for compilation; JEI is never bundled.
+def jeiVersion = '15.20.0.106'
+dependencies {
+    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jeiVersion}")
+    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jeiVersion}")
+    if (project.findProperty('jeiCompat') == 'true') {
+        runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jeiVersion}")
+    }
+}
 
 // Optional real-mod compatibility run: -PtaczCompat=true. Never bundled into CsgoBox.
 if (project.findProperty('taczCompat') == 'true') {
