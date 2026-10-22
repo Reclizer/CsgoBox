@@ -1,6 +1,7 @@
 package com.reclizer.csgobox.gui.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.reclizer.csgobox.utils.ColorTools;
 import com.reclizer.csgobox.utils.ReelPresentation;
 import com.mojang.math.Axis;
@@ -13,7 +14,6 @@ import net.minecraft.world.item.ItemStack;
 
 /** Original CSGO presentation, with rendering isolated from inventory and network operations. */
 final class ClassicBoxUi {
-    private static final ResourceLocation GOLD = new ResourceLocation("csgobox:textures/screens/gold_item.png");
     private ClassicBoxUi() {}
 
     static void text(GuiGraphics g, Font font, Component text, float x, float y, float scale, int color) {
@@ -97,8 +97,23 @@ final class ClassicBoxUi {
     }
 
     static void gold(GuiGraphics g, int x, int y, int w, int h) {
+        g.flush();
+        LegendaryIconTexture.ensureLoaded();
         RenderSystem.enableBlend();
-        g.blit(GOLD, x, y, 0, 0, w, h, w, h);
+        // Preserve the opaque card's alpha. The default GUI blend replaces it with
+        // the PNG's alpha, turning almost-transparent background pixels into holes
+        // when ReelLayer composites the off-screen target over the world.
+        RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        g.pose().pushPose();
+        try {
+            // Keep the badge in front of its gradient, including fractionally scaled reel cards.
+            g.pose().translate(0, 0, 1);
+            g.blit(LegendaryIconTexture.LOCATION, x, y, 0, 0, w, h, w, h);
+        } finally {
+            g.pose().popPose();
+            RenderSystem.defaultBlendFunc();
+        }
     }
 
     /** Keep the original green/grey textures and percentage-based hit areas. */
