@@ -22,6 +22,8 @@ bash ./gradlew runGameTestServer
 模组文件在 `build/libs/csgobox-1.6.0.jar`。首次构建需要下载 Forge 和 Minecraft 依赖。
 GameTest 在 `run-gametest/` 下使用独立的开发环境，请勿将该目录指向正式服务器。
 
+箱体模型的 Blockbench 编辑工程位于 `blockbench/csgo_box.bbmodel`，内嵌原贴图，并附 `csgo_box.png` 和导回说明。使用 Java 方块/物品格式导出到 `src/main/resources/assets/csgobox/models/item/csgo_box.json`，贴图导出到 `textures/item/csgo_box.png`；地面方块继承此模型，修改会同时应用于物品和地面箱子。
+
 ## 配置与使用
 
 服务端首次启动会生成 `config/csbox/box.json`。客户端不读取本地奖池配置。
