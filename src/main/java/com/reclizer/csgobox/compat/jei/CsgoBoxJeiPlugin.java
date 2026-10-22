@@ -25,6 +25,7 @@ public final class CsgoBoxJeiPlugin implements IModPlugin {
     @Override public ResourceLocation getPluginUid() { return new ResourceLocation(CsgoBox.MODID,"jei"); }
     @Override public void registerItemSubtypes(ISubtypeRegistration registration) {
         registration.registerSubtypeInterpreter(ModItems.ITEM_CSGOBOX.get(), (stack, context) -> ItemCsgoBox.boxId(stack));
+        registration.registerSubtypeInterpreter(ModItems.ITEM_EMPTY_BOX.get(), (stack, context) -> EmptyBoxItem.appearance(stack).id());
     }
     @Override public void registerCategories(IRecipeCategoryRegistration registration) {
         registration.addRecipeCategories(new AcquisitionCategory(registration.getJeiHelpers().getGuiHelper()));

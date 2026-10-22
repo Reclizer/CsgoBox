@@ -63,6 +63,13 @@ public final class PlacedBoxGameTests {
         return helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(pos(helper)).inflate(2)).stream().map(ItemEntity::getItem).toList();
     }
 
+    static void complete(GameTestHelper helper,PlacedBoxEntity box) {
+        var saved=box.saveWithoutMetadata();
+        saved.putLong("OpeningStarted",helper.getLevel().getGameTime()-com.reclizer.csgobox.utils.GroundAnimation.TOTAL_TICKS);
+        box.load(saved);
+        PlacedBoxEntity.serverTick(helper.getLevel(),box.getBlockPos(),box.getBlockState(),box);
+    }
+
     @GameTest(template = "empty")
     public static void shiftPlacementConsumesOneAndTransfersOnlyPoolIdentity(GameTestHelper helper) throws Exception {
         var box = definition("csgobox:csgo_key0");
@@ -142,17 +149,24 @@ public final class PlacedBoxGameTests {
             second.setItemInHand(InteractionHand.MAIN_HAND, keys.copy());
             var result = PlacedBoxOpening.open(first, pos(helper), InteractionHand.MAIN_HAND, new Random(0));
             helper.assertTrue(result.success() && first.getMainHandItem().getCount() == 2 && first.getInventory().getItem(1).getCount() == 3, "Opening consumed wrong key/amount");
-            helper.assertTrue(first.getInventory().countItem(Items.DIAMOND) == 3 && result.reward().getTag().getBoolean("groundReward"), "Reward NBT/count was lost");
-            helper.assertTrue(helper.getLevel().getBlockState(pos(helper)).isAir(), "Opened box remained in the world");
+            helper.assertTrue(first.getInventory().countItem(Items.DIAMOND)==0 && drops(helper).isEmpty(),"Reward delivered before animation");
+            var opening=(PlacedBoxEntity)helper.getLevel().getBlockEntity(pos(helper));
+            helper.assertTrue(opening.isOpening(),"Placed case did not start animation");
             helper.assertTrue(!PlacedBoxOpening.open(second, pos(helper), InteractionHand.MAIN_HAND, new Random(0)).success()
                     && !PlacedBoxOpening.open(first, pos(helper), InteractionHand.MAIN_HAND, new Random(0)).success(), "Duplicate request awarded again");
             helper.assertTrue(second.getMainHandItem().getCount() == 3 && second.getInventory().countItem(Items.DIAMOND) == 0, "Losing player consumed key or received reward");
             helper.assertTrue(drops(helper).stream().noneMatch(s -> ItemCsgoBox.boxId(s).equals(box.id())), "Opening also dropped an unopened box");
+            complete(helper,opening);
+            helper.assertTrue(opening.isEmpty() && drops(helper).stream().filter(s->s.is(Items.DIAMOND)
+                    && s.getTag().getBoolean("groundReward")).mapToInt(ItemStack::getCount).sum()==3,"Delayed drop lost NBT or quantity");
+            PlacedBoxOpening.open(second,pos(helper),InteractionHand.MAIN_HAND,new Random());
+            helper.assertTrue(second.getMainHandItem().getCount()==3 && drops(helper).stream().filter(s->s.is(Items.DIAMOND))
+                    .mapToInt(ItemStack::getCount).sum()==3,"Empty-case interaction consumed a key or redelivered");
         }); helper.succeed();
     }
 
     @GameTest(template = "empty")
-    public static void offhandKeyAndFullInventoryDeliverOnlyRewardOverflow(GameTestHelper helper) throws Exception {
+    public static void offhandKeyAndFullInventoryDropOnlyAfterAnimation(GameTestHelper helper) throws Exception {
         var box = definition("csgobox:csgo_key0");
         withConfig(box, () -> {
             place(helper, box); var player = player(helper);
@@ -160,6 +174,8 @@ public final class PlacedBoxGameTests {
             player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(ModItems.ITEM_CSGO_KEY0.get(), 2));
             helper.assertTrue(PlacedBoxOpening.open(player, pos(helper), InteractionHand.MAIN_HAND, new Random(0)).success(), "Offhand key could not open box");
             helper.assertTrue(player.getOffhandItem().getCount() == 1 && player.getMainHandItem().getCount() == 64, "Wrong hand was consumed");
+            helper.assertTrue(drops(helper).isEmpty(),"Prize dropped before animation completed");
+            complete(helper,(PlacedBoxEntity)helper.getLevel().getBlockEntity(pos(helper)));
             helper.assertTrue(drops(helper).stream().filter(s -> s.is(Items.DIAMOND) && s.hasTag() && s.getTag().getBoolean("groundReward"))
                     .mapToInt(ItemStack::getCount).sum() == 3, "Full inventory did not drop exactly the reward overflow");
         }); helper.succeed();
@@ -185,8 +201,11 @@ public final class PlacedBoxGameTests {
             helper.assertTrue(helper.getLevel().getBlockState(pos(helper)).is(ModBlocks.BOX.get()) && player.getInventory().countItem(Items.EMERALD) == 0,
                     "Canceled interaction still opened the box");
             player.gameMode.useItemOn(player, helper.getLevel(), player.getMainHandItem(), InteractionHand.MAIN_HAND, hit);
-            helper.assertTrue(helper.getLevel().getBlockState(pos(helper)).isAir() && player.getInventory().countItem(Items.EMERALD) == 2,
-                    "Empty-hand interaction did not use latest key/reward rules");
+            var opening=(PlacedBoxEntity)helper.getLevel().getBlockEntity(pos(helper));
+            helper.assertTrue(opening.isOpening() && drops(helper).isEmpty(),"Empty-hand interaction did not start the current animation");
+            complete(helper,opening);
+            helper.assertTrue(opening.isEmpty() && drops(helper).stream().filter(s->s.is(Items.EMERALD))
+                    .mapToInt(ItemStack::getCount).sum()==2,"Delayed opening did not use latest configured reward");
         }); helper.succeed();
     }
 

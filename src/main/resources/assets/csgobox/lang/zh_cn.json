@@ -216,5 +216,9 @@
   "jei.csgobox.chance": "掉落概率：%s",
   "jei.csgobox.trade_details": "等级 %s · 最多 %s 次 · 经验 %s",
   "jei.csgobox.trade_candidate": "加入交易候选，不保证每位村民都有",
-  "jei.csgobox.shaped": "有序合成，支持移动和左右镜像"
+  "jei.csgobox.shaped": "有序合成，支持移动和左右镜像",
+  "item.csgobox.empty_box": "%s（空箱）",
+  "tooltips.csgobox.empty_box": "装饰空箱：直接放置，右键开合，不再产出奖励。",
+  "message.csgobox.hold_key_named": "需要手持 %s 才能打开这个箱子。",
+  "message.csgobox.ground_busy": "箱子正在开箱，请等待滑条结束。"
 }

@@ -1,0 +1,35 @@
+{
+  "parent": "csgobox:item/boxes/classic",
+  "overrides": [
+    {
+      "predicate": {
+        "csgobox:appearance": 0.1
+      },
+      "model": "csgobox:item/boxes/gold"
+    },
+    {
+      "predicate": {
+        "csgobox:appearance": 0.2
+      },
+      "model": "csgobox:item/boxes/orange"
+    },
+    {
+      "predicate": {
+        "csgobox:appearance": 0.3
+      },
+      "model": "csgobox:item/boxes/green"
+    },
+    {
+      "predicate": {
+        "csgobox:appearance": 0.4
+      },
+      "model": "csgobox:item/boxes/rose_blue"
+    },
+    {
+      "predicate": {
+        "csgobox:appearance": 0.5
+      },
+      "model": "csgobox:item/boxes/yellow_metal"
+    }
+  ]
+}

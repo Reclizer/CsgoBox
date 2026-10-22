@@ -1,0 +1,68 @@
+[
+  {
+    "appearance": "gold",
+    "pivot": [
+      8.0,
+      6.6,
+      13.4
+    ],
+    "source": "blockbench\\appearances\\gold\\java_models\\parts",
+    "body": 41,
+    "lid": 33
+  },
+  {
+    "appearance": "green",
+    "pivot": [
+      8.0,
+      1.64,
+      13.62
+    ],
+    "source": "blockbench\\appearances\\green\\java_models\\parts",
+    "body": 20,
+    "lid": 34
+  },
+  {
+    "appearance": "orange",
+    "pivot": [
+      8.0,
+      6.32,
+      13.12
+    ],
+    "source": "blockbench\\appearances\\orange\\java_models\\parts",
+    "body": 22,
+    "lid": 29
+  },
+  {
+    "appearance": "rose_blue",
+    "pivot": [
+      8.0,
+      8.31,
+      14.12
+    ],
+    "source": "blockbench\\appearances\\rose_blue\\java_models\\parts",
+    "body": 38,
+    "lid": 29
+  },
+  {
+    "appearance": "yellow_metal",
+    "pivot": [
+      8.0,
+      8.31,
+      14.12
+    ],
+    "source": "blockbench\\appearances\\yellow_metal\\java_models\\parts",
+    "body": 38,
+    "lid": 29
+  },
+  {
+    "appearance": "classic",
+    "pivot": [
+      8,
+      6.6,
+      13.4
+    ],
+    "source": "models/item/boxes/classic.json",
+    "body": 36,
+    "lid": 26
+  }
+]

@@ -48,5 +48,6 @@ public final class ClientPackets {
     @SubscribeEvent
     public static void logout(ClientPlayerNetworkEvent.LoggingOut event) {
         BoxCatalog.replace(java.util.List.of()); ClientAcquisitions.reset(java.util.List.of());
+        GroundBoxRenderer.clear();
     }
 }

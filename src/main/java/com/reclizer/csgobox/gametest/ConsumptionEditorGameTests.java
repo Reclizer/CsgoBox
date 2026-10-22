@@ -84,7 +84,7 @@ public final class ConsumptionEditorGameTests {
     }
 
     @GameTest(template="empty")
-    public static void groundModesRetainOnlyKeyCasesAndChargeEveryReuse(GameTestHelper helper) throws Exception {
+    public static void groundModesChargeRequiredKeysAndLeaveOnlyDecorativeCases(GameTestHelper helper) throws Exception {
         withConfig(helper,()-> {
             var level=helper.getLevel(); var pos=helper.absolutePos(new BlockPos(2,1,2));
             for (var mode:ConsumptionMode.values()) {
@@ -92,19 +92,23 @@ public final class ConsumptionEditorGameTests {
                 level.setBlockAndUpdate(pos,Blocks.AIR.defaultBlockState());
                 level.setBlockAndUpdate(pos.below(),Blocks.STONE.defaultBlockState());
                 level.setBlockAndUpdate(pos,ModBlocks.BOX.get().defaultBlockState());
-                ((PlacedBoxEntity)level.getBlockEntity(pos)).setPoolId(box.id());
+                var entity=(PlacedBoxEntity)level.getBlockEntity(pos); entity.setPoolId(box.id());
                 var player=player(helper,true); player.setPos(Vec3.atCenterOf(pos).add(0,0,2));
                 player.setItemInHand(InteractionHand.MAIN_HAND,keys(2));
-                var result=PlacedBoxOpening.open(player,pos,InteractionHand.MAIN_HAND,new Random());
-                helper.assertTrue(result.success(),"Ground mode failed: "+mode);
-                helper.assertTrue(level.getBlockState(pos).isAir()==mode.consumesBox(),"Wrong ground retention: "+mode);
-                helper.assertTrue(player.getMainHandItem().getCount()==(mode.requiresKey()?1:2),"Wrong ground key cost: "+mode);
-                if (mode==ConsumptionMode.KEY) {
-                    helper.assertTrue(PlacedBoxOpening.open(player,pos,InteractionHand.MAIN_HAND,new Random()).success(),"Reusable claim was not released");
-                    helper.assertTrue(!PlacedBoxOpening.open(player,pos,InteractionHand.MAIN_HAND,new Random()).success(),"Reusable ground box opened without a key");
-                    helper.assertTrue(player.getInventory().countItem(Items.DIAMOND)==6 && level.getBlockEntity(pos) instanceof PlacedBoxEntity,
-                            "Ground reuse lost box or duplicated rewards");
-                }
+                int before=level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(pos).inflate(2))
+                        .stream().filter(e->e.getItem().is(Items.DIAMOND)).mapToInt(e->e.getItem().getCount()).sum();
+                helper.assertTrue(PlacedBoxOpening.open(player,pos,InteractionHand.MAIN_HAND,new Random()).success(),"Ground mode failed: "+mode);
+                helper.assertTrue(entity.isOpening() && player.getInventory().countItem(Items.DIAMOND)==0,"Ground prize was not delayed");
+                int remaining=mode.requiresKey()?1:2;
+                helper.assertTrue(player.getMainHandItem().getCount()==remaining,"Wrong ground key cost: "+mode);
+                helper.assertTrue(!PlacedBoxOpening.open(player,pos,InteractionHand.MAIN_HAND,new Random()).success(),"Opening was replayed");
+                PlacedBoxGameTests.complete(helper,entity);
+                helper.assertTrue(entity.isEmpty() && level.getBlockState(pos).is(ModBlocks.BOX.get()),"Ground case did not become decorative: "+mode);
+                PlacedBoxOpening.open(player,pos,InteractionHand.MAIN_HAND,new Random());
+                helper.assertTrue(player.getMainHandItem().getCount()==remaining,"Decorative case consumed another key");
+                int after=level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(pos).inflate(2))
+                        .stream().filter(e->e.getItem().is(Items.DIAMOND)).mapToInt(e->e.getItem().getCount()).sum();
+                helper.assertTrue(after-before==3,"Ground case lost or duplicated the delayed reward");
             }
         }); helper.succeed();
     }

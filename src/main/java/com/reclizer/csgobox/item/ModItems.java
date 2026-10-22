@@ -35,6 +35,8 @@ public class ModItems {
                 entries.accept(ModItems.ITEM_CSGO_KEY1.get());
                 entries.accept(ModItems.ITEM_CSGO_KEY2.get());
                 entries.accept(ModItems.ITEM_CSGO_KEY3.get());
+                for (var appearance : com.reclizer.csgobox.config.BoxAppearance.values())
+                    entries.accept(EmptyBoxItem.create(appearance));
 
                 //entries.accept(ModItems.ITEM_CSGO_TEST.get());
 
@@ -48,6 +50,7 @@ public class ModItems {
 
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, CsgoBox.MODID);
     public static final RegistryObject<Item> ITEM_CSGOBOX=ITEMS.register("csgo_box",  ItemCsgoBox::new);
+    public static final RegistryObject<Item> ITEM_EMPTY_BOX=ITEMS.register("empty_box", EmptyBoxItem::new);
 
     public static final RegistryObject<Item> ITEM_CSGO_KEY0=ITEMS.register("csgo_key0",  ItemCsgoKey::new);
     public static final RegistryObject<Item> ITEM_CSGO_KEY1=ITEMS.register("csgo_key1",  ItemCsgoKey::new);

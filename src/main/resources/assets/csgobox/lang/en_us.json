@@ -216,5 +216,9 @@
   "jei.csgobox.chance": "Drop chance: %s",
   "jei.csgobox.trade_details": "Level %s · Uses %s · XP %s",
   "jei.csgobox.trade_candidate": "Random trade candidate; not every villager offers it",
-  "jei.csgobox.shaped": "Shaped recipe; movable and mirrorable"
+  "jei.csgobox.shaped": "Shaped recipe; movable and mirrorable",
+  "item.csgobox.empty_box": "%s (Empty)",
+  "tooltips.csgobox.empty_box": "Decorative empty case: place normally, right-click to open/close; no rewards.",
+  "message.csgobox.hold_key_named": "Hold %s to open this case.",
+  "message.csgobox.ground_busy": "The case is opening. Wait for the reel to finish."
 }

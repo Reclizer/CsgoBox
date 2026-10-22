@@ -13,8 +13,11 @@ public final class BoxAppearanceModels {
     public static void register() {
         ItemProperties.register(ModItems.ITEM_CSGOBOX.get(), new ResourceLocation("csgobox", "appearance"),
                 (stack, level, entity, seed) -> appearance(stack).modelNumber() / 10F);
+        ItemProperties.register(ModItems.ITEM_EMPTY_BOX.get(), new ResourceLocation("csgobox", "appearance"),
+                (stack, level, entity, seed) -> EmptyBoxItem.appearance(stack).modelNumber() / 10F);
     }
     public static BoxAppearance appearance(ItemStack stack) {
+        if (stack.getItem() instanceof EmptyBoxItem) return EmptyBoxItem.appearance(stack);
         if (stack.hasTag() && stack.getTag().contains(PREVIEW_TAG))
             return BoxAppearance.byId(stack.getTag().getString(PREVIEW_TAG));
         return BoxCatalog.appearance(ItemCsgoBox.boxId(stack));

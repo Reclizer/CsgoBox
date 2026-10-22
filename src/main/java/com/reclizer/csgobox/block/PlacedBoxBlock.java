@@ -46,7 +46,7 @@ public final class PlacedBoxBlock extends BaseEntityBlock {
                 .noOcclusion().pushReaction(PushReaction.BLOCK));
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(APPEARANCE, BoxAppearance.CLASSIC));
     }
-    @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
+    @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.ENTITYBLOCK_ANIMATED; }
     @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) { return new PlacedBoxEntity(pos, state); }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING, APPEARANCE); }
     @Override public BlockState getStateForPlacement(BlockPlaceContext context) {
@@ -54,6 +54,7 @@ public final class PlacedBoxBlock extends BaseEntityBlock {
         BoxDefinition definition = context.getLevel().isClientSide ? null : CsgoBoxManage.find(id);
         BoxAppearance appearance = context.getLevel().isClientSide ? BoxCatalog.appearance(id)
                 : definition == null ? BoxAppearance.CLASSIC : BoxAppearance.byId(definition.appearance());
+        if (context.getItemInHand().getItem() instanceof EmptyBoxItem) appearance=EmptyBoxItem.appearance(context.getItemInHand());
         return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite()).setValue(APPEARANCE, appearance);
     }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
@@ -69,7 +70,8 @@ public final class PlacedBoxBlock extends BaseEntityBlock {
     }
     @Override public BlockState updateShape(BlockState state, Direction direction, BlockState neighbor,
                                             LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
-        return direction == Direction.DOWN && !canSurvive(state, level, pos) ? Blocks.AIR.defaultBlockState()
+        return direction == Direction.DOWN && !canSurvive(state, level, pos)
+                && !(level.getBlockEntity(pos) instanceof PlacedBoxEntity box && box.isOpening()) ? Blocks.AIR.defaultBlockState()
                 : super.updateShape(state, direction, neighbor, level, pos, neighborPos);
     }
     @Override public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
@@ -85,12 +87,14 @@ public final class PlacedBoxBlock extends BaseEntityBlock {
         if (level.isClientSide) return InteractionResult.SUCCESS;
         if (!(player instanceof ServerPlayer serverPlayer)) return InteractionResult.CONSUME;
         var result = PlacedBoxOpening.open(serverPlayer, pos, hand, RANDOM);
-        if (!result.success()) player.displayClientMessage(Component.translatable(result.error()), true);
-        else {
-            level.playSound(null, pos, SoundEvents.CHEST_OPEN, SoundSource.BLOCKS, .8F, 1.05F);
-            player.displayClientMessage(Component.translatable("message.csgobox.ground_reward",
-                    result.reward().getHoverName(), result.reward().getCount()), true);
-        }
+        if (!result.success()) player.displayClientMessage(PlacedBoxOpening.errorMessage(serverPlayer,pos,result.error()),true);
         return InteractionResult.CONSUME;
+    }
+    @Override public void onRemove(BlockState state,Level level,BlockPos pos,BlockState next,boolean moving) {
+        if (!state.is(next.getBlock()) && level.getBlockEntity(pos) instanceof PlacedBoxEntity box) box.onForcedRemoval();
+        super.onRemove(state,level,pos,next,moving);
+    }
+    @Override public float getDestroyProgress(BlockState state,Player player,BlockGetter level,BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof PlacedBoxEntity box && box.isOpening()?0:super.getDestroyProgress(state,player,level,pos);
     }
 }

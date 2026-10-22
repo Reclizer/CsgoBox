@@ -10,7 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.gameevent.GameEvent;
 import java.util.random.RandomGenerator;
 
-/** A server-thread transaction: claim the box, charge and deliver, then release a reusable box. */
+/** Validate and charge once, then let the durable block animation release its fixed result. */
 public final class PlacedBoxOpening {
     private PlacedBoxOpening() {}
     private static BoxOpening.Result fail(String key) { return new BoxOpening.Result(ItemStack.EMPTY, 0, key); }
@@ -22,6 +22,8 @@ public final class PlacedBoxOpening {
                 || !level.getBlockState(pos).is(ModBlocks.BOX.get())
                 || !(level.getBlockEntity(pos) instanceof PlacedBoxEntity entity))
             return fail("message.csgobox.placed_unavailable");
+        if (entity.isOpening()) return fail("message.csgobox.ground_busy");
+        if (entity.isEmpty()) { entity.toggleEmpty(); return new BoxOpening.Result(ItemStack.EMPTY,0,null); }
         var box = CsgoBoxManage.find(entity.poolId());
         if (box == null) return fail("message.csgobox.unknown_box");
         var mode = box.mode();
@@ -34,20 +36,20 @@ public final class PlacedBoxOpening {
             if (!BoxKeys.matches(required, key)) return fail("message.csgobox.hold_key");
         }
         BoxOpening.Result result = BoxOpening.selectReward(player, box, random);
-        if (!entity.claim()) return fail("message.csgobox.placed_unavailable");
-        if (mode.consumesBox() && !level.removeBlock(pos, false)) {
-            entity.releaseClaim();
-            return fail("message.csgobox.placed_unavailable");
+        if (!entity.begin(box,result,player.getUUID(),random.nextLong())) return fail("message.csgobox.placed_unavailable");
+        if (!required.isEmpty()) key.shrink(1);
+        player.getInventory().setChanged(); player.containerMenu.broadcastChanges();
+        level.gameEvent(player,GameEvent.BLOCK_OPEN,pos);
+        level.playSound(null,pos,net.minecraft.sounds.SoundEvents.CHEST_OPEN,net.minecraft.sounds.SoundSource.BLOCKS,.8F,1.05F);
+        return new BoxOpening.Result(ItemStack.EMPTY,0,null);
+    }
+    public static net.minecraft.network.chat.Component errorMessage(ServerPlayer player,BlockPos pos,String error) {
+        if ("message.csgobox.hold_key".equals(error)
+                && player.level().getBlockEntity(pos) instanceof PlacedBoxEntity entity) {
+            var box=CsgoBoxManage.find(entity.poolId());
+            if (box!=null && !box.key().isBlank()) return net.minecraft.network.chat.Component.translatable(
+                    "message.csgobox.hold_key_named",BoxKeys.parse(box.key()).getHoverName());
         }
-        try {
-            if (!required.isEmpty()) key.shrink(1);
-            BoxService.deliver(player, result.reward().copy());
-            player.getInventory().setChanged();
-            player.containerMenu.broadcastChanges();
-            level.gameEvent(player, mode.consumesBox() ? GameEvent.BLOCK_DESTROY : GameEvent.BLOCK_OPEN, pos);
-            return result;
-        } finally {
-            if (!mode.consumesBox()) entity.releaseClaim();
-        }
+        return net.minecraft.network.chat.Component.translatable(error);
     }
 }
