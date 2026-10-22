@@ -17,6 +17,11 @@ public final class GuiItemMove {
 
     public static void renderItemInInventoryFollowsMouse(GuiGraphics graphics, float x, float y,
             float angleX, float angleY, ItemStack item, LivingEntity player, float scale) {
+        renderItemInInventoryFollowsMouse(graphics, x, y, angleX, angleY, item, player, scale, false);
+    }
+
+    public static void renderItemInInventoryFollowsMouse(GuiGraphics graphics, float x, float y,
+            float angleX, float angleY, ItemStack item, LivingEntity player, float scale, boolean centerModel) {
         if (item.isEmpty()) return;
         var renderer = Minecraft.getInstance().getItemRenderer();
         var model = renderer.getModel(item, player.level(), player, 0);
@@ -30,6 +35,11 @@ public final class GuiItemMove {
             graphics.pose().mulPose(Axis.YP.rotation(angleX));
             graphics.pose().mulPoseMatrix(new Matrix4f().scaling(1, -1, 1));
             graphics.pose().scale(16 * scale, 16 * scale, 16 * scale);
+            if (centerModel) {
+                var center = PreviewModelCenter.of(model, item);
+                // Recenter inside the drag rotation, so the box turns around its visible centre.
+                graphics.pose().translate(-center.x(), -center.y(), -center.z());
+            }
             if (!model.usesBlockLight()) Lighting.setupForFlatItems();
             // TaCZ intentionally uses a flat slot texture in GUI context. FIXED uses its
             // gun-pack positioning, attachments and 3D model without first-person arms.
