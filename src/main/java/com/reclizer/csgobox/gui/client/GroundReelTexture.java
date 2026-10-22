@@ -1,7 +1,6 @@
 package com.reclizer.csgobox.gui.client;
 
 import com.mojang.blaze3d.pipeline.TextureTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
@@ -12,8 +11,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.*;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL30;
 import java.util.*;
 
 /** One small reusable target, drawn immediately per case; preserves the world's framebuffer and matrices. */
@@ -40,48 +37,46 @@ final class GroundReelTexture {
         var result=new Visual(box.visualSeed(),List.copyOf(cards),layouts,GroundAnimation.motion(box.visualSeed(),samples.size()));
         CACHE.put(box,result); return result;
     }
-    static void render(PlacedBoxEntity box,float partial,Matrix4f worldPose,Matrix4f levelLighting) {
+    static void render(PlacedBoxEntity box,float partial,Matrix4f worldPose) {
         var minecraft=Minecraft.getInstance(); var visual=visual(box);
-        var projection=new Matrix4f(RenderSystem.getProjectionMatrix()); var sorting=RenderSystem.getVertexSorting();
-        int draw=GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING), read=GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
-        int[] viewport=new int[4]; GL11.glGetIntegerv(GL11.GL_VIEWPORT,viewport);
-        float[] color=RenderSystem.getShaderColor().clone();
-        var modelView=RenderSystem.getModelViewStack(); modelView.pushPose();
-        try {
+        try (var state=new WorldGuiRenderState()) {
+            RenderSystem.disableScissor();
+            // Clearing depth also obeys the caller's write mask; enable writes before clearing.
+            RenderSystem.depthMask(true); RenderSystem.colorMask(true,true,true,true);
             if (target==null) { target=new TextureTarget(WIDTH,HEIGHT,true,Minecraft.ON_OSX); target.setClearColor(.025F,.03F,.04F,1); }
             target.clear(Minecraft.ON_OSX); target.bindWrite(true);
             RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0,WIDTH,HEIGHT,0,1000,21000),VertexSorting.ORTHOGRAPHIC_Z);
+            var modelView=RenderSystem.getModelViewStack();
             modelView.setIdentity(); modelView.translate(0,0,-11000); RenderSystem.applyModelViewMatrix();
-            RenderSystem.setShaderColor(1,1,1,1); RenderSystem.enableDepthTest(); RenderSystem.depthMask(true);
-            var g=new GuiGraphics(minecraft,GUI_BUFFERS);
-            g.fill(0,0,WIDTH,HEIGHT,0xFF0D1118);
-            float elapsed=box.spinTicks(partial);
-            for (int i=0;i<visual.cards().size();i++) {
-                int x=Math.round(visual.motion().left(i,elapsed)*WIDTH), width=Math.round(ReelMotion.CARD_WIDTH*WIDTH);
-                if (x+width<0 || x>WIDTH) continue;
-                var card=visual.cards().get(i);
-                ClassicBoxUi.rewardCard(g,card.stack(),card.grade(),x,10,width,108,visual.layouts().get(i),i!=ReelMotion.WINNER);
+            RenderSystem.setShaderColor(1,1,1,1); RenderSystem.enableDepthTest(); RenderSystem.depthFunc(org.lwjgl.opengl.GL11.GL_LEQUAL);
+            FogRenderer.setupNoFog(); Lighting.setupFor3DItems();
+            try {
+                var g=new GuiGraphics(minecraft,GUI_BUFFERS);
+                g.fill(0,0,WIDTH,HEIGHT,0xFF0D1118);
+                float elapsed=box.spinTicks(partial);
+                for (int i=0;i<visual.cards().size();i++) {
+                    int x=Math.round(visual.motion().left(i,elapsed)*WIDTH), width=Math.round(ReelMotion.CARD_WIDTH*WIDTH);
+                    if (x+width<0 || x>WIDTH) continue;
+                    var card=visual.cards().get(i);
+                    ClassicBoxUi.rewardCard(g,card.stack(),card.grade(),x,10,width,108,visual.layouts().get(i),i!=ReelMotion.WINNER);
+                }
+                g.pose().pushPose(); g.pose().translate(0,0,400);
+                g.fill(WIDTH/2-1,3,WIDTH/2+2,HEIGHT-3,0xFFFFDE69); g.pose().popPose(); g.flush();
+            } finally {
+                GUI_BUFFERS.endBatch();
             }
-            g.pose().pushPose(); g.pose().translate(0,0,400);
-            g.fill(WIDTH/2-1,3,WIDTH/2+2,HEIGHT-3,0xFFFFDE69); g.pose().popPose(); g.flush();
-        } finally {
-            GUI_BUFFERS.endBatch();
-            modelView.popPose(); RenderSystem.applyModelViewMatrix(); RenderSystem.setProjectionMatrix(projection,sorting);
-            GlStateManager._glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER,draw); GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER,read);
-            RenderSystem.viewport(viewport[0],viewport[1],viewport[2],viewport[3]); Lighting.setupLevel(levelLighting);
-        }
-        RenderSystem.setShader(GameRenderer::getPositionTexColorShader); RenderSystem.setShaderTexture(0,target.getColorTextureId());
-        RenderSystem.setShaderColor(1,1,1,1); RenderSystem.disableCull(); RenderSystem.enableDepthTest(); RenderSystem.depthMask(true);
-        RenderSystem.disableBlend();
-        try {
+            // Draw the panel using the caller's world projection, not the GUI projection.
+            // The state guard restores all remaining world state after this immediate draw.
+            state.restoreWorldTarget();
+            RenderSystem.setShader(GameRenderer::getPositionTexColorShader); RenderSystem.setShaderTexture(0,target.getColorTextureId());
+            RenderSystem.setShaderColor(1,1,1,1); RenderSystem.disableCull(); RenderSystem.enableDepthTest(); RenderSystem.depthMask(true);
+            RenderSystem.disableBlend();
             var vertices=Tesselator.getInstance().getBuilder(); vertices.begin(VertexFormat.Mode.QUADS,DefaultVertexFormat.POSITION_TEX_COLOR);
             vertices.vertex(worldPose,0,HEIGHT,0).uv(0,0).color(255,255,255,255).endVertex();
             vertices.vertex(worldPose,WIDTH,HEIGHT,0).uv(1,0).color(255,255,255,255).endVertex();
             vertices.vertex(worldPose,WIDTH,0,0).uv(1,1).color(255,255,255,255).endVertex();
             vertices.vertex(worldPose,0,0,0).uv(0,1).color(255,255,255,255).endVertex();
             BufferUploader.drawWithShader(vertices.end());
-        } finally {
-            RenderSystem.enableCull(); RenderSystem.defaultBlendFunc(); RenderSystem.setShaderColor(color[0],color[1],color[2],color[3]);
         }
     }
 }
