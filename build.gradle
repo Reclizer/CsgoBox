@@ -84,6 +84,7 @@ tasks.named('processResources', ProcessResources).configure {
 }
 
 tasks.named('jar', Jar).configure {
+    from('LICENSE') { into 'META-INF' }
     // Runtime regression fixtures belong to the development environment, not the distributed mod.
     exclude 'com/reclizer/csgobox/gametest/**', 'data/csgobox/structures/empty.nbt'
     manifest {
