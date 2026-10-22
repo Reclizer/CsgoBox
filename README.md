@@ -22,6 +22,8 @@ bash ./gradlew runGameTestServer
 模组文件在 `build/libs/csgobox-1.12.0.jar`。首次构建需要下载 Forge 和 Minecraft 依赖。
 GameTest 在 `run-gametest/` 下使用独立的开发环境，请勿将该目录指向正式服务器。
 
+普通 `runClient` 停留在主菜单，进入或新建世界不会改变玩家的模式、位置、背包或场景。地面测试场景只允许手动创建：在临时测试副本中配置 QA 奖池并启用 JVM 参数 `-Dcsgobox.groundFixtureCommands=true` 后，执行 `/csgobox_test_ground prepare`（布置场景）或 `/csgobox_test_ground demo`（布置并演示）。这些命令会重置测试玩家背包和固定坐标附近方块，仅用于可丢弃的测试世界。旧的 `groundFixture`、`groundAutoOpen` 参数不再自动布景；测试命令不包含在发布 JAR 中。
+
 箱体模型的 Blockbench 编辑工程位于 `blockbench/csgo_box.bbmodel`，内嵌原贴图，并附 `csgo_box.png` 和导回说明。使用 Java 方块/物品格式导出到 `src/main/resources/assets/csgobox/models/item/csgo_box.json`，贴图导出到 `textures/item/csgo_box.png`；物品沿用闭合模型；地面动画使用 `models/block/animated/` 下的箱体／箱盖分件。修改源模型后运行 `python tools/export_ground_models.py` 重新生成分件，具体说明见 `blockbench/README.md`。
 
 ## 配置与使用

@@ -5,28 +5,46 @@ import com.reclizer.csgobox.block.*;
 import com.reclizer.csgobox.config.*;
 import com.reclizer.csgobox.item.*;
 import com.reclizer.csgobox.utils.ItemNBT;
+import net.minecraft.commands.Commands;
 import net.minecraft.core.*;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Explicit development-only fixture in an independent copied world; excluded from the release JAR. */
+/** Manual development-only fixture; entering a world must never prepare or reset it. */
 @Mod.EventBusSubscriber(modid=CsgoBox.MODID)
 public final class GroundClientFixture {
     private record Demo(ServerPlayer viewer,long start,boolean[] begun) {}
     private static Demo demo;
-    @SubscribeEvent public static void login(PlayerEvent.PlayerLoggedInEvent event) {
-        if (!Boolean.getBoolean("csgobox.groundFixture") || !(event.getEntity() instanceof ServerPlayer player)) return;
+    @SubscribeEvent public static void commands(RegisterCommandsEvent event) {
+        if (!Boolean.getBoolean("csgobox.groundFixtureCommands")) return;
+        event.getDispatcher().register(Commands.literal("csgobox_test_ground").requires(source -> source.hasPermission(2))
+                .then(Commands.literal("prepare").executes(context -> prepare(context.getSource().getPlayerOrException(),false)))
+                .then(Commands.literal("demo").executes(context -> prepare(context.getSource().getPlayerOrException(),true))));
+    }
+    private static int prepare(ServerPlayer player,boolean animate) {
+        // Validate the complete QA configuration before changing the world or inventory.
+        for (var appearance:BoxAppearance.values()) {
+            var definition=CsgoBoxManage.find("csgobox:ground_qa_"+appearance.id());
+            if (definition==null || definition.key().isEmpty()) {
+                player.sendSystemMessage(Component.literal("Missing ground QA pools; test scene was not prepared."));
+                return 0;
+            }
+            ItemNBT.parseStrict(definition.key());
+        }
+        demo=null;
         var level=player.serverLevel(); level.setDayTime(6000);
         player.server.setDifficulty(net.minecraft.world.Difficulty.PEACEFUL,true);
         player.setHealth(player.getMaxHealth()); player.getFoodData().setFoodLevel(20);
         for (int x=63;x<=70;x++) for (int z=186;z<=195;z++) level.setBlockAndUpdate(new BlockPos(x,-61,z),Blocks.STONE.defaultBlockState());
         for (var appearance:BoxAppearance.values()) {
             var definition=CsgoBoxManage.find("csgobox:ground_qa_"+appearance.id());
-            if (definition==null) throw new IllegalStateException("Missing isolated ground fixture");
             var pos=new BlockPos(65+appearance.ordinal()%3,-60,190+appearance.ordinal()/3*2);
             level.setBlockAndUpdate(pos,Blocks.AIR.defaultBlockState());
             level.setBlockAndUpdate(pos,ModBlocks.BOX.get().defaultBlockState().setValue(PlacedBoxBlock.FACING,Direction.NORTH)
@@ -45,8 +63,13 @@ public final class GroundClientFixture {
         player.connection.teleport(66.5,-60,187.3,0,22);
         player.getInventory().setChanged(); player.containerMenu.broadcastChanges();
         CsgoBox.LOGGER.info("Prepared six isolated ground cases and named keys for client inspection");
-        if (Boolean.getBoolean("csgobox.groundAutoOpen")) demo=new Demo(player,level.getGameTime(),new boolean[6]);
+        if (animate) demo=new Demo(player,level.getGameTime(),new boolean[6]);
+        return 1;
     }
+    @SubscribeEvent public static void logout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (demo!=null && demo.viewer()==event.getEntity()) demo=null;
+    }
+    @SubscribeEvent public static void stop(ServerStoppedEvent event) { demo=null; }
     @SubscribeEvent public static void tick(net.minecraftforge.event.TickEvent.ServerTickEvent event) {
         if (event.phase!=net.minecraftforge.event.TickEvent.Phase.END || demo==null) return;
         var level=demo.viewer().serverLevel(); long elapsed=level.getGameTime()-demo.start();
