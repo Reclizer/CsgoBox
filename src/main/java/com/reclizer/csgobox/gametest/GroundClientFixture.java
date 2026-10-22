@@ -62,8 +62,8 @@ public final class GroundClientFixture {
         player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetCarriedItemPacket(0));
         player.connection.teleport(66.5,-60,187.3,0,22);
         player.getInventory().setChanged(); player.containerMenu.broadcastChanges();
-        CsgoBox.LOGGER.info("Prepared six isolated ground cases and named keys for client inspection");
-        if (animate) demo=new Demo(player,level.getGameTime(),new boolean[6]);
+        CsgoBox.LOGGER.info("Prepared isolated ground cases and named keys for client inspection");
+        if (animate) demo=new Demo(player,level.getGameTime(),new boolean[BoxAppearance.values().length]);
         return 1;
     }
     @SubscribeEvent public static void logout(PlayerEvent.PlayerLoggedOutEvent event) {

@@ -12,7 +12,7 @@ import java.util.*;
 /** Client display cache populated only by the connected server. No configuration reads. */
 public final class BoxCatalog {
     public record Entry(String id, String name, String appearance) {
-        public Entry(String id, String name) { this(id, name, BoxAppearance.CLASSIC.id()); }
+        public Entry(String id, String name) { this(id, name, BoxAppearance.GOLD.id()); }
     }
     private static Map<String, Entry> catalog = Map.of();
     private static final Map<String, List<RewardName>> rewardNames = new HashMap<>();
@@ -27,7 +27,7 @@ public final class BoxCatalog {
 
     public static BoxAppearance appearance(String id) {
         Entry entry = catalog.get(id);
-        return entry == null ? BoxAppearance.CLASSIC : BoxAppearance.byId(entry.appearance());
+        return entry == null ? BoxAppearance.GOLD : BoxAppearance.byId(entry.appearance());
     }
 
     public static void replaceRewardNames(String id, List<RewardName> rewards) {

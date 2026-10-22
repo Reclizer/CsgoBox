@@ -19,12 +19,12 @@ bash ./gradlew test build
 bash ./gradlew runGameTestServer
 ```
 
-模组文件在 `build/libs/csgobox-1.12.1.jar`。首次构建需要下载 Forge 和 Minecraft 依赖。
+模组文件在 `build/libs/csgobox-1.13.0.jar`。首次构建需要下载 Forge 和 Minecraft 依赖。
 GameTest 在 `run-gametest/` 下使用独立的开发环境，请勿将该目录指向正式服务器。
 
 普通 `runClient` 停留在主菜单，进入或新建世界不会改变玩家的模式、位置、背包或场景。地面测试场景只允许手动创建：在临时测试副本中配置 QA 奖池并启用 JVM 参数 `-Dcsgobox.groundFixtureCommands=true` 后，执行 `/csgobox_test_ground prepare`（布置场景）或 `/csgobox_test_ground demo`（布置并演示）。这些命令会重置测试玩家背包和固定坐标附近方块，仅用于可丢弃的测试世界。旧的 `groundFixture`、`groundAutoOpen` 参数不再自动布景；测试命令不包含在发布 JAR 中。
 
-箱体模型的 Blockbench 编辑工程位于 `blockbench/csgo_box.bbmodel`，内嵌原贴图，并附 `csgo_box.png` 和导回说明。使用 Java 方块/物品格式导出到 `src/main/resources/assets/csgobox/models/item/csgo_box.json`，贴图导出到 `textures/item/csgo_box.png`；物品沿用闭合模型；地面动画使用 `models/block/animated/` 下的箱体／箱盖分件。修改源模型后运行 `python tools/export_ground_models.py` 重新生成分件，具体说明见 `blockbench/README.md`。
+五款箱体的 Blockbench 编辑工程和原贴图位于 `blockbench/appearances/<外观>/`。物品使用 Java 闭合模型，地面使用独立箱体与箱盖分件。修改源分件后运行 `python tools/export_ground_models.py` 重新生成运行资源，具体路径及导回说明见 `blockbench/README.md`。旧款做旧金箱的根目录工程仅保留归档。
 
 ## 配置与使用
 
@@ -147,7 +147,7 @@ tacz3dPreview = true
 
 ## 升级说明
 
-当前版本 **1.12.1、网络协议 14**，修复 JEI 已配置箱子被基础箱子的隐藏规则连带隐藏，客户端可与 1.12.0 服务端通信。地面箱支持三种消耗模式：仅钥匙可在掉奖 2 秒后自动关盖复位，另外两种变为装饰空箱；开箱中被破坏会直接掉出固定奖励与空箱。保留原箱底与模型、抬高并倾斜 30° 的滑条及独立 GUI 光照。分页、获取方式列表、JEI、检视和图标修复继续保留。原奖池 JSON 和未开箱物品无需迁移。
+当前版本 **1.13.0、网络协议 15**，因移除旧款外观后方块状态集合变化，客户端和服务端需要一起更新。地面箱支持三种消耗模式：仅钥匙可在掉奖 2 秒后自动关盖复位，另外两种变为装饰空箱；开箱中被破坏会直接掉出固定奖励与空箱。保留原箱底与模型、抬高并倾斜 30° 的滑条及独立 GUI 光照。分页、获取方式列表、JEI、检视和图标修复继续保留。旧款 `classic` 外观已移除；引用它的自定义奖池需改为 `gold` 等有效外观。
 
 不提供旧示例箱的名称回退或 NBT 迁移；旧箱子需从创造目录、编辑器或命令重新获取。已有配置文件需为每个奖池填写唯一 `id`，缺失时会明确报错，不会清空或静默重建配置。当前工作区的配置已补充 ID 并保留全部奖励，修改前备份位于工作目录。奖励物品的 TaCZ 数据、附魔及其他 NBT 不变。
 
@@ -155,11 +155,11 @@ tacz3dPreview = true
 
 ## 箱体外观
 
-编辑器新增“箱体外观”标签页，可并排预览并选择六种模型，保存和复制奖池均保留选择。奖池 JSON 的 `appearance` 支持 `classic`、`gold`、`orange`、`green`、`rose_blue`、`yellow_metal`；缺省为保留的旧款做旧金箱 `classic`，未知值会拒绝加载并保留当前有效配置。
+编辑器新增“箱体外观”标签页，可并排预览并选择五种模型，保存和复制奖池均保留选择。奖池 JSON 的 `appearance` 支持 `gold`、`orange`、`green`、`rose_blue`、`yellow_metal`；缺省为新金色箱 `gold`，旧款做旧金箱 `classic` 已移除，未知值会拒绝加载并保留当前有效配置。
 
 背包、手持、掉落物和开箱预览按服务器同步的奖池外观显示，箱子 NBT 仍只需要 `PoolId`。地面箱子将外观保存在方块状态，跟随原朝向渲染；编辑或重载后，已加载箱子在一秒内同步外观和碰撞范围。绿色扁平箱使用较矮的碰撞范围。主开箱界面布局保持不变。
 
-六个使用原版奖励的示例见 [examples/box-appearances.json](examples/box-appearances.json)，具体 ID、获取命令及合并方式见 [示例说明](examples/README.md)。新建配置包含这些示例；升级已有配置不会覆盖原奖池。模型包的 Java 闭合模型已接入；可编辑 Blockbench 工程、原贴图、开盖快照与动画源保存在 `blockbench/appearances/`，运行时不需要 GeckoLib。
+三个使用原版奖励、未配置获取方式的示例见 [examples/box-appearances.json](examples/box-appearances.json)，具体 ID、获取命令及合并方式见 [示例说明](examples/README.md)。新建配置包含这些示例；升级已有配置不会覆盖原奖池。模型包的 Java 闭合模型已接入；可编辑 Blockbench 工程、原贴图、开盖快照与动画源保存在 `blockbench/appearances/`，运行时不需要 GeckoLib。
 
 ## TaCZ
 
@@ -176,5 +176,7 @@ JEI 是可选客户端依赖，不需要安装在服务端，也不会打包进 
 
 - JEI 物品列表显示服务器配置的全部箱子，按 `PoolId` 区分，同名或相同外观的箱子也不会合并。显示名称和模型跟随服务端目录。
 - 查看箱子或钥匙的配方时，新增「箱子与钥匙获取方式」分类：合成显示完整九格材料和产出数量；掉落按实体列出名称、ID、概率和数量；交易显示职业、等级、两项材料、产出数量、次数及经验，并说明它是随机交易候选。
-- 没有启用获取方式的配置箱子仍在物品列表中，获取页面明确标为未配置。钥匙获取规则独立展示；样品材料和产出保留 NBT。现有动态工作台配方也继续同步给原版及 JEI。
+- 没有启用获取方式的配置箱子仍在物品列表中，不生成占位获取页面。钥匙获取规则独立展示，也仅显示启用的方式；样品材料和产出保留 NBT。现有动态工作台配方继续同步给原版及 JEI。
 - 登录、保存、删除和重载配置后更新目录与获取页面；退出服务器时清空。数据来自当前服务器，不读取客户端本地奖池。获取方式同步包只包含已启用的公开获取规则，不包含抽奖权重、奖励清单或未启用方式的编辑草稿。
+
+1.13.0 的实体掉落配置支持打开生物选择器，按中文名称、实体 ID 或模组名搜索，多选、翻页、只看已选、清空及取消。列表来自当前游戏的实体和属性注册表，包含其他模组的生物；不生成实体预览实例。箱子与钥匙分别配置。未启用获取方式时，JEI 仍列出配置箱子，但不生成无获取方式的占位配方。

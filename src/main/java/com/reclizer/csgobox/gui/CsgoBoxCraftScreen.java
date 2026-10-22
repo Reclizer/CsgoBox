@@ -37,7 +37,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     private String poolId = BoxDefinition.newId(), originalId = "", revision = "", search = "", itemId = "", luck = "0";
     private String status = "", issue = "", amountError = "";
     private boolean dirty, needsValidation = true, statusError, luckEnabled = true;
-    private BoxAppearance appearance = BoxAppearance.CLASSIC;
+    private BoxAppearance appearance = BoxAppearance.GOLD;
     private ConsumptionMode consumption = ConsumptionMode.BOX;
     private boolean deleteConfirm;
     private final Map<BoxAppearance, ItemStack> appearanceSamples = new EnumMap<>(BoxAppearance.class);
@@ -49,6 +49,15 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     private Runnable discardAction;
     private ItemStack tooltip = ItemStack.EMPTY;
     private String tooltipChance = "";
+    private static final int ENTITY_ROWS = 9;
+    private record EntityChoice(String id, String name, String mod, String search) {}
+    private List<EntityChoice> entityChoices = List.of(), filteredEntities = List.of();
+    private final Set<String> selectedEntities = new LinkedHashSet<>();
+    private final List<UiButton> entityButtons = new ArrayList<>();
+    private boolean entityPicker, selectedEntitiesOnly;
+    private int entityPage;
+    private String entityQuery = "", entityError = "";
+    private UiButton entityPrevious, entityNext, entityFilter;
 
     public CsgoBoxCraftScreen(CsgoBoxCraftMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -93,6 +102,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         catalogButtons.clear();
         amountField = null;
         consumptionButton = null;
+        if (entityPicker) { buildEntityPicker(); return; }
         if (deleteConfirm) {
             button(170, 258, 132, tr("delete_confirm"), this::deleteSaved, 0xFFF0747A);
             button(318, 258, 132, tr("cancel"), () -> { deleteConfirm = false; rebuild(); }, MUTED);
@@ -224,7 +234,8 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         } else if (acquisitionPage == 1) {
             acquisitionField(252, 190, 100, 16, a.dropChance, value -> a.dropChance = value);
             acquisitionField(380, 190, 70, 2, a.dropCount, value -> a.dropCount = value);
-            acquisitionField(252, 238, 352, 8192, a.entities, value -> a.entities = value);
+            acquisitionField(252, 238, 238, 8192, a.entities, value -> a.entities = value);
+            button(500, 238, 104, tr("select_entities"), this::openEntityPicker, COLORS[0]);
         } else {
             acquisitionField(252, 169, 154, 128, a.profession, value -> a.profession = value);
             acquisitionField(420, 169, 44, 1, a.level, value -> a.level = value);
@@ -277,7 +288,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         boxAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled());
         keyAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled());
         luckEnabled = true;
-        appearance = BoxAppearance.CLASSIC;
+        appearance = BoxAppearance.GOLD;
         consumption = ConsumptionMode.BOX; deleteConfirm = false;
         String[] defaults = {"625", "20", "6", "5", "2"};
         System.arraycopy(defaults, 0, weights, 0, 5);
@@ -302,7 +313,112 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
                 BoxEditorCodec.encode(definition), expected));
     }
 
-    private boolean hasDialog() { return discardAction != null || deleteConfirm; }
+    private boolean hasDialog() { return entityPicker || discardAction != null || deleteConfirm; }
+
+    private void openEntityPicker() {
+        selectedEntities.clear();
+        Arrays.stream(acquisition().entities.split("[,;\\s]+"))
+                .filter(id -> !id.isBlank()).forEach(selectedEntities::add);
+        var choices = new ArrayList<EntityChoice>();
+        for (var type : EntityDropTargets.types()) {
+            var id = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(type);
+            String name = type.getDescription().getString();
+            String mod = net.minecraftforge.fml.ModList.get().getModContainerById(id.getNamespace())
+                    .map(container -> container.getModInfo().getDisplayName()).orElse(id.getNamespace());
+            choices.add(new EntityChoice(id.toString(), name, mod, (name + " " + id + " " + mod).toLowerCase(Locale.ROOT)));
+        }
+        var known = choices.stream().map(EntityChoice::id).collect(java.util.stream.Collectors.toSet());
+        // Preserve manually entered IDs when their mod is temporarily unavailable.
+        for (String id : selectedEntities) if (!known.contains(id))
+            choices.add(new EntityChoice(id, text("entity_unavailable"), "", id.toLowerCase(Locale.ROOT)));
+        entityChoices = List.copyOf(choices);
+        entityQuery = ""; entityError = ""; selectedEntitiesOnly = false; entityPage = 0; entityPicker = true;
+        filterEntities(); rebuild();
+    }
+
+    private void filterEntities() {
+        String query = entityQuery.trim().toLowerCase(Locale.ROOT);
+        filteredEntities = entityChoices.stream().filter(e -> e.search().contains(query)
+                && (!selectedEntitiesOnly || selectedEntities.contains(e.id()))).toList();
+        entityPage = Math.min(entityPage, Math.max(0, (filteredEntities.size()-1)/ENTITY_ROWS));
+    }
+
+    private void buildEntityPicker() {
+        entityButtons.clear();
+        var searchField = field(88, 88, 280, 128, entityQuery, value -> {
+            entityQuery = value; entityPage = 0; filterEntities(); refreshEntityButtons();
+        });
+        searchField.setHint(tr("entity_search"));
+        entityFilter = button(380, 88, 152, Component.empty(), () -> {
+            selectedEntitiesOnly = !selectedEntitiesOnly; entityPage = 0; filterEntities(); refreshEntityButtons();
+        }, MUTED);
+        for (int i = 0; i < ENTITY_ROWS; i++) {
+            int row = i;
+            entityButtons.add(button(88, 120+i*24, 444, Component.empty(), () -> {
+                int index = entityPage*ENTITY_ROWS+row;
+                if (index >= filteredEntities.size()) return;
+                String id = filteredEntities.get(index).id();
+                entityError = "";
+                if (!selectedEntities.remove(id)) {
+                    int length = String.join(", ", selectedEntities).length() + id.length() + (selectedEntities.isEmpty() ? 0 : 2);
+                    if (selectedEntities.size() >= 256 || length > 8192) entityError = text("entity_limit");
+                    else selectedEntities.add(id);
+                }
+                filterEntities(); refreshEntityButtons();
+            }, COLORS[0]));
+        }
+        entityPrevious = button(442, 342, 40, Component.literal("<"), () -> moveEntityPage(-1), MUTED);
+        entityNext = button(492, 342, 40, Component.literal(">"), () -> moveEntityPage(1), MUTED);
+        button(88, 378, 100, tr("entity_clear"), () -> {
+            selectedEntities.clear(); entityError = ""; filterEntities(); refreshEntityButtons();
+        }, MUTED);
+        button(316, 378, 104, tr("cancel"), this::closeEntityPicker, MUTED);
+        button(428, 378, 104, tr("entity_apply"), () -> {
+            String value = String.join(", ", selectedEntities);
+            if (selectedEntities.size() > 256 || value.length() > 8192) { entityError = text("entity_limit"); return; }
+            if (!value.equals(acquisition().entities)) { acquisition().entities = value; changed(); }
+            closeEntityPicker();
+        }, COLORS[4]);
+        refreshEntityButtons();
+        setInitialFocus(searchField);
+    }
+
+    private void refreshEntityButtons() {
+        if (entityFilter == null) return;
+        entityFilter.setMessage(tr(selectedEntitiesOnly ? "entity_show_all" : "entity_selected_only"));
+        for (int i = 0; i < entityButtons.size(); i++) {
+            var button = entityButtons.get(i);
+            int index = entityPage*ENTITY_ROWS+i;
+            button.visible = index < filteredEntities.size();
+            if (button.visible) {
+                var entity = filteredEntities.get(index);
+                button.setMessage(Component.literal((selectedEntities.contains(entity.id()) ? "☑ " : "☐ ")
+                        + entity.name() + "  ·  " + entity.id()));
+                button.setTooltip(Tooltip.create(Component.literal(entity.name() + "\n" + entity.id() + "\n" + entity.mod())));
+            }
+        }
+        entityPrevious.active = entityPage > 0;
+        entityNext.active = (entityPage+1)*ENTITY_ROWS < filteredEntities.size();
+    }
+
+    private void moveEntityPage(int delta) {
+        entityPage = Math.max(0, Math.min(Math.max(0, (filteredEntities.size()-1)/ENTITY_ROWS), entityPage+delta));
+        refreshEntityButtons();
+    }
+
+    private void closeEntityPicker() {
+        entityPicker = false; entityChoices = List.of(); filteredEntities = List.of();
+        entityButtons.clear(); entityFilter = null; rebuild();
+    }
+
+    private void renderEntityPicker(GuiGraphics g) {
+        panel(g, 72, 42, 476, 366, 0xFF182231);
+        label(g, text("entity_picker_title"), 88, 60, TEXT);
+        if (filteredEntities.isEmpty()) label(g, text("entity_empty"), 88, 130, MUTED);
+        clipped(g, text("entity_count", selectedEntities.size(), filteredEntities.size()), 88, 347, 270, MUTED);
+        label(g, (entityPage+1) + "/" + Math.max(1, (filteredEntities.size()+ENTITY_ROWS-1)/ENTITY_ROWS), 382, 348, MUTED);
+        clipped(g, entityError, 88, 365, 444, 0xFFF19A9A);
+    }
 
     private void deleteSaved() {
         if (pending != 0 || originalId.isEmpty()) return;
@@ -473,7 +589,9 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             saveButton.setMessage(tr(pending == 2 ? "saving_short" : "save"));
         } else {
             panel(g, 0, 0, imageWidth, imageHeight, 0xD0101722);
-            if (deleteConfirm) {
+            if (entityPicker) {
+                renderEntityPicker(g);
+            } else if (deleteConfirm) {
                 label(g, text("delete_title"), 170, 158, 0xFFF0747A);
                 clipped(g, BoxCatalog.displayName(originalId), 170, 179, 280, TEXT);
                 clipped(g, originalId, 170, 198, 280, MUTED);
@@ -664,6 +782,14 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     @Override public boolean mouseClicked(double x, double y, int button) {
         double mx = x/uiScale, my = y/uiScale;
         if (pending != 0) return true;
+        if (entityPicker) {
+            for (var child : List.copyOf(children())) if (child.mouseClicked(mx, my, button)) {
+                // A button may rebuild the modal; do not focus its stale widget.
+                if (children().contains(child)) { setFocused(child); if (button == 0) setDragging(true); }
+                return true;
+            }
+            return true;
+        }
         if (!hasDialog() && page == 0) {
             for (int i = 0; i < PAGE_SIZE; i++) {
                 int index = rewardPage*PAGE_SIZE+i;
@@ -765,6 +891,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         return super.mouseDragged(x/uiScale, y/uiScale, button, dx/uiScale, dy/uiScale);
     }
     @Override public boolean mouseScrolled(double x, double y, double delta) {
+        if (entityPicker) { if (delta != 0) moveEntityPage(delta < 0 ? 1 : -1); return true; }
         if (pending != 0 || hasDialog()) return true;
         if (inside(x/uiScale, y/uiScale, 8, 34, 132, 360)) {
             catalogPage = Math.max(0, Math.min(Math.max(0, (filteredPools().size()-1)/12), catalogPage + (delta < 0 ? 1 : -1)));
@@ -782,6 +909,10 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         if (pending != 0) return true;
         if (hasControlDown() && key == 83 && !hasDialog()) { save(); return true; }
         if (getFocused() instanceof EditBox input && input.isFocused() && key != 258) return input.keyPressed(key, scan, modifiers);
+        if (entityPicker && key != 258) {
+            if (getFocused() != null) getFocused().keyPressed(key, scan, modifiers);
+            return true;
+        }
         return super.keyPressed(key, scan, modifiers);
     }
     @Override protected void containerTick() {
@@ -792,6 +923,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         }
     }
     @Override public void onClose() {
+        if (entityPicker) { closeEntityPicker(); return; }
         if (pending == 2 || pending == 3 || pending == 4) return;
         if (deleteConfirm) { deleteConfirm = false; rebuild(); return; }
         if (discardAction != null) { discardAction = null; rebuild(); return; }

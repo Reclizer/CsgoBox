@@ -69,7 +69,7 @@ class BoxConfigStoreTest {
 
     @Test void missingAppearanceDefaultsToClassicAndInvalidAppearanceCannotReplaceLiveConfig() throws IOException {
         var store = store(VALID); store.reload();
-        assertEquals("classic", store.readForEditing("csgobox:test").appearance());
+        assertEquals("gold", store.readForEditing("csgobox:test").appearance());
         var before = store.snapshot();
         for (String id : List.of("unknown", "", "../gold", "GOLD")) {
             String invalid = VALID.replace("\"grade1\"", "\"appearance\":\""+id+"\",\"grade1\"");

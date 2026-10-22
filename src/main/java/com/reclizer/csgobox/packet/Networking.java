@@ -8,7 +8,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import java.util.Optional;
 
 public final class Networking {
-    private static final String PROTOCOL = "14";
+    private static final String PROTOCOL = "15";
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(CsgoBox.MODID, "network"), () -> PROTOCOL, PROTOCOL::equals, PROTOCOL::equals);
 

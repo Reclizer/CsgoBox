@@ -16,7 +16,7 @@ public final class EmptyBoxItem extends BlockItem {
     public static final String APPEARANCE_TAG="Appearance";
     public EmptyBoxItem() { super(ModBlocks.BOX.get(),new Properties().stacksTo(16)); }
     public static BoxAppearance appearance(ItemStack stack) {
-        return stack.hasTag()?BoxAppearance.byId(stack.getTag().getString(APPEARANCE_TAG)):BoxAppearance.CLASSIC;
+        return stack.hasTag()?BoxAppearance.byId(stack.getTag().getString(APPEARANCE_TAG)):BoxAppearance.GOLD;
     }
     public static ItemStack create(BoxAppearance appearance) {
         var stack=new ItemStack(ModItems.ITEM_EMPTY_BOX.get());

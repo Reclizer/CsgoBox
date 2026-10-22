@@ -1,23 +1,8 @@
 from pathlib import Path
-import json,copy
+import json
 repo=Path(__file__).resolve().parents[1]
 assets=repo/'src/main/resources/assets/csgobox'
 target=assets/'models/block/animated'; target.mkdir(exist_ok=True)
-def crop(element,lower,upper):
-    e=copy.deepcopy(element); e['from']=lower; e['to']=upper
-    axes={'up':[(0,False),(2,False)],'down':[(0,False),(2,True)],'north':[(0,True),(1,True)],
-          'south':[(0,False),(1,True)],'west':[(2,False),(1,True)],'east':[(2,True),(1,True)]}
-    for face,data in e['faces'].items():
-        if 'uv' not in data: continue
-        uv=data['uv']; ranges=[]
-        for axis,reverse in axes[face]:
-            lo,hi=element['from'][axis],element['to'][axis]; size=hi-lo
-            if not size: ranges.append((0,1)); continue
-            ranges.append(((hi-upper[axis])/size,(hi-lower[axis])/size) if reverse else ((lower[axis]-lo)/size,(upper[axis]-lo)/size))
-        data['uv']=[uv[0]+(uv[2]-uv[0])*ranges[0][0],uv[1]+(uv[3]-uv[1])*ranges[1][0],
-                    uv[0]+(uv[2]-uv[0])*ranges[0][1],uv[1]+(uv[3]-uv[1])*ranges[1][1]]
-    return e
-
 manifest=[]
 for folder in sorted((repo/'blockbench/appearances').iterdir()):
     if not folder.is_dir(): continue
@@ -32,23 +17,6 @@ for folder in sorted((repo/'blockbench/appearances').iterdir()):
         data['textures']=texture
         (target/f'{folder.name}_{name}.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     manifest.append(dict(appearance=folder.name,pivot=meta['pivot_java'],source=parts.relative_to(repo).as_posix(),body=len(body['elements']),lid=len(lid['elements'])))
-classic=json.loads((assets/'models/item/boxes/classic.json').read_text(encoding='utf-8'))
-body=[]; lid=[]
-for e in classic['elements']:
-    lo,hi=e['from'],e['to']
-    if hi[1]>6.6:
-        lower=list(lo); lower[1]=max(lo[1],6.6); part=crop(e,lower,list(hi))
-        # The partition has no face in the original mesh. Do not add an overlapping cap.
-        if lo[1]<6.6: part['faces'].pop('down',None)
-        lid.append(part)
-    if lo[1]>=6.6: continue
-    upper=list(hi); upper[1]=min(hi[1],6.6)
-    part=crop(e,list(lo),upper)
-    if hi[1]>6.6: part['faces'].pop('up',None)
-    body.append(part)
-for name,elements in [('body',body),('lid',lid)]:
-    (target/f'classic_{name}.json').write_text(json.dumps(dict(credit='Original classic geometry partitioned at the lid seam',textures=classic['textures'],elements=elements),ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-manifest.append(dict(appearance='classic',pivot=[8,6.6,13.4],source='models/item/boxes/classic.json',body=len(body),lid=len(lid)))
 (repo/'blockbench/ground-animation-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 (assets/'models/item/empty_box.json').write_bytes((assets/'models/item/csgo_box.json').read_bytes())
-print('Exported original geometry and textures, with classic lid partition only.')
+print('Exported five current appearances, preserving original geometry and textures.')

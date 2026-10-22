@@ -14,7 +14,7 @@ public record BoxDefinition(String id, String name, String key, float drop, List
     public BoxDefinition {
         // Missing in legacy JSON: retain the previous luck-sensitive behavior.
         luckEnabled = luckEnabled == null ? true : luckEnabled;
-        appearance = appearance == null ? BoxAppearance.CLASSIC.id() : appearance;
+        appearance = appearance == null ? BoxAppearance.GOLD.id() : appearance;
         consumption = consumption == null ? key == null || key.isBlank() ? "box" : "both" : consumption;
         random = copy(random);
         entity = copy(entity);

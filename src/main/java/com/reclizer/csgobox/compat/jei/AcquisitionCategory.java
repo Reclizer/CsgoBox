@@ -57,9 +57,6 @@ final class AcquisitionCategory implements IRecipeCategory<AcquisitionRecipe> {
             text(graphics,Component.translatable("entity."+profession.getNamespace()+".villager."+profession.getPath()),4,21,117);
             text(graphics,tr("trade_details",recipe.level(),recipe.uses(),recipe.xp()),4,69,164);
             text(graphics,tr("trade_candidate"),4,85,164);
-        } else if (recipe.kind() == AcquisitionRecipe.Kind.NONE) {
-            text(graphics,tr("no_method"),4,27,117);
-            text(graphics,tr("admin_grant"),4,69,164);
         } else text(graphics,tr("shaped"),4,85,164);
         text(graphics,recipe.output().getHoverName(),4,101,164);
     }

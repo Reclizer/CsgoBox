@@ -9,7 +9,7 @@ import java.util.*;
 /** Stable content keys let unchanged recipes be reused when JEI updates at runtime. */
 public record AcquisitionRecipe(String fingerprint, Kind kind, ItemStack output, List<ItemStack> inputs,
                                 String source, float chance, int level, int uses, int xp) {
-    public enum Kind { CRAFTING, DROP, TRADE, NONE }
+    public enum Kind { CRAFTING, DROP, TRADE }
     public static ItemStack box(String id) {
         return ItemCsgoBox.setBoxId(id, new ItemStack(ModItems.ITEM_CSGOBOX.get()));
     }
@@ -24,7 +24,6 @@ public record AcquisitionRecipe(String fingerprint, Kind kind, ItemStack output,
     private static ItemStack count(ItemStack base, int count) { var copy = base.copy(); copy.setCount(count); return copy; }
     private static void add(List<AcquisitionRecipe> result, String id, ItemStack output, AcquisitionDefinition rules) {
         id += "/"+net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(output.getItem());
-        int before = result.size();
         if (rules.crafting().enabled()) {
             var c = rules.crafting();
             result.add(new AcquisitionRecipe(id+"/craft/"+output.getTag()+c, Kind.CRAFTING, count(output,c.count()),
@@ -42,6 +41,5 @@ public record AcquisitionRecipe(String fingerprint, Kind kind, ItemStack output,
                     List.of(ItemNBT.parseStrict(t.cost()), t.secondCost().isEmpty() ? ItemStack.EMPTY : ItemNBT.parseStrict(t.secondCost())),
                     t.profession(),0,t.level(),t.maxUses(),t.xp()));
         }
-        if (result.size() == before) result.add(new AcquisitionRecipe(id+"/none/"+output.getTag(),Kind.NONE,output.copy(),List.of(),"",0,0,0,0));
     }
 }

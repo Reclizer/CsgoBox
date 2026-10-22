@@ -53,16 +53,5 @@
     "source": "blockbench/appearances/yellow_metal/java_models/parts",
     "body": 34,
     "lid": 29
-  },
-  {
-    "appearance": "classic",
-    "pivot": [
-      8,
-      6.6,
-      13.4
-    ],
-    "source": "models/item/boxes/classic.json",
-    "body": 29,
-    "lid": 26
   }
 ]

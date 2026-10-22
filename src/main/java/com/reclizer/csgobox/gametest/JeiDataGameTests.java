@@ -44,9 +44,11 @@ public final class JeiDataGameTests {
         helper.assertTrue(entries.stream().filter(r -> r.kind()==AcquisitionRecipe.Kind.DROP).allMatch(r -> r.chance()==.125F
                 && r.output().getCount()==3),"Drop display differs from server rules");
         var empty = AcquisitionRecipe.build(List.of(new AcquisitionSummary(summary.id(),"minecraft:stick",null,null)));
-        var changed = AcquisitionRecipe.build(List.of(new AcquisitionSummary(summary.id(),"minecraft:blaze_rod",null,null)));
-        helper.assertTrue(empty.size()==2 && empty.stream().allMatch(r -> r.kind()==AcquisitionRecipe.Kind.NONE),"Unobtainable configured items were omitted");
-        helper.assertTrue(!empty.get(1).fingerprint().equals(changed.get(1).fingerprint()),"Changing required item reuses stale JEI output");
+        helper.assertTrue(empty.isEmpty(),"Disabled acquisition rules generated placeholder pages");
+        var keyOnly=AcquisitionRecipe.build(List.of(new AcquisitionSummary(summary.id(),"minecraft:stick",null,summary.keyRules())));
+        var changed = AcquisitionRecipe.build(List.of(new AcquisitionSummary(summary.id(),"minecraft:blaze_rod",null,summary.keyRules())));
+        helper.assertTrue(keyOnly.size()==4 && keyOnly.stream().allMatch(r->r.output().is(Items.STICK)),"Box/key acquisition rules were not kept independent");
+        helper.assertTrue(!keyOnly.get(0).fingerprint().equals(changed.get(0).fingerprint()),"Changing required item reuses stale JEI output");
         helper.succeed();
     }
     @GameTest(template="empty")

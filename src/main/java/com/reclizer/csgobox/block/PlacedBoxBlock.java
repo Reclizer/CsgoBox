@@ -44,7 +44,7 @@ public final class PlacedBoxBlock extends BaseEntityBlock {
     public PlacedBoxBlock() {
         super(Properties.of().mapColor(MapColor.COLOR_YELLOW).strength(1.5F).sound(SoundType.METAL)
                 .noOcclusion().pushReaction(PushReaction.BLOCK));
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(APPEARANCE, BoxAppearance.CLASSIC));
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(APPEARANCE, BoxAppearance.GOLD));
     }
     @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.ENTITYBLOCK_ANIMATED; }
     @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) { return new PlacedBoxEntity(pos, state); }
@@ -53,7 +53,7 @@ public final class PlacedBoxBlock extends BaseEntityBlock {
         String id = ItemCsgoBox.boxId(context.getItemInHand());
         BoxDefinition definition = context.getLevel().isClientSide ? null : CsgoBoxManage.find(id);
         BoxAppearance appearance = context.getLevel().isClientSide ? BoxCatalog.appearance(id)
-                : definition == null ? BoxAppearance.CLASSIC : BoxAppearance.byId(definition.appearance());
+                : definition == null ? BoxAppearance.GOLD : BoxAppearance.byId(definition.appearance());
         if (context.getItemInHand().getItem() instanceof EmptyBoxItem) appearance=EmptyBoxItem.appearance(context.getItemInHand());
         return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite()).setValue(APPEARANCE, appearance);
     }

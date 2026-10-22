@@ -158,7 +158,7 @@ public class CsboxScreen extends BoxScreen {
         if (minecraft.player != null)
             GuiItemMove.renderItemInInventoryFollowsMouse(g, MODEL_X, MODEL_Y,
                     rotation.yaw(), rotation.pitch(), preview.box(), minecraft.player, MODEL_SIZE/16F,
-                    BoxAppearanceModels.appearance(preview.box()) != com.reclizer.csgobox.config.BoxAppearance.CLASSIC);
+                    true);
         Style bold = Style.EMPTY.withBold(true);
         ClassicBoxUi.centeredText(g, font, Component.translatable("gui.csgobox.csgo_box.title").withStyle(bold),
                 LAYOUT_WIDTH/2F, LAYOUT_HEIGHT*0.059F, 2, LAYOUT_WIDTH*0.9F, 0xFFD3D3D3);

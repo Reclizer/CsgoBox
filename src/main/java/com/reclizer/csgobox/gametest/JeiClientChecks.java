@@ -35,6 +35,7 @@ public final class JeiClientChecks implements IModPlugin {
         if (pools.isEmpty() || pools.size()!=BoxCatalog.entries().size()) return;
         checked=true;
         try {
+            if (Boolean.getBoolean("csgobox.entityPickerChecks")) EntityPickerClientChecks.run();
             var ids=runtime.getIngredientManager().getAllItemStacks().stream().filter(s->s.getItem() instanceof ItemCsgoBox)
                     .map(ItemCsgoBox::boxId).collect(java.util.stream.Collectors.toSet());
             var expected=pools.stream().map(p->p.id()).collect(java.util.stream.Collectors.toSet());
@@ -55,7 +56,8 @@ public final class JeiClientChecks implements IModPlugin {
             for (var pool:pools) {
                 var focus=factory.createFocus(RecipeIngredientRole.OUTPUT,VanillaTypes.ITEM_STACK,AcquisitionRecipe.box(pool.id()));
                 var matches=manager.createRecipeLookup(CsgoBoxJeiPlugin.TYPE).limitFocus(List.of(focus)).get().toList();
-                if (matches.isEmpty() || matches.stream().anyMatch(r->!ItemCsgoBox.boxId(r.output()).equals(pool.id())))
+                long expectedMatches=AcquisitionRecipe.build(List.of(pool)).stream().filter(r->ItemCsgoBox.boxId(r.output()).equals(pool.id())).count();
+                if (matches.size()!=expectedMatches || matches.stream().anyMatch(r->!ItemCsgoBox.boxId(r.output()).equals(pool.id())))
                     throw new AssertionError("JEI output focus merged different pool IDs: "+pool.id());
             }
             var category=manager.getRecipeCategory(CsgoBoxJeiPlugin.TYPE);
@@ -80,6 +82,17 @@ public final class JeiClientChecks implements IModPlugin {
         var expected=originalCatalog.stream().map(BoxCatalog.Entry::id).collect(java.util.stream.Collectors.toSet());
         try {
             replace(originalCatalog,originalPools); assertVisible(expected,"");
+            var samplePool=originalPools.get(0);
+            var dropRule=new com.reclizer.csgobox.config.AcquisitionDefinition(null,
+                    new com.reclizer.csgobox.config.AcquisitionDefinition.Drop(true,.25F,List.of("minecraft:zombie"),1),null);
+            var enabled=originalPools.stream().map(p->p.id().equals(samplePool.id())
+                    ?new AcquisitionSummary(p.id(),p.key(),dropRule,p.keyRules()):p).toList();
+            replace(originalCatalog,enabled);
+            if (runtime.getRecipeManager().createRecipeLookup(CsgoBoxJeiPlugin.TYPE).get().count()!=AcquisitionRecipe.build(enabled).size())
+                throw new AssertionError("Enabling acquisition did not add the real recipe");
+            replace(originalCatalog,originalPools);
+            if (runtime.getRecipeManager().createRecipeLookup(CsgoBoxJeiPlugin.TYPE).get().count()!=AcquisitionRecipe.build(originalPools).size())
+                throw new AssertionError("Disabling acquisition left a placeholder or stale recipe");
             var first=originalCatalog.get(0); String renamed="JEI visibility renamed box";
             var renamedCatalog=originalCatalog.stream().map(e->e.id().equals(first.id())?new BoxCatalog.Entry(e.id(),renamed,e.appearance()):e).toList();
             replace(renamedCatalog,originalPools); assertVisible(expected,""); assertVisible(Set.of(first.id()),renamed);
@@ -94,7 +107,7 @@ public final class JeiClientChecks implements IModPlugin {
             replace(addedCatalog,addedPools); remaining.add(addedId); assertVisible(remaining,"@csgobox");
             replace(List.of(),List.of()); assertVisible(Set.of(),"");
             replace(originalCatalog,originalPools); assertVisible(expected,"@csgobox");
-            CsgoBox.LOGGER.info("JEI VISIBILITY LIFECYCLE CHECKS PASSED: refresh, rename, delete, add, clear and reconnect");
+            CsgoBox.LOGGER.info("JEI VISIBILITY LIFECYCLE CHECKS PASSED: acquisition enable/disable, refresh, rename, delete, add, clear and reconnect");
         } finally { replace(originalCatalog,originalPools); }
     }
 }

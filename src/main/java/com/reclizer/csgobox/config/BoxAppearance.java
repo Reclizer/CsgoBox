@@ -5,7 +5,6 @@ import java.util.Arrays;
 
 /** Stable configuration IDs; model numbers are private to the item resource overrides. */
 public enum BoxAppearance implements StringRepresentable {
-    CLASSIC("classic", 0, 1, 14, 9),
     GOLD("gold", 1, .5, 13.75, 8.25),
     ORANGE("orange", 2, 2.5, 13.5, 8.5),
     GREEN("green", 3, 1.75, 14, 3.5),
@@ -26,10 +25,10 @@ public enum BoxAppearance implements StringRepresentable {
     public double front() { return front; }
     public double back() { return back; }
     public double height() { return height; }
-    public double hingeY() { return switch(this) { case CLASSIC,GOLD -> 6.6/16; case ORANGE -> 6.32/16; case GREEN -> 1.64/16; default -> 8.31/16; }; }
-    public double hingeZ() { return switch(this) { case CLASSIC,GOLD -> 13.4/16; case ORANGE -> 13.12/16; case GREEN -> 13.62/16; default -> 14.12/16; }; }
+    public double hingeY() { return switch(this) { case GOLD -> 6.6/16; case ORANGE -> 6.32/16; case GREEN -> 1.64/16; default -> 8.31/16; }; }
+    public double hingeZ() { return switch(this) { case GOLD -> 13.4/16; case ORANGE -> 13.12/16; case GREEN -> 13.62/16; default -> 14.12/16; }; }
     public static boolean valid(String id) { return Arrays.stream(values()).anyMatch(value -> value.id.equals(id)); }
     public static BoxAppearance byId(String id) {
-        return Arrays.stream(values()).filter(value -> value.id.equals(id)).findFirst().orElse(CLASSIC);
+        return Arrays.stream(values()).filter(value -> value.id.equals(id)).findFirst().orElse(GOLD);
     }
 }

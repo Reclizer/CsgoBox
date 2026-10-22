@@ -44,7 +44,7 @@ public final class AppearanceGameTests {
             try { BoxCatalog.replace(List.of(new BoxCatalog.Entry("csgobox:gold", "Bad", "unknown"))); }
             catch (IllegalArgumentException expected) { rejected=true; }
             helper.assertTrue(rejected && BoxCatalog.appearance("csgobox:gold")==BoxAppearance.GREEN, "Bad catalog replaced valid models");
-            helper.assertTrue(BoxCatalog.appearance("csgobox:missing")==BoxAppearance.CLASSIC, "Unknown box has no fallback");
+            helper.assertTrue(BoxCatalog.appearance("csgobox:missing")==BoxAppearance.GOLD, "Unknown box has no fallback");
         } finally { buffer.release(); BoxCatalog.replace(before); }
         helper.succeed();
     }
@@ -119,14 +119,40 @@ public final class AppearanceGameTests {
             helper.assertTrue(input!=null,"Missing appearance examples");
             var examples=new com.google.gson.Gson().fromJson(new String(input.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8),BoxDefinition[].class);
             var ids=new HashSet<String>(); var appearances=EnumSet.noneOf(BoxAppearance.class);
+            var modes=EnumSet.noneOf(ConsumptionMode.class);
+            helper.assertTrue(examples.length==3 && BoxAppearance.values().length==5 && !BoxAppearance.valid("classic"),
+                    "Expected three examples and five current appearances");
             for (var example : examples) {
                 example.validate(value -> !ItemNBT.parseStrict(value).isEmpty());
                 helper.assertTrue(ids.add(example.id()),"Duplicate example identity");
                 appearances.add(BoxAppearance.byId(example.appearance()));
+                modes.add(example.mode());
                 helper.assertTrue(!example.grade5().isEmpty() && example.previewRewards().size()>0,"Example lacks rewards");
-                helper.assertTrue(!example.acquisition().drop().enabled(),"Examples added automatic world drops");
+                for (var rules : List.of(example.acquisition(),example.keyAcquisition()))
+                    helper.assertTrue(!rules.crafting().enabled() && !rules.drop().enabled() && !rules.trade().enabled(),
+                            "Examples enabled acquisition methods");
+                for (int grade=1;grade<=4;grade++)
+                    helper.assertTrue(example.items(grade).size()==BoxDefinition.suggestedCount(grade),"Example does not follow suggested reward counts");
             }
-            helper.assertTrue(appearances.size()==BoxAppearance.values().length,"Examples do not cover every appearance");
+            helper.assertTrue(appearances.size()==3 && modes.size()==3,"Examples do not demonstrate three appearances and consumption modes");
         } helper.succeed();
+    }
+
+    @GameTest(template="empty")
+    public static void entityPickerIncludesLivingTargetsAcrossCategoriesAndNamespaces(GameTestHelper helper) {
+        var targets=EntityDropTargets.types();
+        for (var type : List.of(net.minecraft.world.entity.EntityType.ZOMBIE,net.minecraft.world.entity.EntityType.VILLAGER,
+                net.minecraft.world.entity.EntityType.IRON_GOLEM,net.minecraft.world.entity.EntityType.WITHER,
+                net.minecraft.world.entity.EntityType.ENDER_DRAGON))
+            helper.assertTrue(targets.contains(type),"Picker omitted living entity: "+type);
+        for (var type : List.of(net.minecraft.world.entity.EntityType.PLAYER,net.minecraft.world.entity.EntityType.ARMOR_STAND,
+                net.minecraft.world.entity.EntityType.ITEM,net.minecraft.world.entity.EntityType.ARROW,net.minecraft.world.entity.EntityType.MINECART))
+            helper.assertTrue(!targets.contains(type),"Picker included non-creature: "+type);
+        for (var type : net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getValues())
+            if (!net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(type).getNamespace().equals("minecraft")
+                    && net.minecraft.world.entity.ai.attributes.DefaultAttributes.hasSupplier(type))
+                helper.assertTrue(targets.contains(type),"Picker omitted modded living entity: "+type);
+        helper.assertTrue(new HashSet<>(targets).size()==targets.size(),"Duplicate entity picker entries");
+        helper.succeed();
     }
 }

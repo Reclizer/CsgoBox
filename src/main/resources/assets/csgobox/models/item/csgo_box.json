@@ -1,5 +1,5 @@
 {
-  "parent": "csgobox:item/boxes/classic",
+  "parent": "csgobox:item/boxes/gold",
   "overrides": [
     {
       "predicate": {

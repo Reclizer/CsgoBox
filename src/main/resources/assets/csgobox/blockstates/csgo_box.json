@@ -1,20 +1,5 @@
 {
   "variants": {
-    "appearance=classic,facing=north": {
-      "model": "csgobox:block/csgo_box"
-    },
-    "appearance=classic,facing=east": {
-      "model": "csgobox:block/csgo_box",
-      "y": 90
-    },
-    "appearance=classic,facing=south": {
-      "model": "csgobox:block/csgo_box",
-      "y": 180
-    },
-    "appearance=classic,facing=west": {
-      "model": "csgobox:block/csgo_box",
-      "y": 270
-    },
     "appearance=gold,facing=north": {
       "model": "csgobox:block/boxes/gold"
     },
