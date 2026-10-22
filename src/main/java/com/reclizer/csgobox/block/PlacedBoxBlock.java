@@ -94,7 +94,7 @@ public final class PlacedBoxBlock extends BaseEntityBlock {
         super.onRemove(state,level,pos,next,moving);
     }
     @Override public boolean onDestroyedByPlayer(BlockState state,Level level,BlockPos pos,Player player,boolean willHarvest,FluidState fluid) {
-        // Creative skips the normal loot path. A paid case still leaves its decorative shell.
+        // Creative skips normal loot. A paid case still returns its mode-dependent case item.
         ItemStack shell=!level.isClientSide && player.isCreative() && level.getBlockEntity(pos) instanceof PlacedBoxEntity box && box.isBusy()
                 ?box.asItem():ItemStack.EMPTY;
         boolean removed=super.onDestroyedByPlayer(state,level,pos,player,willHarvest,fluid);

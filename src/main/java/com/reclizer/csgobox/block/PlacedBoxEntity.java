@@ -136,15 +136,17 @@ public final class PlacedBoxEntity extends BlockEntity {
             pending=ItemStack.EMPTY; return true;
         } finally { emitting=false; }
     }
-    /** Any removal settles the fixed result rather than refunding a fresh case. */
+    /** Settle the fixed result once; only modes that consumed the case leave an empty shell. */
     public void onRemoved() {
         if (isBusy() && level!=null && !level.isClientSide) {
             if (opening) emitReward();
-            opening=false; resetting=false; empty=true; poolId=""; samples=List.of(); opener=null; motion=null; setChanged();
+            opening=false; resetting=false; empty=consumption.consumesBox();
+            if (empty) poolId="";
+            pending=ItemStack.EMPTY; samples=List.of(); opener=null; motion=null; setChanged();
         }
     }
     public ItemStack asItem() {
-        if (empty || isBusy()) return EmptyBoxItem.create(getBlockState().getValue(PlacedBoxBlock.APPEARANCE));
+        if (empty || isBusy() && consumption.consumesBox()) return EmptyBoxItem.create(getBlockState().getValue(PlacedBoxBlock.APPEARANCE));
         return BoxDefinition.validId(poolId)?ItemCsgoBox.setBoxId(poolId,new ItemStack(ModItems.ITEM_CSGOBOX.get())):ItemStack.EMPTY;
     }
     @Override protected void saveAdditional(CompoundTag tag) {

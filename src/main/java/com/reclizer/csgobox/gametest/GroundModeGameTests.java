@@ -53,6 +53,10 @@ public final class GroundModeGameTests {
         return drops(h).stream().filter(s->s.is(Items.DIAMOND) && s.hasTag() && s.getTag().getBoolean("groundModeReward")).mapToInt(ItemStack::getCount).sum();
     }
     private static int shells(GameTestHelper h) { return drops(h).stream().filter(s->s.is(ModItems.ITEM_EMPTY_BOX.get())).mapToInt(ItemStack::getCount).sum(); }
+    private static int cases(GameTestHelper h,BoxDefinition box) {
+        return drops(h).stream().filter(s->s.is(ModItems.ITEM_CSGOBOX.get()) && ItemCsgoBox.boxId(s).equals(box.id()))
+                .mapToInt(ItemStack::getCount).sum();
+    }
     private static boolean open(GameTestHelper h,FakePlayer player) { return PlacedBoxOpening.open(player,pos(h),InteractionHand.MAIN_HAND,new Random(9)).success(); }
     private static void resetNow(GameTestHelper h,PlacedBoxEntity entity) {
         var tag=entity.saveWithoutMetadata(); tag.putLong("RewardDroppedAt",h.getLevel().getGameTime()-GroundAnimation.REUSE_DELAY_TICKS); entity.load(tag);
@@ -117,16 +121,18 @@ public final class GroundModeGameTests {
         }); h.succeed();
     }
     @GameTest(template="empty")
-    public static void everyModeDropsOnlyEmptyShellAndFixedPrizeWhenMinedDuringReel(GameTestHelper h) throws Exception {
+    public static void everyModeDropsItsCaseTypeAndFixedPrizeWhenMinedDuringReel(GameTestHelper h) throws Exception {
         int completed=0;
         for (var mode:ConsumptionMode.values()) {
             final int before=completed;
             setup(h,definition(mode),(box,entity,p)-> {
+                int beforeShells=shells(h);
                 h.assertTrue(open(h,p),"Ground mode could not start: "+mode);
                 var saved=entity.saveWithoutMetadata(); saved.putLong("OpeningStarted",h.getLevel().getGameTime()-GroundAnimation.LID_TICKS-40); entity.load(saved);
                 h.assertTrue(p.gameMode.destroyBlock(pos(h)),"Mode still blocked mining: "+mode);
                 entity.onRemoved(); PlacedBoxEntity.serverTick(h.getLevel(),pos(h),entity.getBlockState(),entity);
-                h.assertTrue(prizes(h)==(before+1)*3 && shells(h)==before+1 && drops(h).stream().noneMatch(s->s.is(ModItems.ITEM_CSGOBOX.get())),"Broken mode lost/duplicated payout or returned a reusable case: "+mode);
+                h.assertTrue(prizes(h)==(before+1)*3 && shells(h)==beforeShells+(mode.consumesBox()?1:0)
+                        && cases(h,box)==(mode.consumesBox()?0:1),"Broken mode lost/duplicated payout or returned the wrong case type: "+mode);
                 h.assertTrue(p.getMainHandItem().getCount()==(mode.consumesKey()?1:2),"Broken mode changed the key cost: "+mode);
             }); completed++;
         } h.succeed();
@@ -136,7 +142,56 @@ public final class GroundModeGameTests {
         setup(h,definition(ConsumptionMode.KEY),(box,entity,p)-> {
             h.assertTrue(open(h,p),"Key-only opening failed"); PlacedBoxGameTests.complete(h,entity);
             h.assertTrue(entity.isBusy() && !entity.isOpening() && p.gameMode.destroyBlock(pos(h)),"Recovery case could not be mined");
-            h.assertTrue(prizes(h)==3 && shells(h)==1 && drops(h).stream().noneMatch(s->s.is(ModItems.ITEM_CSGOBOX.get())),"Recovery break duplicated prize or refunded a usable case");
+            entity.onRemoved(); PlacedBoxEntity.serverTick(h.getLevel(),pos(h),entity.getBlockState(),entity);
+            h.assertTrue(prizes(h)==3 && shells(h)==0 && cases(h,box)==1,"Recovery break duplicated prize or lost the reusable case");
         }); h.succeed();
+    }
+
+    @GameTest(template="empty")
+    public static void keyOnlyBreakUsesSavedModeAndReturnedCaseRequiresAnotherKey(GameTestHelper h) throws Exception {
+        setup(h,definition(ConsumptionMode.KEY),(box,entity,p)-> {
+            h.assertTrue(open(h,p),"Key-only opening failed");
+            var saved=entity.saveWithFullMetadata();
+            CsgoBoxManage.saveDefinition(box.withConsumption("both"),BoxConfigStore.revision(box));
+            var loaded=(PlacedBoxEntity)BlockEntity.loadStatic(pos(h),entity.getBlockState(),saved);
+            h.getLevel().setBlockEntity(loaded);
+            h.assertTrue(ItemCsgoBox.boxId(loaded.asItem()).equals(box.id()),"Loot queried before removal ignored the saved key-only mode");
+            h.assertTrue(p.gameMode.destroyBlock(pos(h)),"Reloaded key-only case could not be mined");
+            loaded.onRemoved();
+            h.assertTrue(prizes(h)==3 && shells(h)==0 && cases(h,box)==1 && p.getMainHandItem().getCount()==1,
+                    "Reload/config change lost the reusable case or duplicated payout");
+            var returned=drops(h).stream().filter(s->ItemCsgoBox.boxId(s).equals(box.id())).findFirst().orElseThrow().copy();
+            h.assertTrue(returned.getTag().size()==1,"Returned case retained pending reward or animation data");
+            CsgoBoxManage.saveDefinition(box,BoxConfigStore.revision(box.withConsumption("both")));
+            p.setShiftKeyDown(true); p.setItemInHand(InteractionHand.MAIN_HAND,returned);
+            var hit=new BlockHitResult(Vec3.atLowerCornerOf(pos(h)).add(.5,0,.5),net.minecraft.core.Direction.UP,pos(h).below(),false);
+            h.assertTrue(returned.useOn(new net.minecraft.world.item.context.UseOnContext(p,InteractionHand.MAIN_HAND,hit)).consumesAction(),
+                    "Returned key-only case could not be placed again");
+            var placed=(PlacedBoxEntity)h.getLevel().getBlockEntity(pos(h));
+            h.assertTrue(!placed.isBusy() && !placed.isEmpty() && placed.poolId().equals(box.id()) && !open(h,p) && prizes(h)==3,
+                    "Replaced case resumed old payout or opened without another key");
+            p.setShiftKeyDown(false); p.setItemInHand(InteractionHand.MAIN_HAND,ItemNBT.parseStrict(KEY));
+            h.assertTrue(open(h,p) && p.getMainHandItem().isEmpty(),"Returned case did not charge a fresh key");
+            PlacedBoxGameTests.complete(h,placed);
+            h.assertTrue(prizes(h)==6,"Second paid opening did not deliver exactly one new reward");
+        }); h.succeed();
+    }
+
+    @GameTest(template="empty")
+    public static void keyOnlySupportRemovalAndCreativeMiningKeepCaseAndPayOnce(GameTestHelper h) throws Exception {
+        int completed=0;
+        for (boolean creative : List.of(false,true)) {
+            final int before=completed;
+            setup(h,definition(ConsumptionMode.KEY),(box,entity,p)-> {
+                if (creative) p.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+                h.assertTrue(open(h,p),"Key-only opening failed");
+                if (creative) h.assertTrue(p.gameMode.destroyBlock(pos(h)),"Creative break failed");
+                else h.getLevel().destroyBlock(pos(h).below(),false);
+                entity.onRemoved(); PlacedBoxEntity.serverTick(h.getLevel(),pos(h),entity.getBlockState(),entity);
+                h.assertTrue(h.getLevel().getBlockState(pos(h)).isAir() && prizes(h)==(before+1)*3
+                        && cases(h,box)==1 && shells(h)==0 && p.getMainHandItem().getCount()==1,
+                        "Support/creative break lost or duplicated reusable case, reward or key cost");
+            }); completed++;
+        } h.succeed();
     }
 }
