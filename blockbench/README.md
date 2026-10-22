@@ -33,12 +33,12 @@ src/main/java/com/reclizer/csgobox/block/PlacedBoxBlock.java
 物品使用 Java 闭合快照，路径映射记录在 appearances/import-manifest.json。修改后请将对应 Java 模型导出到 src/main/resources/assets/csgobox/models/block/boxes/<appearance>.json，贴图放到 textures/item/boxes/<appearance>.png，并将模型的 textures 路径保持为 csgobox:item/boxes/<appearance>；地面动画分件也需同步更新。不要用输入包的同名 csgo_box.json 覆盖游戏物品入口，入口负责所有外观切换。
 
 
-## 地面开合动画（1.11.0）
+## 地面开合动画（1.11.1）
 
 物品继续使用原闭合模型。地面箱使用 `src/main/resources/assets/csgobox/models/block/animated/<外观>_body.json` 与 `<外观>_lid.json`，箱盖与锁扣一起绕后侧铰链旋转，原贴图不变。
 
 - 新五款外观的源分件在 `blockbench/appearances/<外观>/java_models/parts/`，铰链信息见各自 `model_manifest.json`；可编辑工程和动画源保留。
-- 旧款 classic 从 `models/item/boxes/classic.json` 沿原箱盖分界拆分，并补上内部空腔。外观、贴图及背包模型保留。
-- 新外观源分件中的封顶主体也会生成底板和内壁，保留原贴图；游戏中的内部空腔为箱内滑条留出可见空间。
+- 旧款 classic 从 `models/item/boxes/classic.json` 沿原箱盖分界拆分，保留原始表面和箱底高度；分界处不生成原模型中不存在的封口面。
+- 新五款直接使用源箱体分件，箱盖与锁扣合并作为活动分件；几何、UV、底面和装饰面原样保留。生成器不再挖空箱体、压低底板或裁剪原始装饰面。
 - 修改源分件后运行 `python tools/export_ground_models.py`，重新生成游戏资源及 `blockbench/ground-animation-manifest.json`；保持原铰链位置即可直接应用。若移动铰链，同时调整 `BoxAppearance.hingeY()` / `hingeZ()`。
-- 空箱与未开箱使用同一套地面动画资源，空箱物品模型为 `models/item/empty_box.json`。箱内滑条由客户端渲染，不需要在模型中加入 GUI 面片，也不依赖 GeckoLib。
+- 空箱与未开箱使用同一套地面动画资源，空箱物品模型为 `models/item/empty_box.json`。滑条由客户端绘制在箱体上方，并向正面倾斜至与水平面成 30°，不需要在模型中加入 GUI 面片，也不依赖 GeckoLib。

@@ -17,7 +17,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 
-/** Original baked geometry split at its real hinge. The strip is embedded inside the open case. */
+/** Original baked geometry and hinged lid, with a raised reel tilted towards the case front. */
 public final class GroundBoxRenderer implements BlockEntityRenderer<PlacedBoxEntity> {
     public GroundBoxRenderer(BlockEntityRendererProvider.Context context) {}
     private static ResourceLocation part(BoxAppearance appearance,String part) {
@@ -48,9 +48,11 @@ public final class GroundBoxRenderer implements BlockEntityRenderer<PlacedBoxEnt
             if (box.isOpening() && box.spinTicks(partial)>=0 && Minecraft.getInstance().gameRenderer.getMainCamera()
                     .getPosition().distanceToSqr(box.getBlockPos().getCenter())<24*24) {
                 pose.pushPose();
-                pose.translate(.90,Math.max(.035,appearance.hingeY()-.018),(appearance.front()+appearance.back())/32+.13);
-                pose.mulPose(Axis.XP.rotationDegrees(-90));
+                pose.translate(.5,appearance.hingeY()+.12,(appearance.front()+appearance.back())/32);
+                // 30 degrees above horizontal: rear/top edge higher than front/bottom edge.
+                pose.mulPose(Axis.XP.rotationDegrees(-120));
                 pose.scale(-.80F/GroundReelTexture.WIDTH,.26F/GroundReelTexture.HEIGHT,.001F);
+                pose.translate(-GroundReelTexture.WIDTH/2F,-GroundReelTexture.HEIGHT/2F,0);
                 GroundReelTexture.render(box,partial,pose.last().pose(),levelLighting);
                 pose.popPose();
             } else if (!box.isOpening()) GroundReelTexture.forget(box);
