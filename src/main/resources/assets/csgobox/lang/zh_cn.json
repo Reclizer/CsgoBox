@@ -170,5 +170,15 @@
   "gui.csgobox.inspect.legendary_title": "传奇物品清单",
   "gui.csgobox.inspect.legendary_count": "共 %s 项传奇物品",
   "gui.csgobox.inspect.drag_hint": "拖拽旋转 · 松手回正 · 按住 Shift 查看物品说明",
-  "gui.csgobox.inspect.empty": "此奖池没有传奇物品"
+  "gui.csgobox.inspect.empty": "此奖池没有传奇物品",
+  "appearance.csgobox.classic": "旧款做旧金箱",
+  "appearance.csgobox.gold": "金色武器箱",
+  "appearance.csgobox.orange": "橙色武器箱",
+  "appearance.csgobox.green": "绿色扁平箱",
+  "appearance.csgobox.rose_blue": "铜粉雾蓝箱",
+  "appearance.csgobox.yellow_metal": "芥末黄金属箱",
+  "editor.csgobox.appearance": "箱体外观",
+  "editor.csgobox.appearance_hint": "点击选择外观，保存后应用到该奖池的所有箱子。",
+  "editor.csgobox.appearance_reload_hint": "已有箱子同步更新；绿色扁平箱使用较矮的碰撞范围。",
+  "editor.csgobox.bad_appearance": "未知箱体外观，请选择内置外观。"
 }

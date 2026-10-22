@@ -1,6 +1,8 @@
 package com.reclizer.csgobox.block;
 
 import com.reclizer.csgobox.server.PlacedBoxOpening;
+import com.reclizer.csgobox.config.*;
+import com.reclizer.csgobox.item.*;
 import net.minecraft.core.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -12,6 +14,8 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.state.*;
 import net.minecraft.world.level.block.state.properties.*;
 import net.minecraft.world.level.material.*;
@@ -23,25 +27,42 @@ import java.util.*;
 
 public final class PlacedBoxBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-    private static final VoxelShape NORTH_SOUTH = Block.box(0, 0, 1, 16, 9, 14);
-    private static final VoxelShape EAST_WEST = Block.box(1, 0, 0, 14, 9, 16);
+    public static final EnumProperty<BoxAppearance> APPEARANCE = EnumProperty.create("appearance", BoxAppearance.class);
+    private static final Map<BoxAppearance, Map<Direction, VoxelShape>> SHAPES = new EnumMap<>(BoxAppearance.class);
+    static {
+        for (var appearance : BoxAppearance.values()) {
+            double front = appearance.front(), back = appearance.back(), height = appearance.height();
+            SHAPES.put(appearance, Map.of(
+                    Direction.NORTH, Block.box(0, 0, front, 16, height, back),
+                    Direction.EAST, Block.box(16-back, 0, 0, 16-front, height, 16),
+                    Direction.SOUTH, Block.box(0, 0, 16-back, 16, height, 16-front),
+                    Direction.WEST, Block.box(front, 0, 0, back, height, 16)));
+        }
+    }
     private static final Random RANDOM = new Random();
 
     public PlacedBoxBlock() {
         super(Properties.of().mapColor(MapColor.COLOR_YELLOW).strength(1.5F).sound(SoundType.METAL)
                 .noOcclusion().pushReaction(PushReaction.BLOCK));
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(APPEARANCE, BoxAppearance.CLASSIC));
     }
     @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
     @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) { return new PlacedBoxEntity(pos, state); }
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING); }
+    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING, APPEARANCE); }
     @Override public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        String id = ItemCsgoBox.boxId(context.getItemInHand());
+        BoxDefinition definition = context.getLevel().isClientSide ? null : CsgoBoxManage.find(id);
+        BoxAppearance appearance = context.getLevel().isClientSide ? BoxCatalog.appearance(id)
+                : definition == null ? BoxAppearance.CLASSIC : BoxAppearance.byId(definition.appearance());
+        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite()).setValue(APPEARANCE, appearance);
+    }
+    @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return level.isClientSide ? null : createTickerHelper(type, ModBlocks.BOX_ENTITY.get(), PlacedBoxEntity::serverTick);
     }
     @Override public BlockState rotate(BlockState state, Rotation rotation) { return state.setValue(FACING, rotation.rotate(state.getValue(FACING))); }
     @Override public BlockState mirror(BlockState state, Mirror mirror) { return state.rotate(mirror.getRotation(state.getValue(FACING))); }
     @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return state.getValue(FACING).getAxis() == Direction.Axis.X ? EAST_WEST : NORTH_SOUTH;
+        return SHAPES.get(state.getValue(APPEARANCE)).get(state.getValue(FACING));
     }
     @Override public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         return level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP);

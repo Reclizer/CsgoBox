@@ -16,11 +16,13 @@ public record PacketBoxCatalog(List<BoxCatalog.Entry> entries) {
         int size = buf.readVarInt();
         if (size < 0 || size > 512) throw new IllegalArgumentException("Oversized pool catalog");
         var entries = new java.util.ArrayList<BoxCatalog.Entry>(size);
-        for (int i = 0; i < size; i++) entries.add(new BoxCatalog.Entry(buf.readUtf(128), buf.readUtf(128)));
+        for (int i = 0; i < size; i++) entries.add(new BoxCatalog.Entry(buf.readUtf(128), buf.readUtf(128), buf.readUtf(32)));
         return List.copyOf(entries);
     }
     public void toBytes(FriendlyByteBuf buf) {
-        buf.writeCollection(entries, (buffer, entry) -> { buffer.writeUtf(entry.id(), 128); buffer.writeUtf(entry.name(), 128); });
+        buf.writeCollection(entries, (buffer, entry) -> {
+            buffer.writeUtf(entry.id(), 128); buffer.writeUtf(entry.name(), 128); buffer.writeUtf(entry.appearance(), 32);
+        });
     }
     public void handle(Supplier<NetworkEvent.Context> supplier) {
         var context = supplier.get();

@@ -8,11 +8,13 @@ import java.util.function.Predicate;
 public record BoxDefinition(String id, String name, String key, float drop, List<Integer> random,
                             List<String> entity, List<String> grade1, List<String> grade2,
                             List<String> grade3, List<String> grade4, List<String> grade5, Boolean luckEnabled,
-                            List<Integer> displayOrder, AcquisitionDefinition acquisition, AcquisitionDefinition keyAcquisition) {
+                            List<Integer> displayOrder, AcquisitionDefinition acquisition, AcquisitionDefinition keyAcquisition,
+                            String appearance) {
     public static final int RECOMMENDED_REGULAR_LIMIT = 20;
     public BoxDefinition {
         // Missing in legacy JSON: retain the previous luck-sensitive behavior.
         luckEnabled = luckEnabled == null ? true : luckEnabled;
+        appearance = appearance == null ? BoxAppearance.CLASSIC.id() : appearance;
         random = copy(random);
         entity = copy(entity);
         grade1 = copy(grade1);
@@ -35,6 +37,14 @@ public record BoxDefinition(String id, String name, String key, float drop, List
     }
 
     public BoxDefinition(String id, String name, String key, float drop, List<Integer> random, List<String> entity,
+                         List<String> grade1, List<String> grade2, List<String> grade3, List<String> grade4,
+                         List<String> grade5, Boolean luckEnabled, List<Integer> displayOrder,
+                         AcquisitionDefinition acquisition, AcquisitionDefinition keyAcquisition) {
+        this(id, name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, luckEnabled,
+                displayOrder, acquisition, keyAcquisition, null);
+    }
+
+    public BoxDefinition(String id, String name, String key, float drop, List<Integer> random, List<String> entity,
                          List<String> grade1, List<String> grade2, List<String> grade3,
                          List<String> grade4, List<String> grade5, Boolean luckEnabled) {
         this(id, name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, luckEnabled, null, null, null);
@@ -50,12 +60,17 @@ public record BoxDefinition(String id, String name, String key, float drop, List
 
     public BoxDefinition withLuckEnabled(boolean enabled) {
         return new BoxDefinition(id, name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, enabled,
-                displayOrder, acquisition, keyAcquisition);
+                displayOrder, acquisition, keyAcquisition, appearance);
     }
 
     public BoxDefinition withName(String displayName) {
         return new BoxDefinition(id, displayName, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, luckEnabled,
-                displayOrder, acquisition, keyAcquisition);
+                displayOrder, acquisition, keyAcquisition, appearance);
+    }
+
+    public BoxDefinition withAppearance(String value) {
+        return new BoxDefinition(id, name, key, drop, random, entity, grade1, grade2, grade3, grade4, grade5, luckEnabled,
+                displayOrder, acquisition, keyAcquisition, value);
     }
 
     public List<RewardEntry> regularRewardsInOrder() {
@@ -91,6 +106,7 @@ public record BoxDefinition(String id, String name, String key, float drop, List
     }
 
     public void validate(Predicate<String> validItem) {
+        if (!BoxAppearance.valid(appearance)) throw new IllegalArgumentException("editor.csgobox.bad_appearance");
         if (!validId(id)) throw new IllegalArgumentException("Pool requires a stable namespaced id, for example csgobox:weapons_supply");
         if (name == null || name.isBlank() || !name.equals(name.trim()) || name.length() > 128)
             throw new IllegalArgumentException("Box name must contain 1-128 characters without outer spaces");
@@ -139,7 +155,7 @@ public record BoxDefinition(String id, String name, String key, float drop, List
         ordered.forEach(e -> nextOrder.add(e.grade()));
         return new BoxDefinition(id, name, key, drop, random, entity,
                 rewardsAt(rewards, 1), rewardsAt(rewards, 2), rewardsAt(rewards, 3),
-                rewardsAt(rewards, 4), rewardsAt(rewards, 5), luckEnabled, nextOrder, acquisition, keyAcquisition);
+                rewardsAt(rewards, 4), rewardsAt(rewards, 5), luckEnabled, nextOrder, acquisition, keyAcquisition, appearance);
     }
 
     private static List<String> rewardsAt(List<RewardEntry> entries, int grade) {

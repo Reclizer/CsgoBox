@@ -1,0 +1,63 @@
+{
+  "status": "passed",
+  "target": "Minecraft Java 1.20.1",
+  "model_id": "csgo_green_case",
+  "texture_dimensions": [
+    128,
+    128
+  ],
+  "texture_sha256": "2c7bdd8467b751d8854791e8f1bd05fd666f9db7b5556a869acd40b63a3e864c",
+  "palette_colors": 15,
+  "random_texture_noise": false,
+  "dimensions_main_shell": [
+    16,
+    3.5,
+    10.5
+  ],
+  "element_counts": {
+    "body": 16,
+    "lid": 30,
+    "lock": 4
+  },
+  "total_elements": 50,
+  "closed_is_rest_pose": true,
+  "bone_hierarchy": {
+    "root": [
+      "body",
+      "lid"
+    ],
+    "lid": [
+      "lock"
+    ]
+  },
+  "lid_pivot_java": [
+    8.0,
+    1.64,
+    13.62
+  ],
+  "lid_pivot_centered": [
+    0.0,
+    1.64,
+    5.619999999999999
+  ],
+  "animation_range_degrees": [
+    0,
+    90
+  ],
+  "lid_lock_clear_of_body_at_integer_angles_0_through_90": true,
+  "hinge_joint_contact_excluded": true,
+  "java_1_20_1_element_and_uv_limits_valid": true,
+  "body_top_is_sealed": true,
+  "lid_center_is_uniform_dark_gray": true,
+  "minecraft_client_tested": false,
+  "blockbench_gui_import_tested": false,
+  "printed_artwork": false,
+  "case_is_flat": true,
+  "front_direction": "north (-Z)",
+  "hinge_edge": "back (+Z)",
+  "top_lid_opens_backward": true,
+  "carry_handle_fixed_to_body": true,
+  "reference_broad_panel_is_top_lid": true,
+  "model_asset_references_resolve": true,
+  "official_codec_validation_passed": true
+}

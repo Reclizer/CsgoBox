@@ -1,8 +1,94 @@
 {
   "variants": {
-    "facing=north": {"model": "csgobox:block/csgo_box"},
-    "facing=east": {"model": "csgobox:block/csgo_box", "y": 90},
-    "facing=south": {"model": "csgobox:block/csgo_box", "y": 180},
-    "facing=west": {"model": "csgobox:block/csgo_box", "y": 270}
+    "appearance=classic,facing=north": {
+      "model": "csgobox:block/csgo_box"
+    },
+    "appearance=classic,facing=east": {
+      "model": "csgobox:block/csgo_box",
+      "y": 90
+    },
+    "appearance=classic,facing=south": {
+      "model": "csgobox:block/csgo_box",
+      "y": 180
+    },
+    "appearance=classic,facing=west": {
+      "model": "csgobox:block/csgo_box",
+      "y": 270
+    },
+    "appearance=gold,facing=north": {
+      "model": "csgobox:block/boxes/gold"
+    },
+    "appearance=gold,facing=east": {
+      "model": "csgobox:block/boxes/gold",
+      "y": 90
+    },
+    "appearance=gold,facing=south": {
+      "model": "csgobox:block/boxes/gold",
+      "y": 180
+    },
+    "appearance=gold,facing=west": {
+      "model": "csgobox:block/boxes/gold",
+      "y": 270
+    },
+    "appearance=orange,facing=north": {
+      "model": "csgobox:block/boxes/orange"
+    },
+    "appearance=orange,facing=east": {
+      "model": "csgobox:block/boxes/orange",
+      "y": 90
+    },
+    "appearance=orange,facing=south": {
+      "model": "csgobox:block/boxes/orange",
+      "y": 180
+    },
+    "appearance=orange,facing=west": {
+      "model": "csgobox:block/boxes/orange",
+      "y": 270
+    },
+    "appearance=green,facing=north": {
+      "model": "csgobox:block/boxes/green"
+    },
+    "appearance=green,facing=east": {
+      "model": "csgobox:block/boxes/green",
+      "y": 90
+    },
+    "appearance=green,facing=south": {
+      "model": "csgobox:block/boxes/green",
+      "y": 180
+    },
+    "appearance=green,facing=west": {
+      "model": "csgobox:block/boxes/green",
+      "y": 270
+    },
+    "appearance=rose_blue,facing=north": {
+      "model": "csgobox:block/boxes/rose_blue"
+    },
+    "appearance=rose_blue,facing=east": {
+      "model": "csgobox:block/boxes/rose_blue",
+      "y": 90
+    },
+    "appearance=rose_blue,facing=south": {
+      "model": "csgobox:block/boxes/rose_blue",
+      "y": 180
+    },
+    "appearance=rose_blue,facing=west": {
+      "model": "csgobox:block/boxes/rose_blue",
+      "y": 270
+    },
+    "appearance=yellow_metal,facing=north": {
+      "model": "csgobox:block/boxes/yellow_metal"
+    },
+    "appearance=yellow_metal,facing=east": {
+      "model": "csgobox:block/boxes/yellow_metal",
+      "y": 90
+    },
+    "appearance=yellow_metal,facing=south": {
+      "model": "csgobox:block/boxes/yellow_metal",
+      "y": 180
+    },
+    "appearance=yellow_metal,facing=west": {
+      "model": "csgobox:block/boxes/yellow_metal",
+      "y": 270
+    }
   }
 }

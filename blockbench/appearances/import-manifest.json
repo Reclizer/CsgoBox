@@ -1,0 +1,42 @@
+[
+  {
+    "appearance": "gold",
+    "source": "CsgoBox_MC_128_Animated_Compatible_Java_1.20.1.zip",
+    "model": "CsgoBox-MC-128-Animated-Compatible/assets/csgobox/models/block/csgo_box_closed.json",
+    "elements": 66,
+    "source_sha256": "7960035c9d338a8ecc913e801032df2c0c27107fb95b3eec2f48cd2c8853cb4c",
+    "texture_sha256": "bcce172cec6f4f7156d42a03a9fe8c8426f9d077695b985642885b17af61d6a4"
+  },
+  {
+    "appearance": "orange",
+    "source": "CsgoBox_Orange_MC_128_No_Print_Java_1.20.1.zip",
+    "model": "CsgoBox-Orange-MC-128-No-Print/assets/csgobox/models/block/csgo_orange_case_closed.json",
+    "elements": 47,
+    "source_sha256": "169c3c65306c04bd96d0591028e771d384353ecf3e389ac2c181c2114c3e16bf",
+    "texture_sha256": "17c113c71f809bb4ce782ebf4d4ad234cddfc87ce52064da64197db994ae6fac"
+  },
+  {
+    "appearance": "green",
+    "source": "CsgoBox_Green_MC_128_Flat_No_Print_Java_1.20.1.zip",
+    "model": "CsgoBox-Green-MC-128-Flat-No-Print/assets/csgobox/models/block/csgo_green_case_closed.json",
+    "elements": 50,
+    "source_sha256": "f20058e43e3c057e0979036f25bd2eed1467ad39cf7f84730368d85051dfe6c2",
+    "texture_sha256": "2c7bdd8467b751d8854791e8f1bd05fd666f9db7b5556a869acd40b63a3e864c"
+  },
+  {
+    "appearance": "rose_blue",
+    "source": "CsgoBox_RoseBlue_MC_128_No_Print_Java_1.20.1.zip",
+    "model": "CsgoBox-RoseBlue-MC-128-No-Print/assets/csgobox/models/block/csgo_roseblue_case_closed.json",
+    "elements": 63,
+    "source_sha256": "868f8ab2e7684265f362627e7bf0f873b310ab15770369da92ccd82917e6ae97",
+    "texture_sha256": "da6d70572aec28c13367832226d83d27f2f0ac6f6077cd5b4928bbd6e75ca740"
+  },
+  {
+    "appearance": "yellow_metal",
+    "source": "CsgoBox_YellowMetal_MC_128_No_Print_Java_1.20.1.zip",
+    "model": "CsgoBox-YellowMetal-MC-128-No-Print/assets/csgobox/models/block/csgo_yellow_metal_case_closed.json",
+    "elements": 63,
+    "source_sha256": "c3546d0e16dfaa749a3ef177a76ad91f53d16fbd8c4034de09c6d0d79bf9397e",
+    "texture_sha256": "2782a9c84728c04adb31ab4e6e385b00ba600bcac4315c058dbb5394ea2493ce"
+  }
+]

@@ -1,4 +1,3 @@
 {
-  "parent": "csgobox:item/csgo_box",
-  "textures": {"particle": "csgobox:item/csgo_box"}
+  "parent": "csgobox:item/boxes/classic"
 }

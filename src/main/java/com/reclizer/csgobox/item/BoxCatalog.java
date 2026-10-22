@@ -1,6 +1,7 @@
 package com.reclizer.csgobox.item;
 
 import com.reclizer.csgobox.config.BoxDefinition;
+import com.reclizer.csgobox.config.BoxAppearance;
 import com.reclizer.csgobox.packet.RewardName;
 import com.reclizer.csgobox.utils.ColorTools;
 import net.minecraft.ChatFormatting;
@@ -10,7 +11,9 @@ import java.util.*;
 
 /** Client display cache populated only by the connected server. No configuration reads. */
 public final class BoxCatalog {
-    public record Entry(String id, String name) {}
+    public record Entry(String id, String name, String appearance) {
+        public Entry(String id, String name) { this(id, name, BoxAppearance.CLASSIC.id()); }
+    }
     private static Map<String, Entry> catalog = Map.of();
     private static final Map<String, List<RewardName>> rewardNames = new HashMap<>();
     private static final Map<String, List<Component>> tooltipLines = new HashMap<>();
@@ -20,6 +23,11 @@ public final class BoxCatalog {
     public static String displayName(String id) {
         Entry entry = catalog.get(id);
         return entry == null ? id : entry.name();
+    }
+
+    public static BoxAppearance appearance(String id) {
+        Entry entry = catalog.get(id);
+        return entry == null ? BoxAppearance.CLASSIC : BoxAppearance.byId(entry.appearance());
     }
 
     public static void replaceRewardNames(String id, List<RewardName> rewards) {
@@ -57,6 +65,7 @@ public final class BoxCatalog {
         Map<String, Entry> replacement = new LinkedHashMap<>();
         for (Entry entry : next) {
             if (!BoxDefinition.validId(entry.id()) || entry.name() == null || entry.name().isBlank()
+                    || !BoxAppearance.valid(entry.appearance())
                     || entry.name().length() > 128 || replacement.putIfAbsent(entry.id(), entry) != null)
                 throw new IllegalArgumentException("Invalid pool catalog");
         }

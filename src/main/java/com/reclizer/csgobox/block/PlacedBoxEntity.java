@@ -1,6 +1,8 @@
 package com.reclizer.csgobox.block;
 
 import com.reclizer.csgobox.config.BoxDefinition;
+import com.reclizer.csgobox.config.BoxAppearance;
+import com.reclizer.csgobox.config.CsgoBoxManage;
 import com.reclizer.csgobox.item.ItemCsgoBox;
 import com.reclizer.csgobox.item.ModItems;
 import net.minecraft.core.BlockPos;
@@ -9,6 +11,7 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.Level;
 
 /** Placed boxes keep the same stable identity as inventory boxes, never a reward snapshot. */
 public final class PlacedBoxEntity extends BlockEntity {
@@ -21,7 +24,23 @@ public final class PlacedBoxEntity extends BlockEntity {
     public void setPoolId(String id) {
         poolId = BoxDefinition.validId(id) ? id : "";
         setChanged();
+        refreshAppearance();
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+    }
+
+    /** Refresh loaded boxes after edits/reloads without storing a second configuration snapshot. */
+    public void refreshAppearance() {
+        if (level == null || level.isClientSide || isRemoved()) return;
+        BoxDefinition definition = CsgoBoxManage.find(poolId);
+        BlockState state = getBlockState();
+        if (definition == null || !state.is(ModBlocks.BOX.get())) return;
+        var appearance = BoxAppearance.byId(definition.appearance());
+        if (state.getValue(PlacedBoxBlock.APPEARANCE) != appearance)
+            level.setBlock(worldPosition, state.setValue(PlacedBoxBlock.APPEARANCE, appearance), 3);
+    }
+    public static void serverTick(Level level, BlockPos pos, BlockState state, PlacedBoxEntity box) {
+        // Spread checks across ticks; chunk meshes only change when the chosen appearance changes.
+        if ((level.getGameTime() + pos.asLong()) % 20 == 0) box.refreshAppearance();
     }
 
     /** Also rejects reentrant opens during neighbor updates while the block is being removed. */

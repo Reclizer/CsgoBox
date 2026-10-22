@@ -1,0 +1,5 @@
+模式：内置 ImageGen；去除印花的局部参考。
+参考图：exec-36b897c6-f0bd-4d47-97f8-86d5f8e95e93.png。
+最终贴图按原有无印花背板恢复对应底色和阴影，仅替换 222 个印花像素，其余像素逐字节对应。
+
+Use case: precise-object-edit. Edit the supplied Minecraft orange hard case render. Remove ONLY the black diamond printed emblem and all white CS lettering/lightning artwork from the FRONT central orange panel. Reconstruct the underlying continuous orange panel with the same broad flat orange color and existing lower shadow band as its surroundings, matching the nearby clean orange panel. No replacement symbol, no lettering, no decal. Keep all geometry, proportions, three steel clasps, recessed top carry handle, side padlock, molded recesses, reinforcing bands, lid seam, colors elsewhere, pixel art style, view and transparent background identical. This is a localized decal removal reference for a 128x128 Minecraft texture atlas.

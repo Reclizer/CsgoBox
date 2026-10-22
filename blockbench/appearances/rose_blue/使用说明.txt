@@ -1,0 +1,31 @@
+铜粉 / 蓝灰金属武器箱 · 无印花 · Minecraft Java 1.20.1 · 模型文件
+
+主工程：csgo_roseblue_case_animated.bbmodel
+沿用已确认的 MC 像素风格与 128×128 贴图，保留参考箱的高身金属结构、暖色上盖、冷色下箱、竖向加强条、侧面凹入提手、前扣与挂锁。
+正面标志、文字和侧面触手图案全部去除。颜色过渡由连贯的大色块构成，没有随机斑点或细密抖色。
+箱体与竖向边框按同一高度衔接暖铜粉到蓝灰配色，边框使用单独的明暗纹理表现金属折边。
+四道顶部压筋与侧面提手均为实际几何。内部沿用灰色衬板，上盖中心纯深灰，下半箱为平面封顶与回字形深浅过渡。
+箱体主壳约 16×11.5×10.05 模型单位，扣件和提手少量外凸；模型显示均匀缩放。
+
+开合
+root → body；root → lid → lock。body 固定，lid 为顶盖，lock 为挂锁；前扣随 lid 移动，侧面提手固定在 body。
+闭合为基础姿态，箱盖绕后侧铰链向后掀开 0°～90°。
+Animate 面板有 closed、open、opened、close 四个动作；开 / 合各 0.5 秒，20 Hz 关键帧。
+主工程为 Generic Model，内嵌 128×128 贴图，无需插件即可编辑并预览动画。
+主工程转轴 [0,8.31,6.12]，对应 Java 方块坐标 [8,8.31,14.12]。
+保存协议为 4.10，Blockbench 4.12 可读取，Blockbench 5 会自动迁移动画方向；不要只手工修改 format_version。
+
+文件
+csgo_roseblue_case.png：128×128 PNG。
+java_models/：Java 1.20.1 打开 / 关闭静态 JSON、Java Block/Item 工程和 body / lid / lock 分体 JSON。
+geckolib/：供 Java 模组 GeckoLib 4 使用的 Geo 1.12.0 骨骼模型、1.8.0 动画与 PNG。
+assets/csgobox/：按模组资源路径整理好的模型资产副本，普通物品入口默认关闭。
+model_manifest.json：骨骼、转轴与动画名称；texture_layout.json：图集分区和配色。
+仅包含模型、贴图、动画、预览和说明，没有新增模组代码或容器逻辑；当前为单箱模型。
+
+检查
+preview_states.png、preview_closed.png、preview_half_open.png、preview_open.png、preview_back.png 均为实际交付模型和 PNG 渲染。
+validation.json：UV、分组、尺寸、纹理和 0°～90° 每个整数角度的开合穿插检查，正常铰链接合除外。
+codec_validation.json：与官方 Blockbench 4.12 编解码逻辑比对，并检查动作方向及新版迁移逻辑。
+已检查文件与模型资产引用，未在 Minecraft 客户端实测。
+生成提示词.txt 保存内置 ImageGen 的造型与材质参考提示词；最终为精确制作的像素图集与立方体模型。

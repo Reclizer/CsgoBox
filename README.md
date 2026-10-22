@@ -19,7 +19,7 @@ bash ./gradlew test build
 bash ./gradlew runGameTestServer
 ```
 
-模组文件在 `build/libs/csgobox-1.7.0.jar`。首次构建需要下载 Forge 和 Minecraft 依赖。
+模组文件在 `build/libs/csgobox-1.8.0.jar`。首次构建需要下载 Forge 和 Minecraft 依赖。
 GameTest 在 `run-gametest/` 下使用独立的开发环境，请勿将该目录指向正式服务器。
 
 箱体模型的 Blockbench 编辑工程位于 `blockbench/csgo_box.bbmodel`，内嵌原贴图，并附 `csgo_box.png` 和导回说明。使用 Java 方块/物品格式导出到 `src/main/resources/assets/csgobox/models/item/csgo_box.json`，贴图导出到 `textures/item/csgo_box.png`；地面方块继承此模型，修改会同时应用于物品和地面箱子。
@@ -137,10 +137,18 @@ tacz3dPreview = true
 
 ## 升级说明
 
-当前版本 1.7.0、网络协议为 9，客户端和服务端都需更新。新增奖品点击检视、传奇奖品详细清单及预览续期，应用新的像素风传奇图标。1.6.1 的金色做旧箱体和 1.6.0 的可放置箱子继续保留，已有配置与固定 ID 箱子无需迁移。从 1.2 及更早版本升级时，奖池身份、目录和编辑请求切换为固定 ID。
+当前版本 1.8.0、网络协议为 10，客户端和服务端都需更新。新增五款武器箱外观、编辑器外观选择与六个示例奖池。已有配置缺省使用 `classic`，固定 ID 箱子无需迁移。1.7.0 的奖品点击检视和传奇清单、1.6.1 的做旧金箱以及 1.6.0 的可放置箱子继续保留。从 1.2 及更早版本升级时，奖池身份、目录和编辑请求切换为固定 ID。
 不提供旧示例箱的名称回退或 NBT 迁移；旧箱子需从创造目录、编辑器或命令重新获取。已有配置文件需为每个奖池填写唯一 `id`，缺失时会明确报错，不会清空或静默重建配置。当前工作区的配置已补充 ID 并保留全部奖励，修改前备份位于工作目录。奖励物品的 TaCZ 数据、附魔及其他 NBT 不变。
 
 重构范围、issue 对应关系和验证记录见 [REFACTOR.md](REFACTOR.md)。
+
+## 箱体外观
+
+编辑器新增“箱体外观”标签页，可并排预览并选择六种模型，保存和复制奖池均保留选择。奖池 JSON 的 `appearance` 支持 `classic`、`gold`、`orange`、`green`、`rose_blue`、`yellow_metal`；缺省为保留的旧款做旧金箱 `classic`，未知值会拒绝加载并保留当前有效配置。
+
+背包、手持、掉落物和开箱预览按服务器同步的奖池外观显示，箱子 NBT 仍只需要 `PoolId`。地面箱子将外观保存在方块状态，跟随原朝向渲染；编辑或重载后，已加载箱子在一秒内同步外观和碰撞范围。绿色扁平箱使用较矮的碰撞范围。主开箱界面布局保持不变。
+
+六个使用原版奖励的示例见 [examples/box-appearances.json](examples/box-appearances.json)，具体 ID、获取命令及合并方式见 [示例说明](examples/README.md)。新建配置包含这些示例；升级已有配置不会覆盖原奖池。模型包的 Java 闭合模型已接入；可编辑 Blockbench 工程、原贴图、开盖快照与动画源保存在 `blockbench/appearances/`，运行时不需要 GeckoLib。
 
 ## TaCZ
 

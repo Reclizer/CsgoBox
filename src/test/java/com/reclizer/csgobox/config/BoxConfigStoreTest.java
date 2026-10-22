@@ -9,6 +9,32 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BoxConfigStoreTest {
+    @Test void appearanceSurvivesEditingDuplicationAndDiskReload() throws IOException {
+        var store = store("[]"); store.reload();
+        for (var appearance : BoxAppearance.values()) {
+            var box = BoxDefinition.create("csgobox:" + appearance.id(), appearance.id(), List.of(new RewardEntry("minecraft:stone", 1)))
+                    .withAppearance(appearance.id()).withName("Copy " + appearance.id()).withLuckEnabled(false)
+                    .withRewards(List.of(new RewardEntry("minecraft:diamond", 5)));
+            assertEquals(appearance.id(), box.appearance());
+            assertEquals(box, BoxEditorCodec.decode(BoxEditorCodec.encode(box)));
+            store.saveDefinition(box, ""); store.reload();
+            assertEquals(box, store.readForEditing(box.id()));
+        }
+    }
+
+    @Test void missingAppearanceDefaultsToClassicAndInvalidAppearanceCannotReplaceLiveConfig() throws IOException {
+        var store = store(VALID); store.reload();
+        assertEquals("classic", store.readForEditing("csgobox:test").appearance());
+        var before = store.snapshot();
+        for (String id : List.of("unknown", "", "../gold", "GOLD")) {
+            String invalid = VALID.replace("\"grade1\"", "\"appearance\":\""+id+"\",\"grade1\"");
+            Files.writeString(directory.resolve("box.json"), invalid);
+            assertThrows(IOException.class, store::reload);
+            assertSame(before, store.snapshot());
+            assertEquals(invalid, Files.readString(directory.resolve("box.json")));
+        }
+    }
+
     @Test void previewLimitSurvivesReloadWithoutRemovingHiddenOrGoldRewards() throws IOException {
         var store = store("[]"); store.reload();
         var entries = new java.util.ArrayList<RewardEntry>();

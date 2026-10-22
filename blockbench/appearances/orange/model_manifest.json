@@ -1,0 +1,43 @@
+{
+  "target": "Minecraft Java 1.20.1",
+  "model_id": "csgo_orange_case",
+  "texture": "csgo_orange_case.png",
+  "texture_size": [
+    128,
+    128
+  ],
+  "primary_project": "csgo_orange_case_animated.bbmodel",
+  "rest_pose": "closed",
+  "fixed_bone": "body",
+  "moving_bone": "lid",
+  "lock_parent": "lid",
+  "pivot_java": [
+    8.0,
+    6.32,
+    13.12
+  ],
+  "pivot_centered": [
+    0.0,
+    6.32,
+    5.119999999999999
+  ],
+  "lock_pivot_centered": [
+    -8.4,
+    7.02,
+    -4.55
+  ],
+  "model_center_offset_java_to_rig": [
+    -8.0,
+    -0.0,
+    -8.0
+  ],
+  "open_angle_degrees": 90,
+  "animations": {
+    "closed": "animation.csgo_orange_case.closed",
+    "open": "animation.csgo_orange_case.open",
+    "opened": "animation.csgo_orange_case.opened",
+    "close": "animation.csgo_orange_case.close"
+  },
+  "runtime_code_included": false,
+  "project_keyframe_convention": "Blockbench 4.10 project: X=-90 opens physically +90. Blockbench 5 migrates automatically."
+}

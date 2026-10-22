@@ -36,6 +36,8 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
     private String poolId = BoxDefinition.newId(), originalId = "", revision = "", search = "", itemId = "", luck = "0";
     private String status = "", issue = "", amountError = "";
     private boolean dirty, needsValidation = true, statusError, luckEnabled = true;
+    private BoxAppearance appearance = BoxAppearance.CLASSIC;
+    private final Map<BoxAppearance, ItemStack> appearanceSamples = new EnumMap<>(BoxAppearance.class);
     private int page, grade = 1, rewardPage, catalogPage, selected = -1;
     private int requestId, pending, pendingTicks;
     private float uiScale = 1;
@@ -112,9 +114,9 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         button(454, 46, 150, tr("duplicate"), () -> {
             name = uniqueCopyName(); poolId = BoxDefinition.newId(); originalId = ""; revision = ""; changed(); rebuild();
         }, MUTED);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
             int tab = i;
-            button(152 + i * 152, 76, 144, tr(new String[]{"rewards", "rules", "probabilities"}[i]),
+            button(152 + i * 114, 76, 106, tr(new String[]{"rewards", "rules", "probabilities", "appearance"}[i]),
                     () -> { page = tab; rebuild(); }, page == i ? COLORS[4] : MUTED);
         }
         if (page == 0) buildRewards();
@@ -130,6 +132,15 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             }, MUTED);
             myLuck.active = pending == 0 && luckEnabled;
             luckButton(390, 181, 214);
+        }
+        if (page == 3) {
+            for (var value : BoxAppearance.values()) {
+                int index = value.ordinal();
+                Component label = Component.literal(appearance == value ? "✓ " : "").append(Component.translatable(value.translationKey()));
+                button(152+index%3*153, 194+index/3*124, 146, label, () -> {
+                    appearance = value; changed(); rebuild();
+                }, appearance == value ? COLORS[4] : MUTED);
+            }
         }
         testButton = button(350, 402, 98, tr("test_box"), this::getTestBox, COLORS[0]);
         saveButton = button(456, 402, 94, tr("save"), this::save, COLORS[4]);
@@ -254,6 +265,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         boxAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled());
         keyAcquisition = new AcquisitionDraft(AcquisitionDefinition.disabled());
         luckEnabled = true;
+        appearance = BoxAppearance.CLASSIC;
         String[] defaults = {"625", "20", "6", "5", "2"};
         System.arraycopy(defaults, 0, weights, 0, 5);
         poolId = BoxDefinition.newId(); originalId = ""; revision = ""; selected = -1; rewardPage = 0; grade = 1; page = 0;
@@ -289,6 +301,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         }
         BoxDefinition box = BoxEditorCodec.decode(packet.json());
         luckEnabled = box.luckEnabled();
+        appearance = BoxAppearance.byId(box.appearance());
         name = box.name(); poolId = box.id(); originalId = box.id(); revision = packet.revision(); key = box.key();
         displayOrder.clear(); displayOrder.addAll(box.displayOrder()); sampleCache.clear();
         boxAcquisition = new AcquisitionDraft(box.acquisition());
@@ -355,7 +368,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         BoxDefinition grouped = BoxDefinition.create(poolId, name.trim(), entries);
         return new BoxDefinition(poolId, name.trim(), key.trim(), 0, parsedWeights(), List.of(),
                 grouped.grade1(), grouped.grade2(), grouped.grade3(), grouped.grade4(), grouped.grade5(), luckEnabled,
-                displayOrder, boxAcquisition.definition(), key.isBlank() ? AcquisitionDefinition.disabled() : keyAcquisition.definition());
+                displayOrder, boxAcquisition.definition(), key.isBlank() ? AcquisitionDefinition.disabled() : keyAcquisition.definition(), appearance.id());
     }
 
     private void validateDraft() {
@@ -421,6 +434,7 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
             if (page == 0) renderRewards(g, mx, my);
             if (page == 1) renderAcquisition(g, mx, my);
             if (page == 2) renderProbabilities(g);
+            if (page == 3) renderAppearances(g);
             String footer = !status.isEmpty() ? status : issue.isEmpty() ? text("ready", rewardCount()) : issue;
             if (inside(mx, my, 350, 402, 98, 20) && pending == 0)
                 footer = text(dirty || originalId.isEmpty() ? "test_save_first" : "test_hint");
@@ -556,11 +570,25 @@ public class CsgoBoxCraftScreen extends AbstractContainerScreen<CsgoBoxCraftMenu
         ItemStack stack;
         if (acquireKey) stack = sampleCache.computeIfAbsent(key, ItemNBT::getStacks);
         else {
-            stack = new ItemStack(com.reclizer.csgobox.item.ModItems.ITEM_CSGOBOX.get());
-            stack.getOrCreateTag().putString("PoolId", poolId);
+            stack = appearanceSamples.computeIfAbsent(appearance, com.reclizer.csgobox.gui.client.BoxAppearanceModels::preview);
         }
         panel(g, x, y, 26, 26, 0xFF0E1621);
         g.renderItem(stack, leftPos+x+5, topPos+y+5);
+    }
+
+    private void renderAppearances(GuiGraphics g) {
+        for (var value : BoxAppearance.values()) {
+            int index = value.ordinal(), x = 152+index%3*153, y = 108+index/3*124;
+            panel(g, x, y, 146, 110, appearance == value ? 0xFF304057 : 0xFF0E1621);
+            ItemStack sample = appearanceSamples.computeIfAbsent(value, com.reclizer.csgobox.gui.client.BoxAppearanceModels::preview);
+            g.pose().pushPose();
+            g.pose().translate(leftPos+x+49, topPos+y+13, 0); g.pose().scale(3, 3, 1);
+            g.renderItem(sample, 0, 0);
+            g.pose().popPose();
+            label(g, value.id(), x+8, y+72, MUTED);
+        }
+        clipped(g, text("appearance_hint"), 152, 365, 452, TEXT);
+        clipped(g, text("appearance_reload_hint"), 152, 379, 452, MUTED);
     }
 
     private void renderProbabilities(GuiGraphics g) {

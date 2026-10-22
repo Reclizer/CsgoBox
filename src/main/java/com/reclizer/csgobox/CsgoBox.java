@@ -41,7 +41,10 @@ public class CsgoBox {
     public static class ClientModEvents {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            event.enqueueWork(RecModScreens::clientLoad);
+            event.enqueueWork(() -> {
+                RecModScreens.clientLoad();
+                com.reclizer.csgobox.gui.client.BoxAppearanceModels.register();
+            });
         }
     }
 }

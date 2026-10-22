@@ -1,0 +1,602 @@
+[
+  {
+    "id": "csgobox:example_classic",
+    "name": "旧款做旧金箱 · 示例",
+    "appearance": "classic",
+    "key": "csgobox:csgo_key0",
+    "luckEnabled": true,
+    "random": [
+      2,
+      5,
+      6,
+      20,
+      625
+    ],
+    "grade1": [
+      "minecraft:stone_sword",
+      "minecraft:iron_sword",
+      "minecraft:iron_axe"
+    ],
+    "grade2": [
+      "minecraft:golden_sword",
+      "minecraft:golden_axe"
+    ],
+    "grade3": [
+      "minecraft:diamond_sword",
+      "minecraft:diamond_axe"
+    ],
+    "grade4": [
+      "minecraft:netherite_sword"
+    ],
+    "grade5": [
+      "minecraft:trident",
+      "minecraft:bow.withTags{Enchantments:[{id:\"minecraft:power\",lvl:5s}]}"
+    ],
+    "acquisition": {
+      "crafting": {
+        "enabled": false,
+        "ingredients": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "count": 1
+      },
+      "drop": {
+        "enabled": false,
+        "chance": 0,
+        "entities": [],
+        "count": 1
+      },
+      "trade": {
+        "enabled": false,
+        "profession": "minecraft:weaponsmith",
+        "level": 1,
+        "cost": "minecraft:emerald",
+        "secondCost": "",
+        "count": 1,
+        "maxUses": 12,
+        "xp": 5
+      }
+    },
+    "keyAcquisition": {
+      "crafting": {
+        "enabled": false,
+        "ingredients": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "count": 1
+      },
+      "drop": {
+        "enabled": false,
+        "chance": 0,
+        "entities": [],
+        "count": 1
+      },
+      "trade": {
+        "enabled": false,
+        "profession": "minecraft:weaponsmith",
+        "level": 1,
+        "cost": "minecraft:emerald",
+        "secondCost": "",
+        "count": 1,
+        "maxUses": 12,
+        "xp": 5
+      }
+    }
+  },
+  {
+    "id": "csgobox:example_gold",
+    "name": "金色武器箱 · 示例",
+    "appearance": "gold",
+    "key": "csgobox:csgo_key0",
+    "luckEnabled": true,
+    "random": [
+      2,
+      5,
+      6,
+      20,
+      625
+    ],
+    "grade1": [
+      "minecraft:stone_sword",
+      "minecraft:iron_sword",
+      "minecraft:iron_axe"
+    ],
+    "grade2": [
+      "minecraft:golden_sword",
+      "minecraft:golden_axe"
+    ],
+    "grade3": [
+      "minecraft:diamond_sword",
+      "minecraft:diamond_axe"
+    ],
+    "grade4": [
+      "minecraft:netherite_sword"
+    ],
+    "grade5": [
+      "minecraft:trident",
+      "minecraft:bow.withTags{Enchantments:[{id:\"minecraft:power\",lvl:5s}]}"
+    ],
+    "acquisition": {
+      "crafting": {
+        "enabled": false,
+        "ingredients": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "count": 1
+      },
+      "drop": {
+        "enabled": false,
+        "chance": 0,
+        "entities": [],
+        "count": 1
+      },
+      "trade": {
+        "enabled": false,
+        "profession": "minecraft:weaponsmith",
+        "level": 1,
+        "cost": "minecraft:emerald",
+        "secondCost": "",
+        "count": 1,
+        "maxUses": 12,
+        "xp": 5
+      }
+    },
+    "keyAcquisition": {
+      "crafting": {
+        "enabled": false,
+        "ingredients": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "count": 1
+      },
+      "drop": {
+        "enabled": false,
+        "chance": 0,
+        "entities": [],
+        "count": 1
+      },
+      "trade": {
+        "enabled": false,
+        "profession": "minecraft:weaponsmith",
+        "level": 1,
+        "cost": "minecraft:emerald",
+        "secondCost": "",
+        "count": 1,
+        "maxUses": 12,
+        "xp": 5
+      }
+    }
+  },
+  {
+    "id": "csgobox:example_orange",
+    "name": "橙色武器箱 · 示例",
+    "appearance": "orange",
+    "key": "csgobox:csgo_key0",
+    "luckEnabled": true,
+    "random": [
+      2,
+      5,
+      6,
+      20,
+      625
+    ],
+    "grade1": [
+      "minecraft:stone_sword",
+      "minecraft:iron_sword",
+      "minecraft:iron_axe"
+    ],
+    "grade2": [
+      "minecraft:golden_sword",
+      "minecraft:golden_axe"
+    ],
+    "grade3": [
+      "minecraft:diamond_sword",
+      "minecraft:diamond_axe"
+    ],
+    "grade4": [
+      "minecraft:netherite_sword"
+    ],
+    "grade5": [
+      "minecraft:trident",
+      "minecraft:bow.withTags{Enchantments:[{id:\"minecraft:power\",lvl:5s}]}"
+    ],
+    "acquisition": {
+      "crafting": {
+        "enabled": false,
+        "ingredients": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "count": 1
+      },
+      "drop": {
+        "enabled": false,
+        "chance": 0,
+        "entities": [],
+        "count": 1
+      },
+      "trade": {
+        "enabled": false,
+        "profession": "minecraft:weaponsmith",
+        "level": 1,
+        "cost": "minecraft:emerald",
+        "secondCost": "",
+        "count": 1,
+        "maxUses": 12,
+        "xp": 5
+      }
+    },
+    "keyAcquisition": {
+      "crafting": {
+        "enabled": false,
+        "ingredients": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "count": 1
+      },
+      "drop": {
+        "enabled": false,
+        "chance": 0,
+        "entities": [],
+        "count": 1
+      },
+      "trade": {
+        "enabled": false,
+        "profession": "minecraft:weaponsmith",
+        "level": 1,
+        "cost": "minecraft:emerald",
+        "secondCost": "",
+        "count": 1,
+        "maxUses": 12,
+        "xp": 5
+      }
+    }
+  },
+  {
+    "id": "csgobox:example_green",
+    "name": "绿色扁平箱 · 示例",
+    "appearance": "green",
+    "key": "csgobox:csgo_key0",
+    "luckEnabled": true,
+    "random": [
+      2,
+      5,
+      6,
+      20,
+      625
+    ],
+    "grade1": [
+      "minecraft:stone_sword",
+      "minecraft:iron_sword",
+      "minecraft:iron_axe"
+    ],
+    "grade2": [
+      "minecraft:golden_sword",
+      "minecraft:golden_axe"
+    ],
+    "grade3": [
+      "minecraft:diamond_sword",
+      "minecraft:diamond_axe"
+    ],
+    "grade4": [
+      "minecraft:netherite_sword"
+    ],
+    "grade5": [
+      "minecraft:trident",
+      "minecraft:bow.withTags{Enchantments:[{id:\"minecraft:power\",lvl:5s}]}"
+    ],
+    "acquisition": {
+      "crafting": {
+        "enabled": false,
+        "ingredients": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "count": 1
+      },
+      "drop": {
+        "enabled": false,
+        "chance": 0,
+        "entities": [],
+        "count": 1
+      },
+      "trade": {
+        "enabled": false,
+        "profession": "minecraft:weaponsmith",
+        "level": 1,
+        "cost": "minecraft:emerald",
+        "secondCost": "",
+        "count": 1,
+        "maxUses": 12,
+        "xp": 5
+      }
+    },
+    "keyAcquisition": {
+      "crafting": {
+        "enabled": false,
+        "ingredients": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "count": 1
+      },
+      "drop": {
+        "enabled": false,
+        "chance": 0,
+        "entities": [],
+        "count": 1
+      },
+      "trade": {
+        "enabled": false,
+        "profession": "minecraft:weaponsmith",
+        "level": 1,
+        "cost": "minecraft:emerald",
+        "secondCost": "",
+        "count": 1,
+        "maxUses": 12,
+        "xp": 5
+      }
+    }
+  },
+  {
+    "id": "csgobox:example_rose_blue",
+    "name": "铜粉雾蓝箱 · 示例",
+    "appearance": "rose_blue",
+    "key": "csgobox:csgo_key0",
+    "luckEnabled": true,
+    "random": [
+      2,
+      5,
+      6,
+      20,
+      625
+    ],
+    "grade1": [
+      "minecraft:stone_sword",
+      "minecraft:iron_sword",
+      "minecraft:iron_axe"
+    ],
+    "grade2": [
+      "minecraft:golden_sword",
+      "minecraft:golden_axe"
+    ],
+    "grade3": [
+      "minecraft:diamond_sword",
+      "minecraft:diamond_axe"
+    ],
+    "grade4": [
+      "minecraft:netherite_sword"
+    ],
+    "grade5": [
+      "minecraft:trident",
+      "minecraft:bow.withTags{Enchantments:[{id:\"minecraft:power\",lvl:5s}]}"
+    ],
+    "acquisition": {
+      "crafting": {
+        "enabled": false,
+        "ingredients": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "count": 1
+      },
+      "drop": {
+        "enabled": false,
+        "chance": 0,
+        "entities": [],
+        "count": 1
+      },
+      "trade": {
+        "enabled": false,
+        "profession": "minecraft:weaponsmith",
+        "level": 1,
+        "cost": "minecraft:emerald",
+        "secondCost": "",
+        "count": 1,
+        "maxUses": 12,
+        "xp": 5
+      }
+    },
+    "keyAcquisition": {
+      "crafting": {
+        "enabled": false,
+        "ingredients": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "count": 1
+      },
+      "drop": {
+        "enabled": false,
+        "chance": 0,
+        "entities": [],
+        "count": 1
+      },
+      "trade": {
+        "enabled": false,
+        "profession": "minecraft:weaponsmith",
+        "level": 1,
+        "cost": "minecraft:emerald",
+        "secondCost": "",
+        "count": 1,
+        "maxUses": 12,
+        "xp": 5
+      }
+    }
+  },
+  {
+    "id": "csgobox:example_yellow_metal",
+    "name": "芥末黄金属箱 · 示例",
+    "appearance": "yellow_metal",
+    "key": "csgobox:csgo_key0",
+    "luckEnabled": true,
+    "random": [
+      2,
+      5,
+      6,
+      20,
+      625
+    ],
+    "grade1": [
+      "minecraft:stone_sword",
+      "minecraft:iron_sword",
+      "minecraft:iron_axe"
+    ],
+    "grade2": [
+      "minecraft:golden_sword",
+      "minecraft:golden_axe"
+    ],
+    "grade3": [
+      "minecraft:diamond_sword",
+      "minecraft:diamond_axe"
+    ],
+    "grade4": [
+      "minecraft:netherite_sword"
+    ],
+    "grade5": [
+      "minecraft:trident",
+      "minecraft:bow.withTags{Enchantments:[{id:\"minecraft:power\",lvl:5s}]}"
+    ],
+    "acquisition": {
+      "crafting": {
+        "enabled": false,
+        "ingredients": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "count": 1
+      },
+      "drop": {
+        "enabled": false,
+        "chance": 0,
+        "entities": [],
+        "count": 1
+      },
+      "trade": {
+        "enabled": false,
+        "profession": "minecraft:weaponsmith",
+        "level": 1,
+        "cost": "minecraft:emerald",
+        "secondCost": "",
+        "count": 1,
+        "maxUses": 12,
+        "xp": 5
+      }
+    },
+    "keyAcquisition": {
+      "crafting": {
+        "enabled": false,
+        "ingredients": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "count": 1
+      },
+      "drop": {
+        "enabled": false,
+        "chance": 0,
+        "entities": [],
+        "count": 1
+      },
+      "trade": {
+        "enabled": false,
+        "profession": "minecraft:weaponsmith",
+        "level": 1,
+        "cost": "minecraft:emerald",
+        "secondCost": "",
+        "count": 1,
+        "maxUses": 12,
+        "xp": 5
+      }
+    }
+  }
+]

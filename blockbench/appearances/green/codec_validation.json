@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "official_blockbench_codec_reference": "JannisX11/blockbench v4.12.6",
+  "geometry_matches_official_compileGroup_and_compileCube": true,
+  "cubes_checked": 50,
+  "saved_animation_keys_checked_with_official_displayRotation": 24,
+  "opening_direction_correct": true,
+  "java_1_20_1_static_exports_legal": true,
+  "all_bbmodel_embedded_textures_identical": true,
+  "blockbench_5_legacy_animation_axis_migration_checked": true,
+  "native_app_gui_import_tested": false,
+  "minecraft_client_tested": false
+}

@@ -1,0 +1,42 @@
+{
+  "target": "Minecraft Java 1.20.1",
+  "model_id": "csgo_yellow_metal_case",
+  "texture": "csgo_yellow_metal_case.png",
+  "texture_size": [
+    128,
+    128
+  ],
+  "primary_project": "csgo_yellow_metal_case_animated.bbmodel",
+  "rest_pose": "closed",
+  "fixed_bone": "body",
+  "moving_bone": "lid",
+  "lock_parent": "lid",
+  "side_handle_parent": "body",
+  "painted_front_clasps": true,
+  "pivot_java": [
+    8.0,
+    8.31,
+    14.12
+  ],
+  "pivot_centered": [
+    0.0,
+    8.31,
+    6.12
+  ],
+  "model_center_offset_java_to_rig": [
+    -8.0,
+    -0.0,
+    -8.0
+  ],
+  "opening": "top lid lifts backward",
+  "open_angle_degrees": 90,
+  "printed_artwork": false,
+  "animations": {
+    "closed": "animation.csgo_yellow_metal_case.closed",
+    "open": "animation.csgo_yellow_metal_case.open",
+    "opened": "animation.csgo_yellow_metal_case.opened",
+    "close": "animation.csgo_yellow_metal_case.close"
+  },
+  "runtime_code_included": false,
+  "project_keyframe_convention": "Blockbench 4.10 project: X=-90 opens physically +90. Blockbench 5 migrates automatically."
+}

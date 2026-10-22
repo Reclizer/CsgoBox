@@ -1,0 +1,39 @@
+{
+  "target": "Minecraft Java 1.20.1",
+  "texture": "csgo_box.png",
+  "texture_size": [
+    128,
+    128
+  ],
+  "primary_project": "csgo_box_animated.bbmodel",
+  "rest_pose": "closed",
+  "root_bone": "root",
+  "fixed_bone": "body",
+  "moving_bone": "lid",
+  "lock_parent": "lid",
+  "pivot_java": [
+    8.0,
+    6.6,
+    13.4
+  ],
+  "pivot_centered": [
+    0.0,
+    6.6,
+    5.4
+  ],
+  "model_center_offset_java_to_rig": [
+    -8.0,
+    -0.0,
+    -8.0
+  ],
+  "open_angle_degrees": 90,
+  "animations": {
+    "closed": "animation.csgo_box.closed",
+    "open": "animation.csgo_box.open",
+    "opened": "animation.csgo_box.opened",
+    "close": "animation.csgo_box.close"
+  },
+  "generic_keyframe_convention": "Blockbench project 4.10: rotation X -90 displays physical +90; Blockbench 5 auto-migrates",
+  "java_models_are_static_snapshots": true,
+  "runtime_code_included": false
+}

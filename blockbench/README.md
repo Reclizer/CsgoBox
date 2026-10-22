@@ -26,3 +26,8 @@ src/main/java/com/reclizer/csgobox/block/PlacedBoxBlock.java
 
 验证
 已在 Blockbench 5.2.2 中导入并导出用户提供的新 bbmodel；44 个部件的几何、面 UV 和旋转保持一致。8 个显示位置的变换等效保留，PNG 与新工程内嵌贴图的字节完全一致。1.6.1 已将新模型及贴图应用到游戏资源，外形尺寸与之前相同，沿用原碰撞范围。
+
+多外观模型（1.8.0）
+新增 appearances/，分别保留 gold、orange、green、rose_blue、yellow_metal 五款输入模型包的完整内容。每个目录包含带动画的 Blockbench 工程、Java 开闭快照、原 PNG、分部件和 GeckoLib 动画源；原 csgo_box.bbmodel / csgo_box.png 继续作为 classic 外观。
+
+游戏当前使用 Java 闭合快照，路径映射记录在 appearances/import-manifest.json。修改后请将对应 Java 模型导出到 src/main/resources/assets/csgobox/models/block/boxes/<appearance>.json，贴图放到 textures/item/boxes/<appearance>.png，并将模型的 textures 路径保持为 csgobox:item/boxes/<appearance>。不要用输入包的同名 csgo_box.json 覆盖游戏物品入口，入口负责所有外观切换。

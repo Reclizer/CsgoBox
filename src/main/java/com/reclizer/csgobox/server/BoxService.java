@@ -107,7 +107,7 @@ public final class BoxService {
     }
 
     public static void syncCatalog(ServerPlayer player) {
-        Networking.sendToPlayerClient(new PacketBoxCatalog(CsgoBoxManage.boxes().stream().map(box -> new com.reclizer.csgobox.item.BoxCatalog.Entry(box.id(), box.name())).toList()), player);
+        Networking.sendToPlayerClient(new PacketBoxCatalog(CsgoBoxManage.boxes().stream().map(box -> new com.reclizer.csgobox.item.BoxCatalog.Entry(box.id(), box.name(), box.appearance())).toList()), player);
         for (var box : CsgoBoxManage.boxes()) {
             var names = REWARD_NAMES.compute(box.id(), (id, cached) -> cached != null && cached.definition() == box
                     ? cached : new CachedNames(box, rewardNames(box)));

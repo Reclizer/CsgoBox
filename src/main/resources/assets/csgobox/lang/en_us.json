@@ -170,5 +170,15 @@
   "gui.csgobox.inspect.legendary_title": "Legendary rewards",
   "gui.csgobox.inspect.legendary_count": "%s legendary rewards",
   "gui.csgobox.inspect.drag_hint": "Drag to rotate · release to reset · hold Shift for details",
-  "gui.csgobox.inspect.empty": "No legendary rewards in this pool"
+  "gui.csgobox.inspect.empty": "No legendary rewards in this pool",
+  "appearance.csgobox.classic": "Classic weathered case",
+  "appearance.csgobox.gold": "Gold weapon case",
+  "appearance.csgobox.orange": "Orange weapon case",
+  "appearance.csgobox.green": "Green flat case",
+  "appearance.csgobox.rose_blue": "Rose and blue case",
+  "appearance.csgobox.yellow_metal": "Mustard yellow metal case",
+  "editor.csgobox.appearance": "Case appearance",
+  "editor.csgobox.appearance_hint": "Choose a case; save to apply it to every box in this pool.",
+  "editor.csgobox.appearance_reload_hint": "Existing boxes update too; the flat green case has a lower collision shape.",
+  "editor.csgobox.bad_appearance": "Unknown case appearance; choose a built-in case."
 }
