@@ -163,5 +163,12 @@
   "tooltips.csgobox.place_box": "Sneak-use to place; use a held key to open directly",
   "message.csgobox.ground_reward": "Received: %s × %s",
   "message.csgobox.hold_key": "Hold the matching key in your main hand or offhand.",
-  "message.csgobox.placed_unavailable": "Cannot open this box: already opened or interaction is not allowed here."
+  "message.csgobox.placed_unavailable": "Cannot open this box: already opened or interaction is not allowed here.",
+  "gui.csgobox.inspect.back": "Back",
+  "gui.csgobox.inspect.click_hint": "Click to inspect",
+  "gui.csgobox.inspect.legendary_hint": "Click to browse all legendary rewards",
+  "gui.csgobox.inspect.legendary_title": "Legendary rewards",
+  "gui.csgobox.inspect.legendary_count": "%s legendary rewards",
+  "gui.csgobox.inspect.drag_hint": "Drag to rotate · release to reset · hold Shift for details",
+  "gui.csgobox.inspect.empty": "No legendary rewards in this pool"
 }

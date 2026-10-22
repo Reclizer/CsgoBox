@@ -6,6 +6,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import java.util.function.Consumer;
+import java.util.UUID;
 
 /** Own HUD/effect lifetime, including Escape, death, disconnect and screen replacement. */
 public abstract class BoxScreen extends Screen {
@@ -14,9 +15,20 @@ public abstract class BoxScreen extends Screen {
     private Boolean previousHideGui;
     private long backgroundStarted;
     private boolean continuingBlur;
+    private final BoxScreen returnScreen;
+    private int heartbeatTicks;
     private BoxViewport viewport = BoxViewport.fit(LAYOUT_WIDTH, LAYOUT_HEIGHT);
 
-    protected BoxScreen(Component title) { super(title); }
+    protected BoxScreen(Component title) { this(title, null); }
+    protected BoxScreen(Component title, BoxScreen returnScreen) { super(title); this.returnScreen = returnScreen; }
+    protected final boolean isInspection() { return returnScreen != null; }
+    protected UUID previewToken() { return returnScreen == null ? null : returnScreen.previewToken(); }
+
+    private void heartbeat() {
+        UUID token = previewToken();
+        if (token != null && minecraft.getConnection() != null)
+            com.reclizer.csgobox.packet.Networking.INSTANCE.sendToServer(new com.reclizer.csgobox.packet.PacketPreviewHeartbeat(token));
+    }
 
     protected final void showNext(BoxScreen next) {
         next.backgroundStarted = backgroundStarted;
@@ -38,6 +50,8 @@ public abstract class BoxScreen extends Screen {
             if (backgroundStarted == 0) backgroundStarted = net.minecraft.Util.getMillis();
         }
         minecraft.options.hideGui = true;
+        heartbeatTicks = 0;
+        heartbeat();
     }
 
     @Override
@@ -50,7 +64,18 @@ public abstract class BoxScreen extends Screen {
 
     @Override
     public void tick() {
-        if (minecraft.player == null || !minecraft.player.isAlive()) onClose();
+        if (minecraft.player == null || !minecraft.player.isAlive() || minecraft.level == null) {
+            // A dead/disconnected player must leave the entire hierarchy, not reopen a parent.
+            minecraft.setScreen(null);
+            return;
+        }
+        if (++heartbeatTicks >= 200) { heartbeatTicks = 0; heartbeat(); }
+    }
+
+    @Override public void onClose() {
+        if (returnScreen != null && minecraft.player != null && minecraft.player.isAlive() && minecraft.level != null)
+            showNext(returnScreen);
+        else super.onClose();
     }
 
     @Override

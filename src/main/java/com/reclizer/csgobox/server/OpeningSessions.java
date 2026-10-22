@@ -22,6 +22,18 @@ public final class OpeningSessions<T> {
         return now >= session.expiresAt() ? null : session;
     }
 
+    public Session<T> peek(UUID player, UUID token, long now) {
+        var session = sessions.get(player);
+        return session != null && session.token().equals(token) && now < session.expiresAt() ? session : null;
+    }
+
+    public boolean renew(UUID player, UUID token, long now) {
+        var session = peek(player, token, now);
+        if (session == null) return false;
+        sessions.put(player, new Session<>(token, session.slot(), session.snapshot(), now + 1200));
+        return true;
+    }
+
     public void remove(UUID player) { sessions.remove(player); }
     public void clear() { sessions.clear(); }
 }

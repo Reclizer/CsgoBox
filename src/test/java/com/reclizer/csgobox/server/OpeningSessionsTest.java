@@ -5,6 +5,32 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpeningSessionsTest {
+    @Test void browsingRenewalPreservesTokenAndSnapshotWithoutConsuming() {
+        var sessions = new OpeningSessions<String>();
+        UUID player = UUID.randomUUID();
+        var session = sessions.begin(player, 4, "held box", 0);
+        assertEquals(session, sessions.peek(player, session.token(), 1199));
+        assertTrue(sessions.renew(player, session.token(), 1199));
+        var renewed = sessions.peek(player, session.token(), 1201);
+        assertNotNull(renewed);
+        assertEquals(session.token(), renewed.token());
+        assertEquals(4, renewed.slot()); assertEquals("held box", renewed.snapshot());
+        assertEquals(renewed, sessions.consume(player, session.token(), 1201));
+        assertFalse(sessions.renew(player, session.token(), 1202));
+    }
+
+    @Test void renewalCannotReviveExpiredSupersededOrOtherPlayersPreviews() {
+        var sessions = new OpeningSessions<String>();
+        UUID player = UUID.randomUUID();
+        var first = sessions.begin(player, 0, "first", 0);
+        assertFalse(sessions.renew(UUID.randomUUID(), first.token(), 1));
+        assertFalse(sessions.renew(player, UUID.randomUUID(), 1));
+        assertFalse(sessions.renew(player, first.token(), 1200));
+        var second = sessions.begin(player, 0, "second", 1201);
+        assertFalse(sessions.renew(player, first.token(), 1202));
+        assertNotNull(sessions.consume(player, second.token(), 1202));
+    }
+
     @Test void tokenIsBoundToPlayerAndConsumedOnce() {
         var sessions = new OpeningSessions<String>();
         UUID player = UUID.randomUUID();

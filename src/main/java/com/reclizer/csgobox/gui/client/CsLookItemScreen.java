@@ -4,10 +4,12 @@ import com.reclizer.csgobox.sounds.ModSounds;
 import com.reclizer.csgobox.utils.ColorTools;
 import com.reclizer.csgobox.utils.GuiItemMove;
 import com.reclizer.csgobox.utils.PreviewRotation;
+import com.reclizer.csgobox.utils.HoverCache;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import java.util.List;
 
 /** Keep the original reveal composition while displaying only the server-confirmed reward. */
 public class CsLookItemScreen extends BoxScreen {
@@ -18,9 +20,14 @@ public class CsLookItemScreen extends BoxScreen {
     private final int grade;
     private final PreviewRotation rotation = new PreviewRotation();
     private boolean playedSound;
+    private final HoverCache<List<Component>> tooltip = new HoverCache<>();
 
     public CsLookItemScreen(ItemStack reward, int grade) {
-        super(reward.getHoverName());
+        this(reward, grade, null);
+    }
+
+    public CsLookItemScreen(ItemStack reward, int grade, BoxScreen returnScreen) {
+        super(com.reclizer.csgobox.compat.TaczCompat.rewardName(reward), returnScreen);
         this.reward = reward.copy();
         this.grade = grade;
     }
@@ -28,12 +35,13 @@ public class CsLookItemScreen extends BoxScreen {
     @Override protected void init() {
         super.init();
         rotation.release(Util.getMillis());
-        if (!playedSound && minecraft.player != null) {
+        tooltip.clear();
+        if (!isInspection() && !playedSound && minecraft.player != null) {
             minecraft.player.playSound(ModSounds.CS_FINSH.get(), 1, 1);
             playedSound = true;
         }
         addRenderableWidget(ClassicBoxUi.action(font, LAYOUT_WIDTH, LAYOUT_HEIGHT, 72, "back_box",
-                Component.translatable("gui.csgobox.csgo_box.back_box"), button -> onClose()));
+                Component.translatable(isInspection() ? "gui.csgobox.inspect.back" : "gui.csgobox.csgo_box.back_box"), button -> onClose()));
     }
 
     @Override protected boolean canvasClicked(double x, double y, int button) {
@@ -65,5 +73,16 @@ public class CsLookItemScreen extends BoxScreen {
         if (minecraft.player != null)
             GuiItemMove.renderItemInInventoryFollowsMouse(g, MODEL_CENTER_X-MODEL_SIZE/2F, MODEL_CENTER_Y-MODEL_SIZE/2F,
                     rotation.yaw(), rotation.pitch(), reward, minecraft.player, MODEL_SIZE/16F);
+        if (isInspection()) ClassicBoxUi.centeredText(g, font, Component.translatable("gui.csgobox.inspect.drag_hint"),
+                LAYOUT_WIDTH/2F, LAYOUT_HEIGHT*0.86F, 0.65F, LAYOUT_WIDTH*0.8F, 0xFFD3D3D3);
+    }
+
+    @Override protected void renderHover(GuiGraphics g, int mouseX, int mouseY) {
+        // Shift provides the original item's complete Forge tooltip without covering the model by default.
+        if (isInspection() && hasShiftDown()) {
+            int context = (hasControlDown()?1:0) | (hasAltDown()?2:0) | (minecraft.options.advancedItemTooltips?4:0);
+            var lines = tooltip.get(reward, context, Util.getMillis(), () -> List.copyOf(getTooltipFromItem(minecraft, reward)));
+            g.renderTooltip(font, lines, reward.getTooltipImage(), reward, mouseX, mouseY);
+        } else tooltip.clear();
     }
 }

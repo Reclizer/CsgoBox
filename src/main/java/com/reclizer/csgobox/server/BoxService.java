@@ -27,13 +27,27 @@ public final class BoxService {
             return;
         }
         var session = SESSIONS.begin(player.getUUID(), player.getInventory().selected, held.copy(), player.server.getTickCount());
+        Networking.sendToPlayerClient(previewData(session.token(), box), player);
+    }
+
+    public static PacketBoxPreview previewData(UUID token, BoxDefinition box) {
         List<DisplayReward> display = new ArrayList<>();
         for (var entry : box.previewRewards()) display.add(new DisplayReward(ItemNBT.parseStrict(entry.item()), entry.grade()));
-        // Gold prizes, weights, and entity-drop rules never go into preview packets.
+        // Main preview retains its mystery badge; the nested list exposes actual legendary items.
         if (!box.grade5().isEmpty()) display.add(new DisplayReward(new ItemStack(ModItems.ITEM_CSGO_KEY0.get()), 5));
-        Networking.sendToPlayerClient(new PacketBoxPreview(session.token(),
+        var legendary = box.grade5().stream().map(value -> new DisplayReward(ItemNBT.parseStrict(value), 5)).toList();
+        return new PacketBoxPreview(token,
                 ItemCsgoBox.setBoxInfo(box, new ItemStack(ModItems.ITEM_CSGOBOX.get())),
-                com.reclizer.csgobox.utils.BoxKeys.parse(box.key()), display), player);
+                com.reclizer.csgobox.utils.BoxKeys.parse(box.key()), display, legendary);
+    }
+
+    public static void keepPreviewAlive(ServerPlayer player, UUID token) {
+        var session = SESSIONS.peek(player.getUUID(), token, player.server.getTickCount());
+        ItemStack held = player.getMainHandItem();
+        if (session != null && player.isAlive() && !player.isSpectator()
+                && player.getInventory().selected == session.slot() && !held.isEmpty()
+                && ItemStack.isSameItemSameTags(held, session.snapshot()))
+            SESSIONS.renew(player.getUUID(), token, player.server.getTickCount());
     }
 
     public static void open(ServerPlayer player, UUID token) {

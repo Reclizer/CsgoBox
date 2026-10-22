@@ -46,14 +46,24 @@ final class ClassicBoxUi {
 
     static void previewCard(GuiGraphics g, ItemStack stack, int grade, int x, int y, int screenWidth, int screenHeight,
                             CardItemLayout layout) {
-        int w = Math.max(5, screenWidth * 8 / 100), h = Math.max(5, screenHeight * 11 / 100);
+        rewardCard(g, stack, grade, x, y, Math.max(5, screenWidth * 8 / 100),
+                Math.max(5, screenHeight * 11 / 100), layout, true);
+    }
+
+    static void rewardCard(GuiGraphics g, ItemStack stack, int grade, int x, int y, int w, int h,
+                           CardItemLayout layout, boolean mysteryGold) {
         g.fillGradient(x, y, x+w, y+h, grade == 5 ? 0xFF554A33 : 0xFF666970, grade == 5 ? 0xFF827044 : 0xFF85878C);
         g.fill(x, y, x+2, y+h, ColorTools.colorItems(grade));
-        if (grade == 5) gold(g, x+2, y+2, w-4, h-4);
+        if (grade == 5 && mysteryGold) gold(g, x+2, y+2, w-4, h-4);
         else {
             float size = layout.size(w, h);
             item(g, stack, x+(w-size)/2, y+(h-size)/2, size/16);
         }
+    }
+
+    static void hoverFrame(GuiGraphics g, int x, int y, int w, int h, int color) {
+        g.fill(x, y, x+w, y+1, color); g.fill(x, y+h-1, x+w, y+h, color);
+        g.fill(x, y, x+1, y+h, color); g.fill(x+w-1, y, x+w, y+h, color);
     }
 
     static void reelCard(GuiGraphics g, ItemStack stack, int grade, float x, float y,

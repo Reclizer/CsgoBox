@@ -163,5 +163,12 @@
   "tooltips.csgobox.place_box": "Shift＋右键地面放置，手持钥匙右键直接开箱",
   "message.csgobox.ground_reward": "开箱获得：%s × %s",
   "message.csgobox.hold_key": "请将对应钥匙拿在主手或副手中。",
-  "message.csgobox.placed_unavailable": "无法打开此箱子：已被打开，或当前位置不允许操作。"
+  "message.csgobox.placed_unavailable": "无法打开此箱子：已被打开，或当前位置不允许操作。",
+  "gui.csgobox.inspect.back": "返回",
+  "gui.csgobox.inspect.click_hint": "点击检视物品",
+  "gui.csgobox.inspect.legendary_hint": "点击查看完整传奇物品清单",
+  "gui.csgobox.inspect.legendary_title": "传奇物品清单",
+  "gui.csgobox.inspect.legendary_count": "共 %s 项传奇物品",
+  "gui.csgobox.inspect.drag_hint": "拖拽旋转 · 松手回正 · 按住 Shift 查看物品说明",
+  "gui.csgobox.inspect.empty": "此奖池没有传奇物品"
 }
