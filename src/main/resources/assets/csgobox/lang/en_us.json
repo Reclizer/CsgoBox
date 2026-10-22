@@ -4,7 +4,7 @@
   "editor.csgobox.luck_enabled_hint": "Player luck affects this pool's tier chances.",
   "editor.csgobox.luck_disabled_hint": "Ignore luck; always use the configured weights.",
   "editor.csgobox.test_box": "Get test box",
-  "editor.csgobox.test_hint": "Receive a box and its key, if required.",
+  "editor.csgobox.test_hint": "Receive a box and one key when a key is configured.",
   "editor.csgobox.test_save_first": "Save and apply before getting a test box.",
   "editor.csgobox.test_pending": "Requesting a test box...",
   "editor.csgobox.test_given": "Test items given; overflow drops at your feet.",
@@ -185,9 +185,9 @@
   "editor.csgobox.consume_box": "Box only",
   "editor.csgobox.consume_key": "Key only",
   "editor.csgobox.consume_both": "Box and key",
-  "editor.csgobox.consume_box_hint": "Consumes one box; no key required.",
-  "editor.csgobox.consume_key_hint": "Consumes one key; keeps the box.",
-  "editor.csgobox.consume_both_hint": "Consumes one box and one key.",
+  "editor.csgobox.consume_box_hint": "Consumes the box. A configured key is required but retained for placed cases.",
+  "editor.csgobox.consume_key_hint": "Consumes one key. Placed cases close and reset 2 seconds after releasing loot.",
+  "editor.csgobox.consume_both_hint": "Consumes one box and one key. Placed cases become empty.",
   "editor.csgobox.bad_consumption": "Unknown opening consumption mode.",
   "editor.csgobox.required_item_missing": "Set the required item for this consumption mode.",
   "editor.csgobox.suggestion": "Outlined slots: %s suggested · %s current",
@@ -220,5 +220,5 @@
   "item.csgobox.empty_box": "%s (Empty)",
   "tooltips.csgobox.empty_box": "Decorative empty case: place normally, right-click to open/close; no rewards.",
   "message.csgobox.hold_key_named": "Hold %s to open this case.",
-  "message.csgobox.ground_busy": "The case is opening. Wait for the reel to finish."
+  "message.csgobox.ground_busy": "The case is opening or resetting. Please wait."
 }

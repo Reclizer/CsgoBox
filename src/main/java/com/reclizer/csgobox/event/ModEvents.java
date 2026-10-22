@@ -63,19 +63,6 @@ public final class ModEvents {
     }
 
     @SubscribeEvent
-    public static void protectOpening(net.minecraftforge.event.level.BlockEvent.BreakEvent event) {
-        if (event.getLevel().getBlockEntity(event.getPos()) instanceof com.reclizer.csgobox.block.PlacedBoxEntity box && box.isOpening()) {
-            event.setCanceled(true);
-            event.getPlayer().displayClientMessage(Component.translatable("message.csgobox.ground_busy"),true);
-        }
-    }
-    @SubscribeEvent
-    public static void protectOpeningFromExplosion(net.minecraftforge.event.level.ExplosionEvent.Detonate event) {
-        event.getAffectedBlocks().removeIf(pos -> event.getLevel().getBlockEntity(pos)
-                instanceof com.reclizer.csgobox.block.PlacedBoxEntity box && box.isOpening());
-    }
-
-    @SubscribeEvent
     public static void commands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("csgobox").requires(source -> source.hasPermission(2))
                 .then(Commands.literal("reload").executes(context -> {

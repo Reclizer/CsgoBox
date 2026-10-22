@@ -9,6 +9,7 @@ public enum ConsumptionMode {
     public String id() { return id; }
     public boolean consumesBox() { return box; }
     public boolean requiresKey() { return key; }
+    public boolean consumesKey() { return key; }
     public String translationKey() { return "editor.csgobox.consume_"+id; }
     public ConsumptionMode next() { return values()[(ordinal()+1)%values().length]; }
     public static boolean valid(String id) { return "box".equals(id) || "key".equals(id) || "both".equals(id); }

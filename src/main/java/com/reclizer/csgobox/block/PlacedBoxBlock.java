@@ -70,8 +70,7 @@ public final class PlacedBoxBlock extends BaseEntityBlock {
     }
     @Override public BlockState updateShape(BlockState state, Direction direction, BlockState neighbor,
                                             LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
-        return direction == Direction.DOWN && !canSurvive(state, level, pos)
-                && !(level.getBlockEntity(pos) instanceof PlacedBoxEntity box && box.isOpening()) ? Blocks.AIR.defaultBlockState()
+        return direction == Direction.DOWN && !canSurvive(state, level, pos) ? Blocks.AIR.defaultBlockState()
                 : super.updateShape(state, direction, neighbor, level, pos, neighborPos);
     }
     @Override public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
@@ -91,10 +90,15 @@ public final class PlacedBoxBlock extends BaseEntityBlock {
         return InteractionResult.CONSUME;
     }
     @Override public void onRemove(BlockState state,Level level,BlockPos pos,BlockState next,boolean moving) {
-        if (!state.is(next.getBlock()) && level.getBlockEntity(pos) instanceof PlacedBoxEntity box) box.onForcedRemoval();
+        if (!state.is(next.getBlock()) && level.getBlockEntity(pos) instanceof PlacedBoxEntity box) box.onRemoved();
         super.onRemove(state,level,pos,next,moving);
     }
-    @Override public float getDestroyProgress(BlockState state,Player player,BlockGetter level,BlockPos pos) {
-        return level.getBlockEntity(pos) instanceof PlacedBoxEntity box && box.isOpening()?0:super.getDestroyProgress(state,player,level,pos);
+    @Override public boolean onDestroyedByPlayer(BlockState state,Level level,BlockPos pos,Player player,boolean willHarvest,FluidState fluid) {
+        // Creative skips the normal loot path. A paid case still leaves its decorative shell.
+        ItemStack shell=!level.isClientSide && player.isCreative() && level.getBlockEntity(pos) instanceof PlacedBoxEntity box && box.isBusy()
+                ?box.asItem():ItemStack.EMPTY;
+        boolean removed=super.onDestroyedByPlayer(state,level,pos,player,willHarvest,fluid);
+        if (removed && !shell.isEmpty()) Block.popResource(level,pos,shell);
+        return removed;
     }
 }

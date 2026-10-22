@@ -84,7 +84,7 @@ public final class ConsumptionEditorGameTests {
     }
 
     @GameTest(template="empty")
-    public static void groundModesChargeRequiredKeysAndLeaveOnlyDecorativeCases(GameTestHelper helper) throws Exception {
+    public static void groundModesHonorReusableAndSingleUseCases(GameTestHelper helper) throws Exception {
         withConfig(helper,()-> {
             var level=helper.getLevel(); var pos=helper.absolutePos(new BlockPos(2,1,2));
             for (var mode:ConsumptionMode.values()) {
@@ -103,9 +103,17 @@ public final class ConsumptionEditorGameTests {
                 helper.assertTrue(player.getMainHandItem().getCount()==remaining,"Wrong ground key cost: "+mode);
                 helper.assertTrue(!PlacedBoxOpening.open(player,pos,InteractionHand.MAIN_HAND,new Random()).success(),"Opening was replayed");
                 PlacedBoxGameTests.complete(helper,entity);
-                helper.assertTrue(entity.isEmpty() && level.getBlockState(pos).is(ModBlocks.BOX.get()),"Ground case did not become decorative: "+mode);
-                PlacedBoxOpening.open(player,pos,InteractionHand.MAIN_HAND,new Random());
-                helper.assertTrue(player.getMainHandItem().getCount()==remaining,"Decorative case consumed another key");
+                if (mode==ConsumptionMode.KEY) {
+                    helper.assertTrue(!entity.isEmpty() && entity.isBusy() && !entity.isOpening(),"Key-only case did not enter recovery");
+                    helper.assertTrue(!PlacedBoxOpening.open(player,pos,InteractionHand.MAIN_HAND,new Random()).success(),"Recovery accepted another opening");
+                    var tag=entity.saveWithoutMetadata(); tag.putLong("RewardDroppedAt",level.getGameTime()-com.reclizer.csgobox.utils.GroundAnimation.REUSE_DELAY_TICKS); entity.load(tag);
+                    PlacedBoxEntity.serverTick(level,pos,entity.getBlockState(),entity);
+                    helper.assertTrue(!entity.isBusy() && !entity.isEmpty() && !entity.lidOpen() && ItemCsgoBox.boxId(entity.asItem()).equals(box.id()),"Key-only case did not return to reusable state");
+                } else {
+                    helper.assertTrue(entity.isEmpty() && level.getBlockState(pos).is(ModBlocks.BOX.get()),"Single-use case did not become decorative: "+mode);
+                    PlacedBoxOpening.open(player,pos,InteractionHand.MAIN_HAND,new Random());
+                }
+                helper.assertTrue(player.getMainHandItem().getCount()==remaining,"Post-reward interaction consumed another key");
                 int after=level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(pos).inflate(2))
                         .stream().filter(e->e.getItem().is(Items.DIAMOND)).mapToInt(e->e.getItem().getCount()).sum();
                 helper.assertTrue(after-before==3,"Ground case lost or duplicated the delayed reward");

@@ -4,7 +4,7 @@
   "editor.csgobox.luck_enabled_hint": "玩家幸运值会影响此奖池的稀有度概率。",
   "editor.csgobox.luck_disabled_hint": "忽略玩家幸运值，始终使用配置的权重。",
   "editor.csgobox.test_box": "获取测试箱子",
-  "editor.csgobox.test_hint": "领取 1 个箱子；启用钥匙时附送 1 把钥匙。",
+  "editor.csgobox.test_hint": "领取 1 个箱子；配置了钥匙时附送 1 把钥匙。",
   "editor.csgobox.test_save_first": "先保存并应用，再获取测试箱子。",
   "editor.csgobox.test_pending": "正在获取测试箱子…",
   "editor.csgobox.test_given": "已发放测试物品；背包满时掉落在脚边。",
@@ -185,9 +185,9 @@
   "editor.csgobox.consume_box": "仅箱子",
   "editor.csgobox.consume_key": "仅钥匙",
   "editor.csgobox.consume_both": "箱子和钥匙",
-  "editor.csgobox.consume_box_hint": "只消耗箱子，不要求钥匙。",
-  "editor.csgobox.consume_key_hint": "只消耗钥匙，箱子可重复使用。",
-  "editor.csgobox.consume_both_hint": "箱子和钥匙各消耗一个。",
+  "editor.csgobox.consume_box_hint": "只消耗箱子；地面开箱需手持配置的钥匙，但不扣除。",
+  "editor.csgobox.consume_key_hint": "只消耗钥匙；地面掉奖 2 秒后复位，可重复开启。",
+  "editor.csgobox.consume_both_hint": "箱子和钥匙各消耗一个；地面开完变为空箱。",
   "editor.csgobox.bad_consumption": "未知开箱消耗方式。",
   "editor.csgobox.required_item_missing": "此消耗方式需要设置开箱所需物品。",
   "editor.csgobox.suggestion": "描边格建议放 %s 项 · 当前 %s 项",
@@ -220,5 +220,5 @@
   "item.csgobox.empty_box": "%s（空箱）",
   "tooltips.csgobox.empty_box": "装饰空箱：直接放置，右键开合，不再产出奖励。",
   "message.csgobox.hold_key_named": "需要手持 %s 才能打开这个箱子。",
-  "message.csgobox.ground_busy": "箱子正在开箱，请等待滑条结束。"
+  "message.csgobox.ground_busy": "箱子正在开箱或复位，请稍候。"
 }

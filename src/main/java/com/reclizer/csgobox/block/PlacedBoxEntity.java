@@ -18,12 +18,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import java.util.*;
 
-/** Ready -> durable fixed-result animation -> decorative empty case. */
+/** Ready -> fixed-result animation -> empty case, or a timed close/reset for key-only cases. */
 public final class PlacedBoxEntity extends BlockEntity {
     private String poolId="";
-    private boolean empty, opening, lidOpen, emitting;
+    private boolean empty, opening, resetting, lidOpen, emitting;
+    private ConsumptionMode consumption=ConsumptionMode.BOTH;
     private float lidFrom;
-    private long lidChanged, openingStarted, visualSeed;
+    private long lidChanged, openingStarted, visualSeed, rewardDroppedAt;
     private ItemStack pending=ItemStack.EMPTY;
     private int pendingGrade=1, lastSound=-1;
     private UUID opener;
@@ -33,6 +34,7 @@ public final class PlacedBoxEntity extends BlockEntity {
     public String poolId() { return poolId; }
     public boolean isEmpty() { return empty; }
     public boolean isOpening() { return opening; }
+    public boolean isBusy() { return opening || resetting; }
     public boolean lidOpen() { return lidOpen; }
     public long visualSeed() { return visualSeed; }
     public List<DisplayReward> samples() { return samples; }
@@ -47,24 +49,24 @@ public final class PlacedBoxEntity extends BlockEntity {
         if (level!=null) level.sendBlockUpdated(worldPosition,getBlockState(),getBlockState(),3);
     }
     public void setPoolId(String id) {
-        if (opening || empty) return;
+        if (isBusy() || empty) return;
         poolId=BoxDefinition.validId(id)?id:""; refreshAppearance(); sync();
     }
     public void setEmpty() {
-        poolId=""; empty=true; opening=false; pending=ItemStack.EMPTY; samples=List.of(); opener=null; sync();
+        poolId=""; empty=true; opening=false; resetting=false; pending=ItemStack.EMPTY; samples=List.of(); opener=null; motion=null; sync();
     }
     private void setLid(boolean open) {
         lidFrom=lidProgress(0); lidOpen=open; lidChanged=level==null?0:level.getGameTime();
     }
     public void toggleEmpty() {
-        if (!empty || opening || level==null || level.isClientSide) return;
+        if (!empty || isBusy() || level==null || level.isClientSide) return;
         setLid(!lidOpen);
         level.playSound(null,worldPosition,lidOpen?SoundEvents.CHEST_OPEN:SoundEvents.CHEST_CLOSE,SoundSource.BLOCKS,.65F,1.05F);
         level.gameEvent(null,lidOpen?net.minecraft.world.level.gameevent.GameEvent.BLOCK_OPEN:net.minecraft.world.level.gameevent.GameEvent.BLOCK_CLOSE,worldPosition);
         sync();
     }
     public boolean begin(BoxDefinition definition,BoxOpening.Result result,UUID player,long seed) {
-        if (opening || empty || isRemoved() || level==null || level.isClientSide || result.reward().isEmpty()) return false;
+        if (isBusy() || empty || isRemoved() || level==null || level.isClientSide || result.reward().isEmpty()) return false;
         var visuals=new ArrayList<DisplayReward>(); var regular=definition.previewRewards();
         int count=Math.min(15,regular.size());
         for (int i=0;i<count;i++) {
@@ -74,11 +76,12 @@ public final class PlacedBoxEntity extends BlockEntity {
         if (!definition.grade5().isEmpty()) visuals.add(new DisplayReward(new ItemStack(ModItems.ITEM_CSGO_KEY0.get()),5));
         if (visuals.isEmpty()) visuals.add(new DisplayReward(result.reward().copy(),result.grade()));
         pending=result.reward().copy(); pendingGrade=result.grade(); opener=player; visualSeed=seed;
+        consumption=definition.mode(); rewardDroppedAt=0;
         samples=List.copyOf(visuals); motion=GroundAnimation.motion(seed,samples.size());
         openingStarted=level.getGameTime(); opening=true; lastSound=motion.underPointer(0); setLid(true); sync(); return true;
     }
     public void refreshAppearance() {
-        if (level==null || level.isClientSide || isRemoved() || opening || empty) return;
+        if (level==null || level.isClientSide || isRemoved() || isBusy() || empty) return;
         var definition=CsgoBoxManage.find(poolId); var state=getBlockState();
         if (definition==null || !state.is(ModBlocks.BOX.get())) return;
         var appearance=BoxAppearance.byId(definition.appearance());
@@ -86,6 +89,10 @@ public final class PlacedBoxEntity extends BlockEntity {
             level.setBlock(worldPosition,state.setValue(PlacedBoxBlock.APPEARANCE,appearance),3);
     }
     public static void serverTick(Level level,BlockPos pos,BlockState state,PlacedBoxEntity box) {
+        if (box.resetting) {
+            if (level.getGameTime()-box.rewardDroppedAt>=GroundAnimation.REUSE_DELAY_TICKS) box.resetForReuse();
+            return;
+        }
         if (box.opening) {
             float elapsed=box.spinTicks(0);
             if (elapsed>=0 && elapsed<ReelMotion.DURATION && box.motion!=null) {
@@ -94,11 +101,27 @@ public final class PlacedBoxEntity extends BlockEntity {
                 box.lastSound=index;
             }
             if (box.elapsed(0)>=GroundAnimation.TOTAL_TICKS && box.emitReward()) {
-                box.setEmpty();
+                if (box.isRemoved() || !level.getBlockState(pos).is(ModBlocks.BOX.get())) return;
+                if (box.consumption==ConsumptionMode.KEY) {
+                    box.opening=false; box.resetting=true; box.rewardDroppedAt=level.getGameTime();
+                    box.samples=List.of(); box.opener=null; box.motion=null; box.sync();
+                } else box.setEmpty();
                 level.playSound(null,pos,SoundEvents.ITEM_PICKUP,SoundSource.BLOCKS,.45F,1.25F);
                 if (!state.canSurvive(level,pos)) level.destroyBlock(pos,true);
             }
-        } else if ((level.getGameTime()+pos.asLong())%20==0) box.refreshAppearance();
+        } else {
+            if (!box.empty && !box.lidOpen && box.lidFrom!=0 && level.getGameTime()-box.lidChanged>=GroundAnimation.LID_TICKS) {
+                box.lidFrom=0; box.lidChanged=0; box.sync();
+            }
+            if ((level.getGameTime()+pos.asLong())%20==0) box.refreshAppearance();
+        }
+    }
+    private void resetForReuse() {
+        setLid(false); resetting=false; openingStarted=0; rewardDroppedAt=0; visualSeed=0; lastSound=-1;
+        pending=ItemStack.EMPTY; samples=List.of(); opener=null; motion=null;
+        level.playSound(null,worldPosition,SoundEvents.CHEST_CLOSE,SoundSource.BLOCKS,.65F,1.05F);
+        level.gameEvent(null,net.minecraft.world.level.gameevent.GameEvent.BLOCK_CLOSE,worldPosition);
+        refreshAppearance(); sync();
     }
     /** Canceled spawns keep the fixed result pending; ordinary ticks retry without drawing again. */
     private boolean emitReward() {
@@ -113,21 +136,27 @@ public final class PlacedBoxEntity extends BlockEntity {
             pending=ItemStack.EMPTY; return true;
         } finally { emitting=false; }
     }
-    /** Forced administrative removal settles the result rather than refunding a fresh case. */
-    public void onForcedRemoval() {
-        if (opening && level!=null && !level.isClientSide) { emitReward(); opening=false; empty=true; setChanged(); }
+    /** Any removal settles the fixed result rather than refunding a fresh case. */
+    public void onRemoved() {
+        if (isBusy() && level!=null && !level.isClientSide) {
+            if (opening) emitReward();
+            opening=false; resetting=false; empty=true; poolId=""; samples=List.of(); opener=null; motion=null; setChanged();
+        }
     }
     public ItemStack asItem() {
-        if (empty || opening) return EmptyBoxItem.create(getBlockState().getValue(PlacedBoxBlock.APPEARANCE));
+        if (empty || isBusy()) return EmptyBoxItem.create(getBlockState().getValue(PlacedBoxBlock.APPEARANCE));
         return BoxDefinition.validId(poolId)?ItemCsgoBox.setBoxId(poolId,new ItemStack(ModItems.ITEM_CSGOBOX.get())):ItemStack.EMPTY;
     }
     @Override protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         if (!empty) tag.putString(ItemCsgoBox.POOL_ID_TAG,poolId);
-        if (empty || opening) {
-            tag.putString("Phase",opening?"opening":"empty"); tag.putBoolean("LidOpen",lidOpen);
+        if (empty || isBusy() || lidOpen || lidFrom!=0) {
+            if (empty || isBusy()) tag.putString("Phase",opening?"opening":resetting?"resetting":"empty");
+            tag.putBoolean("LidOpen",lidOpen);
             tag.putFloat("LidFrom",lidFrom); tag.putLong("LidChanged",lidChanged);
         }
+        if (isBusy()) tag.putString("Consumption",consumption.id());
+        if (resetting) tag.putLong("RewardDroppedAt",rewardDroppedAt);
         if (opening) {
             tag.putLong("OpeningStarted",openingStarted); tag.putLong("VisualSeed",visualSeed);
             tag.put("PendingReward",pending.save(new CompoundTag())); tag.putInt("Grade",pendingGrade);
@@ -142,7 +171,9 @@ public final class PlacedBoxEntity extends BlockEntity {
     @Override public void load(CompoundTag tag) {
         super.load(tag);
         poolId=BoxDefinition.validId(tag.getString(ItemCsgoBox.POOL_ID_TAG))?tag.getString(ItemCsgoBox.POOL_ID_TAG):"";
-        empty="empty".equals(tag.getString("Phase")); opening="opening".equals(tag.getString("Phase"));
+        empty="empty".equals(tag.getString("Phase")); opening="opening".equals(tag.getString("Phase")); resetting="resetting".equals(tag.getString("Phase"));
+        consumption=ConsumptionMode.valid(tag.getString("Consumption"))?ConsumptionMode.parse(tag.getString("Consumption")):ConsumptionMode.BOTH;
+        rewardDroppedAt=tag.getLong("RewardDroppedAt");
         lidOpen=tag.getBoolean("LidOpen"); lidFrom=Math.max(0,Math.min(1,tag.getFloat("LidFrom"))); lidChanged=tag.getLong("LidChanged");
         openingStarted=tag.getLong("OpeningStarted"); visualSeed=tag.getLong("VisualSeed");
         pending=opening?ItemStack.of(tag.getCompound("PendingReward")):ItemStack.EMPTY;

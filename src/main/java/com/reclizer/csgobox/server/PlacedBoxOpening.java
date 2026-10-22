@@ -22,13 +22,14 @@ public final class PlacedBoxOpening {
                 || !level.getBlockState(pos).is(ModBlocks.BOX.get())
                 || !(level.getBlockEntity(pos) instanceof PlacedBoxEntity entity))
             return fail("message.csgobox.placed_unavailable");
-        if (entity.isOpening()) return fail("message.csgobox.ground_busy");
+        if (entity.isBusy()) return fail("message.csgobox.ground_busy");
         if (entity.isEmpty()) { entity.toggleEmpty(); return new BoxOpening.Result(ItemStack.EMPTY,0,null); }
         var box = CsgoBoxManage.find(entity.poolId());
         if (box == null) return fail("message.csgobox.unknown_box");
         var mode = box.mode();
         if (mode.requiresKey() && box.key().isEmpty()) return fail("message.csgobox.hold_key");
-        ItemStack required = mode.requiresKey() ? BoxKeys.parse(box.key()) : ItemStack.EMPTY;
+        // A configured ground key unlocks BOX mode too, but that mode does not consume it.
+        ItemStack required = box.key().isEmpty() ? ItemStack.EMPTY : BoxKeys.parse(box.key());
         ItemStack key = player.getItemInHand(hand);
         if (!required.isEmpty() && !BoxKeys.matches(required, key)) {
             // Vanilla normally attempts main hand first. A held offhand key works as well.
@@ -37,7 +38,7 @@ public final class PlacedBoxOpening {
         }
         BoxOpening.Result result = BoxOpening.selectReward(player, box, random);
         if (!entity.begin(box,result,player.getUUID(),random.nextLong())) return fail("message.csgobox.placed_unavailable");
-        if (!required.isEmpty()) key.shrink(1);
+        if (mode.consumesKey() && !required.isEmpty()) key.shrink(1);
         player.getInventory().setChanged(); player.containerMenu.broadcastChanges();
         level.gameEvent(player,GameEvent.BLOCK_OPEN,pos);
         level.playSound(null,pos,net.minecraft.sounds.SoundEvents.CHEST_OPEN,net.minecraft.sounds.SoundSource.BLOCKS,.8F,1.05F);

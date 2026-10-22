@@ -5,6 +5,7 @@ import java.util.Random;
 public final class GroundAnimation {
     public static final int LID_TICKS=16, SETTLE_TICKS=10;
     public static final int TOTAL_TICKS=LID_TICKS+ReelMotion.DURATION+SETTLE_TICKS;
+    public static final int REUSE_DELAY_TICKS=40;
     private GroundAnimation() {}
     public static ReelMotion motion(long seed,int samples) {
         var random=new Random(seed);

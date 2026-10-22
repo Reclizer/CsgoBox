@@ -54,6 +54,17 @@ public final class GroundAnimationGameTests {
     private static void start(GameTestHelper h,FakePlayer p) {
         h.assertTrue(PlacedBoxOpening.open(p,pos(h),InteractionHand.MAIN_HAND,new Random(7)).success(),"Opening did not begin");
     }
+    private static void duringReel(GameTestHelper h,PlacedBoxEntity entity) {
+        var tag=entity.saveWithoutMetadata(); tag.putLong("OpeningStarted",h.getLevel().getGameTime()-GroundAnimation.LID_TICKS-40); entity.load(tag);
+        h.assertTrue(entity.spinTicks(0)>0 && entity.elapsed(0)<GroundAnimation.TOTAL_TICKS,"Test did not run during the reel");
+    }
+    private static void settled(GameTestHelper h) {
+        h.assertTrue(h.getLevel().getBlockState(pos(h)).isAir() && prizes(h)==3,"Destroyed paid case lost the fixed reward or remained placed");
+        var drops=h.getLevel().getEntitiesOfClass(ItemEntity.class,new AABB(pos(h)).inflate(2));
+        h.assertTrue(drops.stream().noneMatch(e->e.getItem().is(ModItems.ITEM_CSGOBOX.get()))
+                && drops.stream().filter(e->e.getItem().is(ModItems.ITEM_EMPTY_BOX.get())).mapToInt(e->e.getItem().getCount()).sum()==1,
+                "Destroyed paid case did not drop exactly one empty shell");
+    }
     @GameTest(template="empty",timeoutTicks=240)
     public static void actualTicksDelayTheDropUntilTheReelFinishes(GameTestHelper h) throws Exception {
         setup(h,(box,entity,p)-> {
@@ -103,16 +114,52 @@ public final class GroundAnimationGameTests {
         }); h.succeed();
     }
     @GameTest(template="empty")
-    public static void openingBlocksNormalBreakingAndDefersSupportLoss(GameTestHelper h) throws Exception {
+    public static void miningDuringReelDropsTheAlreadyFixedRewardAndEmptyShell(GameTestHelper h) throws Exception {
         setup(h,(box,entity,p)-> {
-            start(h,p);
-            h.assertTrue(!p.gameMode.destroyBlock(pos(h)) && entity.isOpening(),"Normal breaking bypassed the animation");
+            start(h,p); duringReel(h,entity);
+            CsgoBoxManage.deleteDefinition(box.id(),BoxConfigStore.revision(box));
+            h.assertTrue(entity.getBlockState().getDestroyProgress(p,h.getLevel(),pos(h))>0,"Client mining progress is still blocked");
+            h.assertTrue(prizes(h)==0 && p.gameMode.destroyBlock(pos(h)),"Normal mining was denied during the reel");
+            settled(h);
+            h.assertTrue(p.getMainHandItem().getCount()==1,"Breaking the paid case consumed another key");
+            entity.onRemoved(); PlacedBoxEntity.serverTick(h.getLevel(),pos(h),entity.getBlockState(),entity);
+            settled(h);
+        }); h.succeed();
+    }
+    @GameTest(template="empty")
+    public static void supportLossDuringReelImmediatelySettlesThePaidCase(GameTestHelper h) throws Exception {
+        setup(h,(box,entity,p)-> {
+            start(h,p); duringReel(h,entity);
             h.getLevel().destroyBlock(pos(h).below(),false);
-            h.assertTrue(h.getLevel().getBlockState(pos(h)).is(ModBlocks.BOX.get()) && prizes(h)==0,"Support removal awarded early");
-            PlacedBoxGameTests.complete(h,entity);
-            h.assertTrue(prizes(h)==3 && h.getLevel().getBlockState(pos(h)).isAir(),"Supportless finished case did not release result");
-            h.assertTrue(h.getLevel().getEntitiesOfClass(ItemEntity.class,new AABB(pos(h)).inflate(2)).stream()
-                    .filter(e->e.getItem().is(ModItems.ITEM_EMPTY_BOX.get())).mapToInt(e->e.getItem().getCount()).sum()==1,"Support loss did not drop exactly one empty case");
+            settled(h);
+        }); h.succeed();
+    }
+    @GameTest(template="empty")
+    public static void creativeBreakingDuringReelAlsoDropsRewardAndEmptyShell(GameTestHelper h) throws Exception {
+        setup(h,(box,entity,p)-> {
+            start(h,p); duringReel(h,entity); p.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+            h.assertTrue(p.gameMode.destroyBlock(pos(h)),"Creative could not break the paid case");
+            settled(h);
+        }); h.succeed();
+    }
+    @GameTest(template="empty")
+    public static void explosionDuringReelDropsTheFixedRewardAndEmptyShell(GameTestHelper h) throws Exception {
+        setup(h,(box,entity,p)-> {
+            start(h,p); duringReel(h,entity);
+            h.getLevel().explode(null,pos(h).getX()+.5,pos(h).getY()+.2,pos(h).getZ()+.5,1.5F,net.minecraft.world.level.Level.ExplosionInteraction.BLOCK);
+            settled(h);
+        }); h.succeed();
+    }
+    @GameTest(template="empty")
+    public static void externalBreakCancellationKeepsTheRewardPending(GameTestHelper h) throws Exception {
+        setup(h,(box,entity,p)-> {
+            start(h,p); duringReel(h,entity);
+            Consumer<net.minecraftforge.event.level.BlockEvent.BreakEvent> cancel=e->{if (e.getPos().equals(pos(h))) e.setCanceled(true);};
+            MinecraftForge.EVENT_BUS.addListener(cancel);
+            try { h.assertTrue(!p.gameMode.destroyBlock(pos(h)),"External break protection was bypassed"); }
+            finally { MinecraftForge.EVENT_BUS.unregister(cancel); }
+            h.assertTrue(entity.isOpening() && prizes(h)==0 && !entity.winner().stack().isEmpty(),"Canceled breaking settled or lost the prize");
+            h.assertTrue(p.gameMode.destroyBlock(pos(h)),"Case did not break after protection was removed"); settled(h);
         }); h.succeed();
     }
     @GameTest(template="empty")
@@ -123,7 +170,7 @@ public final class GroundAnimationGameTests {
             var drops=h.getLevel().getEntitiesOfClass(ItemEntity.class,new AABB(pos(h)).inflate(2));
             h.assertTrue(drops.stream().noneMatch(e->e.getItem().is(ModItems.ITEM_CSGOBOX.get()))
                     && drops.stream().filter(e->e.getItem().is(ModItems.ITEM_EMPTY_BOX.get())).mapToInt(e->e.getItem().getCount()).sum()==1,"Forced removal refunded an unopened case");
-            entity.onForcedRemoval(); h.assertTrue(prizes(h)==3,"Removal fallback duplicated reward");
+            entity.onRemoved(); h.assertTrue(prizes(h)==3,"Removal fallback duplicated reward");
         }); h.succeed();
     }
     @GameTest(template="empty")
