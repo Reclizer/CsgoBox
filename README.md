@@ -19,7 +19,7 @@ bash ./gradlew test build
 bash ./gradlew runGameTestServer
 ```
 
-模组文件在 `build/libs/csgobox-1.6.0.jar`。首次构建需要下载 Forge 和 Minecraft 依赖。
+模组文件在 `build/libs/csgobox-1.6.1.jar`。首次构建需要下载 Forge 和 Minecraft 依赖。
 GameTest 在 `run-gametest/` 下使用独立的开发环境，请勿将该目录指向正式服务器。
 
 箱体模型的 Blockbench 编辑工程位于 `blockbench/csgo_box.bbmodel`，内嵌原贴图，并附 `csgo_box.png` 和导回说明。使用 Java 方块/物品格式导出到 `src/main/resources/assets/csgobox/models/item/csgo_box.json`，贴图导出到 `textures/item/csgo_box.png`；地面方块继承此模型，修改会同时应用于物品和地面箱子。
@@ -135,7 +135,7 @@ tacz3dPreview = true
 
 ## 升级说明
 
-当前版本 1.6.0、网络协议为 8。新增可放置的奖励箱方块及直接开箱交互，**客户端和服务端都需要更新**；1.3.x–1.5.x 的 JSON 配置和固定 ID 箱子可以继续使用，物品 ID 不变。从 1.2 及更早版本升级时，奖池身份、目录和编辑请求切换为固定 ID。
+当前版本 1.6.1、网络协议为 8。1.6.1 应用新的 128×128 金色做旧箱体贴图及对应 Blockbench 工程，物品栏、开箱预览和地面方块共用更新后的模型；与 1.6.0 的网络协议相同。1.6.0 新增可放置的奖励箱方块及直接开箱交互，客户端和服务端都需要安装支持方块的版本；1.3.x–1.5.x 的 JSON 配置和固定 ID 箱子可以继续使用，物品 ID 不变。从 1.2 及更早版本升级时，奖池身份、目录和编辑请求切换为固定 ID。
 不提供旧示例箱的名称回退或 NBT 迁移；旧箱子需从创造目录、编辑器或命令重新获取。已有配置文件需为每个奖池填写唯一 `id`，缺失时会明确报错，不会清空或静默重建配置。当前工作区的配置已补充 ID 并保留全部奖励，修改前备份位于工作目录。奖励物品的 TaCZ 数据、附魔及其他 NBT 不变。
 
 重构范围、issue 对应关系和验证记录见 [REFACTOR.md](REFACTOR.md)。
