@@ -172,7 +172,7 @@ public final class GroundReelTexture {
         var visual=CACHE.get(box);
         if (visual==null || !visual.baked) return;
         visual.seen=frame;
-        var vertices=buffers.getBuffer(RenderType.entityTranslucentEmissive(visual.panel.id));
+        var vertices=buffers.getBuffer(RenderType.entityCutoutNoCull(visual.panel.id));
         vertices.vertex(pose.pose(),0,HEIGHT,0).color(255,255,255,255).uv(0,0).overlayCoords(overlay).uv2(LightTexture.FULL_BRIGHT).normal(pose.normal(),0,0,-1).endVertex();
         vertices.vertex(pose.pose(),WIDTH,HEIGHT,0).color(255,255,255,255).uv(1,0).overlayCoords(overlay).uv2(LightTexture.FULL_BRIGHT).normal(pose.normal(),0,0,-1).endVertex();
         vertices.vertex(pose.pose(),WIDTH,0,0).color(255,255,255,255).uv(1,1).overlayCoords(overlay).uv2(LightTexture.FULL_BRIGHT).normal(pose.normal(),0,0,-1).endVertex();

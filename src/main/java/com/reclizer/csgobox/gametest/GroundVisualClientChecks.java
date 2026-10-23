@@ -23,6 +23,7 @@ public final class GroundVisualClientChecks {
                 || mc.level==null || mc.player==null || ++warmup<40) return;
         try {
             if (start<0) {
+                if (Boolean.getBoolean("csgobox.groundVisualGpuChecks")) GroundRenderClientChecks.run();
                 start=mc.level.getGameTime(); wallStart=System.nanoTime(); mc.options.hideGui=true;
                 var server=mc.getSingleplayerServer(); var id=mc.player.getUUID();
                 server.execute(()-> {

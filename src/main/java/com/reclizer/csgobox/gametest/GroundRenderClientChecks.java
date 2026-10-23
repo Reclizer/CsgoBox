@@ -140,7 +140,7 @@ public final class GroundRenderClientChecks {
         } finally { first.set(shader,originalFirst); second.set(shader,originalSecond); }
         CsgoBox.LOGGER.info("GROUND MISSING-UNIFORM CHECKS PASSED: either/both absent, complete reel renders, exact world-state restoration");
     }
-    private static void run() throws Exception {
+    static void run() throws Exception {
         // Separate shader-pack startup/driver errors from the operations checked below.
         for (int error;(error=GL11.glGetError())!=GL11.GL_NO_ERROR;)
             CsgoBox.LOGGER.warn("Ground GUI checks cleared a pre-existing OpenGL error: {}",error);
