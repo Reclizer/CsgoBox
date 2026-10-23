@@ -25,29 +25,64 @@ import java.util.*;
 public final class GroundRenderClientChecks {
     private static boolean checked;
     private static int frames;
+    private static boolean shaderScenarioStarted;
+    private static long shaderScenarioTick;
+    private static final Set<com.reclizer.csgobox.config.BoxAppearance> renderedAppearances=
+            EnumSet.noneOf(com.reclizer.csgobox.config.BoxAppearance.class);
     @SubscribeEvent public static void frame(TickEvent.RenderTickEvent event) {
         var mc=Minecraft.getInstance();
         if (!Boolean.getBoolean("csgobox.groundRenderChecks") || checked || event.phase!=TickEvent.Phase.END
                 || mc.level==null || mc.player==null || ++frames<40) return;
+        if (Boolean.getBoolean("csgobox.groundShaderChecks")) {
+            try { shaderScenario(mc); }
+            catch (Throwable error) { checked=true; CsgoBox.LOGGER.error("GROUND SHADER COMPAT CHECKS FAILED",error); mc.stop(); }
+            return;
+        }
         checked=true;
         try { run(); } catch (Throwable error) { CsgoBox.LOGGER.error("GROUND GUI GPU CHECKS FAILED",error); }
         finally { if (Boolean.getBoolean("csgobox.groundChecksExit")) mc.stop(); }
     }
+    private static void shaderScenario(Minecraft mc) throws Exception {
+        if (!shaderScenarioStarted) {
+            shaderScenarioStarted=true;
+            var iris=Class.forName("net.irisshaders.iris.Iris");
+            if (!Boolean.TRUE.equals(iris.getMethod("isPackInUseQuick").invoke(null)))
+                throw new AssertionError("The shader compatibility test requires an active shader pack");
+            CsgoBox.LOGGER.info("Ground shader test pack: {}",iris.getMethod("getCurrentPackName").invoke(null));
+            run();
+            shaderScenarioTick=mc.level.getGameTime();
+            var server=Objects.requireNonNull(mc.getSingleplayerServer());
+            var playerId=mc.player.getUUID();
+            server.execute(()-> {
+                var player=Objects.requireNonNull(server.getPlayerList().getPlayer(playerId));
+                server.getCommands().performPrefixedCommand(player.createCommandSourceStack().withPermission(4),"csgobox_test_ground demo");
+            });
+        }
+        var field=Class.forName("com.reclizer.csgobox.gui.client.GroundReelTexture").getDeclaredField("CACHE");
+        field.setAccessible(true);
+        for (var key:((Map<?,?>)field.get(null)).keySet()) {
+            if (key instanceof PlacedBoxEntity box && box.getLevel()==mc.level && !box.getBlockPos().equals(BlockPos.ZERO))
+                renderedAppearances.add(box.getBlockState().getValue(PlacedBoxBlock.APPEARANCE));
+        }
+        if (mc.level.getGameTime()-shaderScenarioTick>800) {
+            if (renderedAppearances.size()!=com.reclizer.csgobox.config.BoxAppearance.values().length)
+                throw new AssertionError("Not all ground reels were rendered with shaders: "+renderedAppearances);
+            checked=true;
+            CsgoBox.LOGGER.info("GROUND SHADER COMPAT CHECKS PASSED: active shader pack, all five world case reels rendered and completed: {}",renderedAppearances);
+            if (Boolean.getBoolean("csgobox.groundChecksExit")) mc.stop();
+        }
+    }
     private static AutoCloseable guard() throws Exception {
         var constructor=Class.forName("com.reclizer.csgobox.gui.client.WorldGuiRenderState").getDeclaredConstructor();
         constructor.setAccessible(true); return (AutoCloseable)constructor.newInstance();
-    }
-    private static Vector3f vector(com.mojang.blaze3d.shaders.Uniform uniform) {
-        var b=uniform.getFloatBuffer(); return new Vector3f(b.get(0),b.get(1),b.get(2));
     }
     private static List<Integer> ints(int... values) { return Arrays.stream(values).boxed().toList(); }
     private static List<Float> floats(float[] values) {
         var list=new ArrayList<Float>(); for (float v:values) list.add(v); return list;
     }
     private static Map<String,Object> state() {
-        var shader=GameRenderer.getRendertypeEntityCutoutShader(); RenderSystem.setupShaderLights(shader);
         var result=new LinkedHashMap<String,Object>();
-        result.put("lights",List.of(vector(shader.LIGHT0_DIRECTION),vector(shader.LIGHT1_DIRECTION)));
+        result.put("lights",List.of(new Vector3f(RenderSystem.shaderLightDirections[0]),new Vector3f(RenderSystem.shaderLightDirections[1])));
         result.put("shader",RenderSystem.getShader()); result.put("color",floats(RenderSystem.getShaderColor().clone()));
         result.put("fog",List.of(RenderSystem.getShaderFogStart(),RenderSystem.getShaderFogEnd(),RenderSystem.getShaderFogShape(),floats(RenderSystem.getShaderFogColor().clone())));
         result.put("matrices",List.of(new Matrix4f(RenderSystem.getProjectionMatrix()),new Matrix4f(RenderSystem.getTextureMatrix()),
@@ -86,7 +121,29 @@ public final class GroundRenderClientChecks {
             image.downloadTexture(0,false); return image.getPixelsRGBA();
         }
     }
+    private static void missingLightUniforms(Method render) throws Exception {
+        var shader=GameRenderer.getRendertypeEntityCutoutShader();
+        var first=ShaderInstance.class.getField("LIGHT0_DIRECTION");
+        var second=ShaderInstance.class.getField("LIGHT1_DIRECTION");
+        first.setAccessible(true); second.setAccessible(true);
+        var originalFirst=first.get(shader); var originalSecond=second.get(shader);
+        try {
+            // Exercise either missing uniform and both missing, as in shader-pack replacements.
+            for (int mask=1;mask<=3;mask++) {
+                first.set(shader,(mask&1)!=0?null:originalFirst);
+                second.set(shader,(mask&2)!=0?null:originalSecond);
+                RenderSystem.setShaderLights(new Vector3f(.31F,.72F,-.51F),new Vector3f(-.42F,.61F,.27F));
+                var before=state();
+                render.invoke(null,box(new ItemStack(Items.DIAMOND_SWORD),91+mask),0F,new Matrix4f());
+                unchanged(before);
+            }
+        } finally { first.set(shader,originalFirst); second.set(shader,originalSecond); }
+        CsgoBox.LOGGER.info("GROUND MISSING-UNIFORM CHECKS PASSED: either/both absent, complete reel renders, exact world-state restoration");
+    }
     private static void run() throws Exception {
+        // Separate shader-pack startup/driver errors from the operations checked below.
+        for (int error;(error=GL11.glGetError())!=GL11.GL_NO_ERROR;)
+            CsgoBox.LOGGER.warn("Ground GUI checks cleared a pre-existing OpenGL error: {}",error);
         var renderer=Class.forName("com.reclizer.csgobox.gui.client.GroundReelTexture");
         var render=renderer.getDeclaredMethod("render",PlacedBoxEntity.class,float.class,Matrix4f.class); render.setAccessible(true);
         var field=renderer.getDeclaredField("target"); field.setAccessible(true);
@@ -125,8 +182,9 @@ public final class GroundRenderClientChecks {
             var before=state();
             try (var nested=guard()) { RenderSystem.setShaderFogStart(-100); RenderSystem.setShaderColor(0,0,0,0); throw new Expected(); }
             catch (Expected expected) { unchanged(before); }
+            missingLightUniforms(render);
             if (GL11.glGetError()!=GL11.GL_NO_ERROR) throw new AssertionError("OpenGL error in ground GUI checks");
-            CsgoBox.LOGGER.info("GROUND GUI GPU CHECKS PASSED: 3 items, 6 renders, fog/color/light isolation, exact world-state restoration, exception cleanup");
+            CsgoBox.LOGGER.info("GROUND GUI GPU CHECKS PASSED: 3 items, 9 renders, absent light uniforms, fog/color/light isolation, exact world-state restoration, exception cleanup");
         } finally { if (scratch!=null) try (var cleanup=guard()) { scratch.destroyBuffers(); } }
     }
     private static final class Expected extends RuntimeException {}

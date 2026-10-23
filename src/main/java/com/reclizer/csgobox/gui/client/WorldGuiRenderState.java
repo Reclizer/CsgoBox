@@ -1,10 +1,8 @@
 package com.reclizer.csgobox.gui.client;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexSorting;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -40,13 +38,11 @@ final class WorldGuiRenderState implements AutoCloseable {
             RenderSystem.activeTexture(GL13.GL_TEXTURE0+i); bindings[i]=GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
         }
         RenderSystem.activeTexture(activeTexture);
-        // Copy the live vectors via the public shader uniforms, not a reconstructed camera/block matrix.
-        var litShader=GameRenderer.getRendertypeEntityCutoutShader(); RenderSystem.setupShaderLights(litShader);
-        light0=vector(litShader.LIGHT0_DIRECTION); light1=vector(litShader.LIGHT1_DIRECTION);
+        // Oculus may replace entity shaders with programs that have no vanilla light uniforms.
+        // Copy the actual RenderSystem values, without touching the caller's shader program.
+        light0=new Vector3f(RenderSystem.shaderLightDirections[0]);
+        light1=new Vector3f(RenderSystem.shaderLightDirections[1]);
         RenderSystem.getModelViewStack().pushPose();
-    }
-    private static Vector3f vector(Uniform uniform) {
-        var values=uniform.getFloatBuffer(); return new Vector3f(values.get(0),values.get(1),values.get(2));
     }
     void restoreWorldTarget() {
         var modelView=RenderSystem.getModelViewStack(); modelView.popPose(); modelView.pushPose();
