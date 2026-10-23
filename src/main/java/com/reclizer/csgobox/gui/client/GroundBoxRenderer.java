@@ -43,7 +43,9 @@ public final class GroundBoxRenderer implements BlockEntityRenderer<PlacedBoxEnt
             pose.translate(-.5,-appearance.hingeY(),-appearance.hingeZ());
             mesh(pose,buffers,box,appearance,"lid",light,overlay);
             pose.popPose();
-            if (box.isOpening() && box.spinTicks(partial)>=0 && Minecraft.getInstance().gameRenderer.getMainCamera()
+            boolean shadow=GroundShaderCompatibility.shadowPass();
+            if (box.isOpening() && !shadow) GroundReelTexture.request(box);
+            if (box.isOpening() && !shadow && box.spinTicks(partial)>=0 && Minecraft.getInstance().gameRenderer.getMainCamera()
                     .getPosition().distanceToSqr(box.getBlockPos().getCenter())<24*24) {
                 pose.pushPose();
                 pose.translate(.5,appearance.hingeY()+.12,(appearance.front()+appearance.back())/32);
@@ -51,7 +53,7 @@ public final class GroundBoxRenderer implements BlockEntityRenderer<PlacedBoxEnt
                 pose.mulPose(Axis.XP.rotationDegrees(-120));
                 pose.scale(-.80F/GroundReelTexture.WIDTH,.26F/GroundReelTexture.HEIGHT,.001F);
                 pose.translate(-GroundReelTexture.WIDTH/2F,-GroundReelTexture.HEIGHT/2F,0);
-                GroundReelTexture.render(box,partial,pose.last().pose());
+                GroundReelTexture.render(box,pose.last(),buffers,overlay);
                 pose.popPose();
             } else if (!box.isOpening()) GroundReelTexture.forget(box);
         } finally { pose.popPose(); }

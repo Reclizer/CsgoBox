@@ -134,7 +134,7 @@ public final class GroundRenderClientChecks {
                 second.set(shader,(mask&2)!=0?null:originalSecond);
                 RenderSystem.setShaderLights(new Vector3f(.31F,.72F,-.51F),new Vector3f(-.42F,.61F,.27F));
                 var before=state();
-                render.invoke(null,box(new ItemStack(Items.DIAMOND_SWORD),91+mask),0F,new Matrix4f());
+                render.invoke(null,box(new ItemStack(Items.DIAMOND_SWORD),91+mask),0F);
                 unchanged(before);
             }
         } finally { first.set(shader,originalFirst); second.set(shader,originalSecond); }
@@ -145,8 +145,8 @@ public final class GroundRenderClientChecks {
         for (int error;(error=GL11.glGetError())!=GL11.GL_NO_ERROR;)
             CsgoBox.LOGGER.warn("Ground GUI checks cleared a pre-existing OpenGL error: {}",error);
         var renderer=Class.forName("com.reclizer.csgobox.gui.client.GroundReelTexture");
-        var render=renderer.getDeclaredMethod("render",PlacedBoxEntity.class,float.class,Matrix4f.class); render.setAccessible(true);
-        var field=renderer.getDeclaredField("target"); field.setAccessible(true);
+        var render=renderer.getDeclaredMethod("prepare",PlacedBoxEntity.class,float.class); render.setAccessible(true);
+        var forget=renderer.getDeclaredMethod("forget",PlacedBoxEntity.class); forget.setAccessible(true);
         TextureTarget scratch=null;
         try (var saved=guard()) {
             scratch=new TextureTarget(64,64,true,Minecraft.ON_OSX); scratch.bindWrite(true);
@@ -161,12 +161,14 @@ public final class GroundRenderClientChecks {
                 RenderSystem.enableBlend(); RenderSystem.blendFuncSeparate(GL11.GL_ONE,GL11.GL_ONE_MINUS_SRC_ALPHA,GL11.GL_ONE,GL11.GL_ZERO);
                 RenderSystem.enableScissor(4,5,20,25); RenderSystem.activeTexture(GL13.GL_TEXTURE1);
                 RenderSystem.colorMask(true,false,true,false);
-                var before=state(); render.invoke(null,box,0F,new Matrix4f()); unchanged(before);
-                int[] foggy=pixels((TextureTarget)field.get(null));
+                var before=state(); var texture=(TextureTarget)render.invoke(null,box,0F); unchanged(before);
+                int[] foggy=pixels(texture);
+                // Re-bake under the other world state instead of merely sampling the cached atlas.
+                forget.invoke(null,box);
                 RenderSystem.setShaderFogStart(Float.MAX_VALUE); RenderSystem.setShaderColor(1,1,1,1);
                 RenderSystem.setShaderLights(new Vector3f(1,0,0),new Vector3f(0,1,0));
-                before=state(); render.invoke(null,box,0F,new Matrix4f()); unchanged(before);
-                int[] clear=pixels((TextureTarget)field.get(null));
+                before=state(); texture=(TextureTarget)render.invoke(null,box,0F); unchanged(before);
+                int[] clear=pixels(texture);
                 if (!Arrays.equals(foggy,clear)) throw new AssertionError("GUI colors depend on world fog/light for "+items.get(i));
                 long colored=Arrays.stream(clear).filter(p->{int r=p&255,g=p>>8&255,b=p>>16&255;
                     return r>120 && r>g*1.7 && r>b*1.7;}).count();
@@ -183,8 +185,17 @@ public final class GroundRenderClientChecks {
             try (var nested=guard()) { RenderSystem.setShaderFogStart(-100); RenderSystem.setShaderColor(0,0,0,0); throw new Expected(); }
             catch (Expected expected) { unchanged(before); }
             missingLightUniforms(render);
+            var firstBox=box(new ItemStack(Items.DIAMOND_SWORD),101);
+            var firstTarget=(TextureTarget)render.invoke(null,firstBox,0F);
+            int[] firstPixels=pixels(firstTarget);
+            var secondTarget=(TextureTarget)render.invoke(null,box(new ItemStack(Items.APPLE),102),0F);
+            if (firstTarget.getColorTextureId()==secondTarget.getColorTextureId() || !Arrays.equals(firstPixels,pixels(firstTarget)))
+                throw new AssertionError("Simultaneous ground cases overwrite each other's reel textures");
+            var cached=(TextureTarget)render.invoke(null,firstBox,30F);
+            if (cached!=firstTarget || Arrays.equals(firstPixels,pixels(cached)))
+                throw new AssertionError("A cached ground reel stopped moving or reallocated its framebuffer");
             if (GL11.glGetError()!=GL11.GL_NO_ERROR) throw new AssertionError("OpenGL error in ground GUI checks");
-            CsgoBox.LOGGER.info("GROUND GUI GPU CHECKS PASSED: 3 items, 9 renders, absent light uniforms, fog/color/light isolation, exact world-state restoration, exception cleanup");
+            CsgoBox.LOGGER.info("GROUND GUI GPU CHECKS PASSED: 3 tinted item checks, absent light uniforms, fog/color/light isolation, exact world-state restoration, independent case targets, cached reel motion, exception cleanup");
         } finally { if (scratch!=null) try (var cleanup=guard()) { scratch.destroyBuffers(); } }
     }
     private static final class Expected extends RuntimeException {}
