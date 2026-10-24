@@ -25,14 +25,7 @@ public final class GroundVisualClientChecks {
             if (start<0) {
                 if (Boolean.getBoolean("csgobox.groundVisualGpuChecks")) GroundRenderClientChecks.run();
                 start=mc.level.getGameTime(); wallStart=System.nanoTime(); mc.options.hideGui=true;
-                var server=mc.getSingleplayerServer(); var id=mc.player.getUUID();
-                server.execute(()-> {
-                    var player=server.getPlayerList().getPlayer(id);
-                    server.getCommands().performPrefixedCommand(player.createCommandSourceStack().withPermission(4),"csgobox_test_ground demo");
-                    player.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
-                            new net.minecraft.world.phys.AABB(63,-61,186,70,-55,195)).forEach(net.minecraft.world.entity.Entity::discard);
-                    player.connection.teleport(66.5,-60,188.4,0,38);
-                });
+                beginDemo(mc);
             }
             frames++;
             long elapsed=mc.level.getGameTime()-start;
@@ -54,5 +47,15 @@ public final class GroundVisualClientChecks {
                 mc.stop();
             }
         } catch (Exception error) { CsgoBox.LOGGER.error("GROUND VISUAL SCENARIO FAILED",error); mc.stop(); }
+    }
+    static void beginDemo(Minecraft mc) {
+        var server=mc.getSingleplayerServer(); var id=mc.player.getUUID();
+        server.execute(()-> {
+            var player=server.getPlayerList().getPlayer(id);
+            server.getCommands().performPrefixedCommand(player.createCommandSourceStack().withPermission(4),"csgobox_test_ground demo");
+            player.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                    new net.minecraft.world.phys.AABB(63,-61,186,70,-55,195)).forEach(net.minecraft.world.entity.Entity::discard);
+            player.connection.teleport(66.5,-60,188.4,0,38);
+        });
     }
 }

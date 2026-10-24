@@ -30,6 +30,7 @@ public final class GroundReelTexture {
     private static final List<Panel> PANELS=new ArrayList<>();
     private static final MultiBufferSource.BufferSource GUI_BUFFERS=MultiBufferSource.immediate(new BufferBuilder(256*1024));
     private static long frame;
+    private static Boolean preparedWithShaders;
     private static final class Visual {
         final long seed;
         final List<Card> cards;
@@ -93,6 +94,7 @@ public final class GroundReelTexture {
     }
     static void clear() {
         CACHE.clear();
+        preparedWithShaders=null;
         if (!PANELS.isEmpty()) try (var state=new WorldGuiRenderState()) {
             for (var panel:PANELS) panel.close(); PANELS.clear();
         }
@@ -114,6 +116,11 @@ public final class GroundReelTexture {
         if (event.phase!=TickEvent.Phase.START) return;
         var mc=Minecraft.getInstance(); ++frame;
         if (mc.level==null) { if (!PANELS.isEmpty()) clear(); return; }
+        boolean shaders=GroundShaderCompatibility.shaderPackInUse();
+        if (preparedWithShaders==null || preparedWithShaders!=shaders) {
+            for (var visual:CACHE.values()) visual.baked=false;
+            preparedWithShaders=shaders;
+        }
         var camera=mc.gameRenderer.getMainCamera().getPosition();
         var iterator=CACHE.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -174,13 +181,23 @@ public final class GroundReelTexture {
         visual.seen=frame;
         // A shader pack applies its own world lighting. Full block+sky light is amplified again,
         // washing the GUI out; retain local skylight and only a soft, bounded readability floor.
-        int light=GroundShaderCompatibility.shaderPackInUse()
+        boolean shaders=GroundShaderCompatibility.shaderPackInUse();
+        int light=shaders
                 ?LightTexture.pack(Math.max(6,Math.min(10,LightTexture.block(worldLight))),LightTexture.sky(worldLight))
                 :LightTexture.FULL_BRIGHT;
-        var vertices=buffers.getBuffer(RenderType.entityCutoutNoCull(visual.panel.id));
-        vertices.vertex(pose.pose(),0,HEIGHT,0).color(255,255,255,255).uv(0,0).overlayCoords(overlay).uv2(light).normal(pose.normal(),0,0,-1).endVertex();
-        vertices.vertex(pose.pose(),WIDTH,HEIGHT,0).color(255,255,255,255).uv(1,0).overlayCoords(overlay).uv2(light).normal(pose.normal(),0,0,-1).endVertex();
-        vertices.vertex(pose.pose(),WIDTH,0,0).color(255,255,255,255).uv(1,1).overlayCoords(overlay).uv2(light).normal(pose.normal(),0,0,-1).endVertex();
-        vertices.vertex(pose.pose(),0,0,0).color(255,255,255,255).uv(0,1).overlayCoords(overlay).uv2(light).normal(pose.normal(),0,0,-1).endVertex();
+        // The cached GUI is already lit. Vanilla entity shaders would shade it a second time
+        // with Light0/Light1 even at FULL_BRIGHT; the text layer has no directional shading.
+        var vertices=buffers.getBuffer(shaders?RenderType.entityCutoutNoCull(visual.panel.id):RenderType.text(visual.panel.id));
+        vertex(vertices,pose,0,HEIGHT,0,0,light,overlay,shaders);
+        vertex(vertices,pose,WIDTH,HEIGHT,1,0,light,overlay,shaders);
+        vertex(vertices,pose,WIDTH,0,1,1,light,overlay,shaders);
+        vertex(vertices,pose,0,0,0,1,light,overlay,shaders);
+    }
+    private static void vertex(VertexConsumer vertices,PoseStack.Pose pose,float x,float y,float u,float v,int light,int overlay,boolean shaders) {
+        var vertex=vertices.vertex(pose.pose(),x,y,0).color(255,255,255,255).uv(u,v);
+        if (shaders) vertex.overlayCoords(overlay);
+        vertex.uv2(light);
+        if (shaders) vertex.normal(pose.normal(),0,0,-1);
+        vertex.endVertex();
     }
 }

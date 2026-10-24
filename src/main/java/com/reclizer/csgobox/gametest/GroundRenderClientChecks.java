@@ -230,6 +230,32 @@ public final class GroundRenderClientChecks {
             } finally { rendered.release(); }
         }
         CsgoBox.LOGGER.info("GROUND PANEL LIGHTING CHECKS PASSED: shaders={}, daylight/night/torch vertices; bounded block light and local skylight, vanilla full brightness preserved",shaders);
+        if (!shaders) unshadedPanelColors(box,render);
+    }
+    private static void unshadedPanelColors(PlacedBoxEntity box,Method render) throws Exception {
+        TextureTarget target=null;
+        try (var saved=guard()) {
+            target=new TextureTarget(512,128,true,Minecraft.ON_OSX);
+            RenderSystem.disableScissor(); RenderSystem.colorMask(true,true,true,true); RenderSystem.depthMask(true);
+            RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0,512,128,0,1000,21000),com.mojang.blaze3d.vertex.VertexSorting.ORTHOGRAPHIC_Z);
+            var modelView=RenderSystem.getModelViewStack(); modelView.setIdentity(); modelView.translate(0,0,-11000); RenderSystem.applyModelViewMatrix();
+            RenderSystem.setShaderColor(1,1,1,1); FogRenderer.setupNoFog();
+            int[] first=null;
+            for (int direction:new int[]{1,-1}) {
+                target.clear(Minecraft.ON_OSX); target.bindWrite(true);
+                RenderSystem.setShaderLights(new Vector3f(0,0,direction),new Vector3f(0,0,direction));
+                var buffers=MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.BufferBuilder(1024));
+                render.invoke(null,box,new com.mojang.blaze3d.vertex.PoseStack().last(),buffers,LightTexture.pack(0,0),
+                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
+                buffers.endBatch();
+                var current=pixels(target);
+                if (first==null) first=current;
+                else if (!Arrays.equals(first,current)) throw new AssertionError("Unshaded ground panel is darkened by directional entity lighting");
+            }
+            long visible=Arrays.stream(first).filter(p->(p&255)+(p>>8&255)+(p>>16&255)>150).count();
+            if (visible<1000) throw new AssertionError("Unshaded ground panel rendered blank or too dark");
+            CsgoBox.LOGGER.info("GROUND UNLIT PANEL PIXELS PASSED: complete panel is unchanged under opposite directional lights, visible in darkness");
+        } finally { if (target!=null) try (var cleanup=guard()) { target.destroyBuffers(); } }
     }
     private static final class Expected extends RuntimeException {}
 }
