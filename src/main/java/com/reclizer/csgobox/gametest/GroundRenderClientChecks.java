@@ -194,9 +194,42 @@ public final class GroundRenderClientChecks {
             var cached=(TextureTarget)render.invoke(null,firstBox,30F);
             if (cached!=firstTarget || Arrays.equals(firstPixels,pixels(cached)))
                 throw new AssertionError("A cached ground reel stopped moving or reallocated its framebuffer");
+            panelLighting(firstBox);
             if (GL11.glGetError()!=GL11.GL_NO_ERROR) throw new AssertionError("OpenGL error in ground GUI checks");
             CsgoBox.LOGGER.info("GROUND GUI GPU CHECKS PASSED: 3 tinted item checks, absent light uniforms, fog/color/light isolation, exact world-state restoration, independent case targets, cached reel motion, exception cleanup");
         } finally { if (scratch!=null) try (var cleanup=guard()) { scratch.destroyBuffers(); } }
+    }
+    private static void panelLighting(PlacedBoxEntity box) throws Exception {
+        var compatibility=Class.forName("com.reclizer.csgobox.gui.client.GroundShaderCompatibility");
+        var active=compatibility.getDeclaredMethod("shaderPackInUse"); active.setAccessible(true);
+        boolean shaders=(boolean)active.invoke(null);
+        var renderer=Class.forName("com.reclizer.csgobox.gui.client.GroundReelTexture");
+        var render=renderer.getDeclaredMethod("render",PlacedBoxEntity.class,com.mojang.blaze3d.vertex.PoseStack.Pose.class,
+                MultiBufferSource.class,int.class,int.class); render.setAccessible(true);
+        for (int worldLight:new int[]{LightTexture.pack(0,15),LightTexture.pack(0,0),LightTexture.pack(15,0)}) {
+            var builder=new com.mojang.blaze3d.vertex.BufferBuilder(1024);
+            MultiBufferSource buffers=type -> { builder.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS,type.format()); return builder; };
+            render.invoke(null,box,new com.mojang.blaze3d.vertex.PoseStack().last(),buffers,worldLight,
+                    net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
+            var rendered=builder.end();
+            try {
+                var format=rendered.drawState().format(); int offset=-1;
+                for (int i=0;i<format.getElements().size();i++) {
+                    var element=format.getElements().get(i);
+                    if (element.getUsage()==com.mojang.blaze3d.vertex.VertexFormatElement.Usage.UV && element.getIndex()==2)
+                        offset=format.getOffset(i);
+                }
+                if (offset<0) throw new AssertionError("Ground panel has no lightmap coordinates");
+                var vertices=rendered.vertexBuffer().order(java.nio.ByteOrder.nativeOrder());
+                for (int i=0;i<4;i++) {
+                    int block=vertices.getShort(i*format.getVertexSize()+offset)&65535;
+                    int sky=vertices.getShort(i*format.getVertexSize()+offset+2)&65535;
+                    if (shaders ? block<=0 || block>=240 || sky!=LightTexture.sky(worldLight)*16 : block!=240 || sky!=240)
+                        throw new AssertionError("Incorrect ground panel lighting: shaders="+shaders+", block="+block+", sky="+sky);
+                }
+            } finally { rendered.release(); }
+        }
+        CsgoBox.LOGGER.info("GROUND PANEL LIGHTING CHECKS PASSED: shaders={}, daylight/night/torch vertices; bounded block light and local skylight, vanilla full brightness preserved",shaders);
     }
     private static final class Expected extends RuntimeException {}
 }

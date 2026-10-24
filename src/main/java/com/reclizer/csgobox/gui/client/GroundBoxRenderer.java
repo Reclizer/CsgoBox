@@ -53,7 +53,7 @@ public final class GroundBoxRenderer implements BlockEntityRenderer<PlacedBoxEnt
                 pose.mulPose(Axis.XP.rotationDegrees(-120));
                 pose.scale(-.80F/GroundReelTexture.WIDTH,.26F/GroundReelTexture.HEIGHT,.001F);
                 pose.translate(-GroundReelTexture.WIDTH/2F,-GroundReelTexture.HEIGHT/2F,0);
-                GroundReelTexture.render(box,pose.last(),buffers,overlay);
+                GroundReelTexture.render(box,pose.last(),buffers,light,overlay);
                 pose.popPose();
             } else if (!box.isOpening()) GroundReelTexture.forget(box);
         } finally { pose.popPose(); }

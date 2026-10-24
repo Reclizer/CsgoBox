@@ -15,8 +15,8 @@ public final class GroundVisualClientChecks {
     private static long start=-1, wallStart;
     private static int warmup, next, frames;
     private static boolean done;
-    private static final int[] TIMES={120,300,440,500};
-    private static final String[] NAMES={"closed","spinning","open-after-reward","reset"};
+    private static final int[] TIMES={120,300,340,440,500};
+    private static final String[] NAMES={"closed","spinning","night-spinning","open-after-reward","reset"};
     @SubscribeEvent public static void frame(TickEvent.RenderTickEvent event) {
         var mc=Minecraft.getInstance();
         if (done || !Boolean.getBoolean("csgobox.groundVisualChecks") || event.phase!=TickEvent.Phase.END
@@ -42,6 +42,11 @@ public final class GroundVisualClientChecks {
                 var path=dir.resolve(NAMES[next++]+".png");
                 try (var image=Screenshot.takeScreenshot(mc.getMainRenderTarget())) { image.writeToFile(path); }
                 CsgoBox.LOGGER.info("Ground visual capture: {} (tick {})",path.toAbsolutePath(),elapsed);
+                if (Boolean.getBoolean("csgobox.groundVisualLighting") && (next==2 || next==3)) {
+                    long time=next==2?18000:6000;
+                    var server=mc.getSingleplayerServer();
+                    server.execute(()->server.overworld().setDayTime(time));
+                }
             }
             if (elapsed>540) {
                 done=true;

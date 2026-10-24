@@ -168,14 +168,19 @@ public final class GroundReelTexture {
             return target;
         }
     }
-    static void render(PlacedBoxEntity box,PoseStack.Pose pose,MultiBufferSource buffers,int overlay) {
+    static void render(PlacedBoxEntity box,PoseStack.Pose pose,MultiBufferSource buffers,int worldLight,int overlay) {
         var visual=CACHE.get(box);
         if (visual==null || !visual.baked) return;
         visual.seen=frame;
+        // A shader pack applies its own world lighting. Full block+sky light is amplified again,
+        // washing the GUI out; retain local skylight and only a soft, bounded readability floor.
+        int light=GroundShaderCompatibility.shaderPackInUse()
+                ?LightTexture.pack(Math.max(6,Math.min(10,LightTexture.block(worldLight))),LightTexture.sky(worldLight))
+                :LightTexture.FULL_BRIGHT;
         var vertices=buffers.getBuffer(RenderType.entityCutoutNoCull(visual.panel.id));
-        vertices.vertex(pose.pose(),0,HEIGHT,0).color(255,255,255,255).uv(0,0).overlayCoords(overlay).uv2(LightTexture.FULL_BRIGHT).normal(pose.normal(),0,0,-1).endVertex();
-        vertices.vertex(pose.pose(),WIDTH,HEIGHT,0).color(255,255,255,255).uv(1,0).overlayCoords(overlay).uv2(LightTexture.FULL_BRIGHT).normal(pose.normal(),0,0,-1).endVertex();
-        vertices.vertex(pose.pose(),WIDTH,0,0).color(255,255,255,255).uv(1,1).overlayCoords(overlay).uv2(LightTexture.FULL_BRIGHT).normal(pose.normal(),0,0,-1).endVertex();
-        vertices.vertex(pose.pose(),0,0,0).color(255,255,255,255).uv(0,1).overlayCoords(overlay).uv2(LightTexture.FULL_BRIGHT).normal(pose.normal(),0,0,-1).endVertex();
+        vertices.vertex(pose.pose(),0,HEIGHT,0).color(255,255,255,255).uv(0,0).overlayCoords(overlay).uv2(light).normal(pose.normal(),0,0,-1).endVertex();
+        vertices.vertex(pose.pose(),WIDTH,HEIGHT,0).color(255,255,255,255).uv(1,0).overlayCoords(overlay).uv2(light).normal(pose.normal(),0,0,-1).endVertex();
+        vertices.vertex(pose.pose(),WIDTH,0,0).color(255,255,255,255).uv(1,1).overlayCoords(overlay).uv2(light).normal(pose.normal(),0,0,-1).endVertex();
+        vertices.vertex(pose.pose(),0,0,0).color(255,255,255,255).uv(0,1).overlayCoords(overlay).uv2(light).normal(pose.normal(),0,0,-1).endVertex();
     }
 }
