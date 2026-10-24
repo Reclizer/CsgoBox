@@ -73,8 +73,6 @@ public class CsLookItemScreen extends BoxScreen {
         if (minecraft.player != null)
             GuiItemMove.renderItemInInventoryFollowsMouse(g, MODEL_CENTER_X-MODEL_SIZE/2F, MODEL_CENTER_Y-MODEL_SIZE/2F,
                     rotation.yaw(), rotation.pitch(), reward, minecraft.player, MODEL_SIZE/16F);
-        if (isInspection()) ClassicBoxUi.centeredText(g, font, Component.translatable("gui.csgobox.inspect.drag_hint"),
-                LAYOUT_WIDTH/2F, LAYOUT_HEIGHT*0.86F, 0.65F, LAYOUT_WIDTH*0.8F, 0xFFD3D3D3);
     }
 
     @Override protected void renderHover(GuiGraphics g, int mouseX, int mouseY) {

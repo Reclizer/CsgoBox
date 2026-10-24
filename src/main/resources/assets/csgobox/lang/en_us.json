@@ -169,7 +169,6 @@
   "gui.csgobox.inspect.legendary_hint": "Click to browse all legendary rewards",
   "gui.csgobox.inspect.legendary_title": "Legendary rewards",
   "gui.csgobox.inspect.legendary_count": "%s legendary rewards",
-  "gui.csgobox.inspect.drag_hint": "Drag to rotate · release to reset · hold Shift for details",
   "gui.csgobox.inspect.empty": "No legendary rewards in this pool",
   "appearance.csgobox.gold": "Gold weapon case",
   "appearance.csgobox.orange": "Orange weapon case",

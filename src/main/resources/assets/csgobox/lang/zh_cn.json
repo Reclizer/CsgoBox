@@ -169,7 +169,6 @@
   "gui.csgobox.inspect.legendary_hint": "点击查看完整传奇物品清单",
   "gui.csgobox.inspect.legendary_title": "传奇物品清单",
   "gui.csgobox.inspect.legendary_count": "共 %s 项传奇物品",
-  "gui.csgobox.inspect.drag_hint": "拖拽旋转 · 松手回正 · 按住 Shift 查看物品说明",
   "gui.csgobox.inspect.empty": "此奖池没有传奇物品",
   "appearance.csgobox.gold": "金色武器箱",
   "appearance.csgobox.orange": "橙色武器箱",
